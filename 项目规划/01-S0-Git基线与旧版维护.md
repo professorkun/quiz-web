@@ -211,3 +211,16 @@ git push -u origin general-dev
 | 迁移映射表位置 | |
 | 云读写验证结论 | 通过 / 未验证（原因） |
 | 带入 S1 的遗留项 | |
+
+---
+
+## 12. 执行记录（会话级，append-only）
+
+> 用途：替代"对话上下文"，让下次会话只看本表就知道做到哪、证据在哪。
+> 每条记录完成后**不要改写**，只追加新行。
+
+| 日期 | 任务块 | 完成情况 | 证据（可复现） | 遗留 |
+| --- | --- | --- | --- | --- |
+| 2026-11-16 | T0-1 敏感信息与版权前置检查 | 完成 | 检查结论见仓库根 `提交前检查清单.md`；27 个待提交文件扫令牌/私钥/`.env*`/手机号/导出数据，仅命中 4 处客户端 `wbpk_` 密钥（本就随页面公开） | RLS 与 Origin 约束核对顺延至 T0-8 / T0-10 |
+| 2026-11-16 | T0-2 写 `.gitignore` | 完成 | 忽略规则按方案 §5.2 落地，另增 `.wbapp_*.genie`、`__pycache__/`、OS 杂项；`git status` 不再出现 `.workbuddy/` 与依赖/临时物；`.gitattributes` 统一以 LF 存储，避免 CI 因 CRLF 误判 | `.wbapp_*.genie` 与 `__pycache__/` 属容差内增补，已在 `.gitignore` 注释说明 |
+| 2026-11-16 | T0-3 初始化 `main` 与基线提交 | 完成 | 提交 `72a46d7`，29 个文件；标签 `legacy-javaweb-20261116`；`git status` 干净；克隆该标签到新目录重跑 `build_json.py` + `build_html.py`，`git status` 仍干净且 HTML md5 `fbb3213…` 与本地一致 | 提交身份沿用本机既有 git 配置（gitee noreply 邮箱）；若推 GitHub 想让提交归属账号，T0-4 前改 repo 级 `user.email` |
