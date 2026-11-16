@@ -116,13 +116,18 @@ describe("T1-6 旧记录 dry-run", () => {
     expect(report.dropped).toHaveLength(1);
   });
 
-  it("进度由 Attempt 重算：先错后对 → mastered 且保留错次", () => {
+  it("进度由 Attempt 重算：先错后对 → 进入复习计划，错次与历史都保留", () => {
     const { progress } = run({
+      // 明确给出导出时间，才能表达"先错后对"；缺省是 1970-01-01，顺序会反过来
+      exportedAt: "2026-11-02T00:00:00Z",
       wrongs: [{ q_key: "choice-1", q_type: "choice", wrong_count: 2, last_wrong_at: "2026-11-01T00:00:00Z" }],
       mastery: [{ q_key: "choice-1", q_type: "choice" }],
     });
     const p = progress.find((x) => x.questionId === "javaweb:single_choice:001");
-    expect(p?.mastered).toBe(true);
+    // S4 起「做对过一次」不再等于已掌握：必须连续 3 次独立复习答对（G4-2）
+    expect(p?.mastered).toBe(false);
+    expect(p?.status).toBe("reviewing");
+    expect(p?.streak).toBe(1);
     expect(p?.wrongCount).toBe(2);
     expect(p?.attemptsCount).toBe(3);
   });

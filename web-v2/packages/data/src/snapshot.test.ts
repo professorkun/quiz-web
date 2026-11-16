@@ -255,6 +255,9 @@ describe("合并策略", () => {
     };
     const merged = mergeLearning(base, incoming);
     expect(merged.snapshot.progress[0]?.attemptsCount).toBe(2);
-    expect(merged.snapshot.progress[0]?.mastered).toBe(true); // 由事件算出来，不是导入说了算
+    // 由事件算出来，不是导入文件说了算；1 次答对只进 reviewing
+    expect(merged.snapshot.progress[0]?.mastered).toBe(false);
+    expect(merged.snapshot.progress[0]?.status).toBe("reviewing");
+    expect(merged.snapshot.progress[0]?.streak).toBe(1);
   });
 });

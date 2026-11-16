@@ -1,4 +1,4 @@
-import type { Attempt, QuestionProgress } from "@quiz/core";
+import { replayReview, type Attempt, type QuestionProgress } from "@quiz/core";
 
 /**
  * 由不可变 Attempt 序列重算进度。
@@ -11,24 +11,36 @@ export function computeProgress(
   questionId: string,
   attempts: readonly Attempt[],
 ): QuestionProgress {
+  const sorted = [...attempts].sort((a, b) =>
+    a.submittedAt === b.submittedAt
+      ? a.attemptId.localeCompare(b.attemptId)
+      : a.submittedAt.localeCompare(b.submittedAt),
+  );
   let wrongCount = 0;
   let firstCorrectAt: string | null = null;
   let lastAttemptAt: string | null = null;
 
-  for (const a of attempts) {
+  for (const a of sorted) {
     if (a.correct === false) wrongCount += 1;
     if (a.correct === true && firstCorrectAt === null) firstCorrectAt = a.submittedAt;
     if (lastAttemptAt === null || a.submittedAt > lastAttemptAt) lastAttemptAt = a.submittedAt;
   }
 
+  // 掌握状态完全交给状态机：这里不再用"做对过一次"冒充已掌握（S4 §6-F）
+  const review = replayReview(sorted);
+
   return {
     bankId,
     questionId,
-    attemptsCount: attempts.length,
+    attemptsCount: sorted.length,
     wrongCount,
     firstCorrectAt,
     lastAttemptAt,
-    mastered: firstCorrectAt !== null,
+    mastered: review.status === "mastered",
+    status: review.status,
+    streak: review.streak,
+    nextReviewAt: review.nextReviewAt,
+    errorCause: review.errorCause,
   };
 }
 

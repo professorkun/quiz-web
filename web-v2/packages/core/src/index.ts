@@ -25,6 +25,7 @@ export {
   AttemptSchema,
   QuestionProgressSchema,
   PracticeSessionSchema,
+  ErrorCauseSchema,
   FavoriteEntrySchema,
   PracticeSettingsSchema,
   AppSettingsSchema,
@@ -149,3 +150,30 @@ export type { ValidationIssue, BankPackage, ValidateResult } from "./validate.js
 // 作答事件构造（S3/T4-1）：事件不可变，首次标记从历史推断
 export { buildAttempt, isFirstAttemptFor } from "./records/attempt.js";
 export type { BuildAttemptInput } from "./records/attempt.js";
+
+// 复习状态机与调度（S4 T4-2 / T4-3）：时钟口径见 ADR-0006
+export {
+  ERROR_CAUSES,
+  ERROR_CAUSE_LABEL,
+  DEFAULT_REVIEW_CONFIG,
+  INITIAL_REVIEW_STATE,
+  addHours,
+  isDue,
+  isDueAt,
+  isIndependentReview,
+  reduceReview,
+  replayReview,
+  eventOf,
+  dueQuestionIds,
+} from "./review/index.js";
+export type {
+  ErrorCause,
+  ReviewStatus,
+  ReviewState,
+  ReviewConfig,
+  ReviewEvent,
+} from "./review/index.js";
+
+// 统计（S4 T4-7）：全部指标由 Attempt 现算，没有计数缓存
+export { computeStats } from "./stats/index.js";
+export type { Stats, StatsInput, Rate } from "./stats/index.js";

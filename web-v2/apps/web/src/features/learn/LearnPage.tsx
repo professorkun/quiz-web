@@ -8,7 +8,12 @@
 
 import { useEffect, useState } from "react";
 
-import { restoreSession, type QuestionProgress } from "@quiz/core";
+import {
+  computeStats,
+  restoreSession,
+  type Attempt,
+  type QuestionProgress,
+} from "@quiz/core";
 
 import { usePlatform } from "../../platform/PlatformProvider";
 import { navigate } from "../../router";
@@ -23,6 +28,7 @@ export function LearnPage(): React.ReactElement {
   const bankId = activeBank.manifest.bankId;
 
   const [progress, setProgress] = useState<readonly QuestionProgress[]>([]);
+  const [attempts, setAttempts] = useState<readonly Attempt[]>([]);
   const [favorites, setFavorites] = useState(0);
   const [resume, setResume] = useState<ResumeInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,14 +36,16 @@ export function LearnPage(): React.ReactElement {
   useEffect(() => {
     let cancelled = false;
     const load = async (): Promise<void> => {
-      const [rows, favs, snapshot] = await Promise.all([
+      const [rows, events, favs, snapshot] = await Promise.all([
         platform.progress.listByBank(bankId),
+        platform.attempts.listByBank(bankId),
         platform.favorites.listByBank(bankId),
         platform.sessionSnapshots.load(bankId),
       ]);
       if (cancelled) return;
 
       setProgress(rows);
+      setAttempts(events);
       setFavorites(favs.length);
 
       if (snapshot === null) {
@@ -62,6 +70,13 @@ export function LearnPage(): React.ReactElement {
   const touched = progress.length;
   const wrong = progress.filter((p) => p.wrongCount > 0).length;
   const correctOnce = progress.filter((p) => p.firstCorrectAt !== null).length;
+  const stats = computeStats({
+    questions: activeBank.questions,
+    topics: activeBank.manifest.topics,
+    attempts,
+    progress,
+    now: new Date().toISOString(),
+  });
 
   if (loading) {
     return (
@@ -131,12 +146,56 @@ export function LearnPage(): React.ReactElement {
         </div>
       </section>
 
-      <section className="card muted">
-        <h2>今日待复习</h2>
-        <p>
-          到期复习需要 1/3/7 天间隔调度，属于 S4 的范围；本阶段先把错题、收藏与作答历史
-          沉淀下来，等 S4 用这些真实事件排期。
-        </p>
+      <section className="kpis">
+        <div className="kpi">
+          <div className="kpi-num">
+            {(stats.firstAccuracy.value * 100).toFixed(0)}%
+            <span className="kpi-sub">（{stats.firstAccuracy.total} 题）</span>
+          </div>
+          <div className="kpi-label">首次正确率</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-num">
+            {(stats.repeatAccuracy.value * 100).toFixed(0)}%
+            <span className="kpi-sub">（{stats.repeatAccuracy.total} 次）</span>
+          </div>
+          <div className="kpi-label">重做正确率</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-num">
+            {(stats.mastery.value * 100).toFixed(0)}%
+            <span className="kpi-sub">（{stats.mastery.correct}/{stats.mastery.total}）</span>
+          </div>
+          <div className="kpi-label">掌握度</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-num">{(stats.studyTimeMs / 60000).toFixed(1)}<span className="kpi-sub"> 分</span></div>
+          <div className="kpi-label">学习时长</div>
+        </div>
+      </section>
+
+      <section className="card">
+        <div className="row">
+          <h2 style={{ margin: 0 }}>今日待复习</h2>
+          <span className="spacer" />
+          <span className={stats.dueCount > 0 ? "badge wrong" : "badge"}>{stats.dueCount} 题到期</span>
+        </div>
+        {stats.dueCount === 0 ? (
+          <p className="muted" style={{ marginTop: 8 }}>
+            现在没有到期的题。答错后按 1 天 → 3 天 → 7 天排期，连续 3 次独立复习答对即转已掌握。
+          </p>
+        ) : (
+          <>
+            <p className="muted" style={{ marginTop: 8 }}>
+              这些题已经到了复习时间。到期规则见 ADR-0006：按 24 小时推进，不含已掌握的题。
+            </p>
+            <div className="row" style={{ marginTop: 10 }}>
+              <button type="button" className="btn" onClick={() => navigate("review")}>
+                去复习（{stats.dueCount}）
+              </button>
+            </div>
+          </>
+        )}
       </section>
     </div>
   );

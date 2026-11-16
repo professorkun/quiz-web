@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { Attempt } from "@quiz/core";
 import type { StorageInfo } from "@quiz/platform";
+import { recomputeBank, verifyBank } from "@quiz/data";
 
 import { usePlatform } from "../../platform/PlatformProvider";
 import { ImportExport } from "./ImportExport";
@@ -64,6 +65,7 @@ export function MePage(): React.ReactElement {
   const [attempts, setAttempts] = useState<readonly Attempt[]>([]);
   const [favorites, setFavorites] = useState(0);
   const [info, setInfo] = useState<StorageInfo | null>(null);
+  const [reconcile, setReconcile] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async (): Promise<void> => {
@@ -84,6 +86,23 @@ export function MePage(): React.ReactElement {
   const sessions = groupSessions(attempts);
   const firstAttempts = attempts.filter((a) => a.isFirstAttempt);
   const firstCorrect = firstAttempts.filter((a) => a.correct === true).length;
+
+  const runReconcile = async (): Promise<void> => {
+    setBusy(true);
+    try {
+      const before = await verifyBank(platform, bankId);
+      const after = await recomputeBank(platform, bankId);
+      setReconcile(
+        `检查 ${before.beforeCount} 条进度，发现 ${before.changed} 条与事件不一致；` +
+          `重算后 ${after.afterCount} 条全部一致。`,
+      );
+      bump();
+    } catch (cause) {
+      setReconcile(cause instanceof Error ? cause.message : "重算失败");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const clearBank = async (): Promise<void> => {
     const confirmed = globalThis.confirm(
@@ -157,6 +176,23 @@ export function MePage(): React.ReactElement {
       </section>
 
       <ImportExport />
+
+      <section className="card">
+        <h2>数据一致性</h2>
+        <p className="muted">
+          进度与统计只是作答事件的投影。若怀疑状态被写坏，可以直接从事件重算并逐条对账。
+        </p>
+        <div className="row" style={{ marginTop: 8 }}>
+          <button type="button" className="btn gray" disabled={busy} onClick={() => void runReconcile()}>
+            {busy ? "重算中…" : "由事件重算并对账"}
+          </button>
+        </div>
+        {reconcile === null ? null : (
+          <div className="notice small" style={{ marginTop: 8 }}>
+            {reconcile}
+          </div>
+        )}
+      </section>
 
       <section className="card">
         <h2>存储</h2>

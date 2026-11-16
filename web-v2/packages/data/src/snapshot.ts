@@ -72,6 +72,12 @@ const PROGRESS_KEYS = [
   "firstCorrectAt",
   "lastAttemptAt",
   "mastered",
+  // S4 的派生字段：缺字段的旧文件由 Zod 默认值补齐，但不能当成"未知字段"拒绝
+  "status",
+  "streak",
+  "nextReviewAt",
+  "errorCause",
+  "note",
 ] as const;
 
 const FAVORITE_KEYS = ["bankId", "questionId", "addedAt"] as const;

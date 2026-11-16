@@ -12,6 +12,8 @@
 
 import { z } from "zod";
 
+import { ERROR_CAUSES } from "./review/types.js";
+
 /** 契约版本。任何破坏性变更必须升这个数，并在迁移逻辑里按版本分支 */
 export const SCHEMA_VERSION = 1 as const;
 
@@ -320,7 +322,18 @@ export const AttemptSchema = z.object({
 });
 export type Attempt = z.infer<typeof AttemptSchema>;
 
-/** 进度是**派生**数据，不是事实源；随时可由 Attempt 重算 */
+/** 错因 key（文案在展示层的 `ERROR_CAUSE_LABEL`），与复习状态机共用同一份枚举 */
+export const ErrorCauseSchema = z.enum(ERROR_CAUSES);
+export type ErrorCause = z.infer<typeof ErrorCauseSchema>;
+
+/**
+ * 进度是**派生**数据，不是事实源；随时可由 Attempt 重算。
+ *
+ * S4 新增的五个字段都带默认值：S3 已经落盘的老记录读进来会自动补成"新题"，
+ * 不需要写数据迁移，也不会因为缺字段导致整个库打不开（S4 §9 回退方案第 1 条）。
+ * `mastered` 保留但降为投影：`mastered === (status === "mastered")`，
+ * 任何写入方都必须用状态机的输出，不许直接设 true（S4 §6-F「不可接受」第一条）。
+ */
 export const QuestionProgressSchema = z.object({
   bankId: IdStr,
   questionId: QuestionIdSchema,
@@ -329,6 +342,15 @@ export const QuestionProgressSchema = z.object({
   firstCorrectAt: z.string().nullable(),
   lastAttemptAt: z.string().nullable(),
   mastered: z.boolean(),
+  status: z.enum(["new", "learning", "reviewing", "mastered"]).default("new"),
+  /** 连续独立答对次数；答错归零 */
+  streak: z.number().int().nonnegative().default(0),
+  /** 下次复习到期时间（ISO）；mastered 为 null */
+  nextReviewAt: z.string().nullable().default(null),
+  /** 最近一次标记的错因 */
+  errorCause: ErrorCauseSchema.nullable().default(null),
+  /** 可选备注 */
+  note: z.string().optional(),
 });
 export type QuestionProgress = z.infer<typeof QuestionProgressSchema>;
 
