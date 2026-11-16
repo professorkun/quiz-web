@@ -265,7 +265,7 @@ export function PracticePage(props: PracticePageProps): React.ReactElement {
         ) : null}
       </header>
 
-      <section className="card">
+      <section className="card" data-question-id={questionId}>
         {stemInRenderer ? null : (
           <div className="stem">
             <RichText text={question.stem} />
