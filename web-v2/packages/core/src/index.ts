@@ -25,6 +25,10 @@ export {
   AttemptSchema,
   QuestionProgressSchema,
   PracticeSessionSchema,
+  FavoriteEntrySchema,
+  PracticeSettingsSchema,
+  AppSettingsSchema,
+  LearningSnapshotSchema,
 } from "./schema.js";
 
 export type {
@@ -45,6 +49,11 @@ export type {
   Attempt,
   QuestionProgress,
   PracticeSession,
+  FavoriteEntry,
+  PracticeSettings,
+  AppSettings,
+  LearningSnapshot,
+  BankContent,
 } from "./schema.js";
 
 export { makeQuestionId, parseQuestionId, nextSeq, padSeq } from "./ids.js";
@@ -136,3 +145,7 @@ export type {
 
 export { ValidationCode, validateBankPackage } from "./validate.js";
 export type { ValidationIssue, BankPackage, ValidateResult } from "./validate.js";
+
+// 作答事件构造（S3/T4-1）：事件不可变，首次标记从历史推断
+export { buildAttempt, isFirstAttemptFor } from "./records/attempt.js";
+export type { BuildAttemptInput } from "./records/attempt.js";

@@ -31,3 +31,31 @@ export function computeProgress(
     mastered: firstCorrectAt !== null,
   };
 }
+
+/**
+ * 由全量事件重算进度（S3 的导入后重算、S4 的 T4-8 对账共用）。
+ *
+ * 排序是必须的：`lastAttemptAt` 依赖时间序，乱序输入会让"最后一次作答"
+ * 取到中间某一条，统计就开始飘。
+ */
+export function recomputeProgress(attempts: readonly Attempt[]): readonly QuestionProgress[] {
+  const groups = new Map<string, Attempt[]>();
+  for (const attempt of attempts) {
+    const key = `${attempt.bankId}\u0000${attempt.questionId}`;
+    const list = groups.get(key);
+    if (list === undefined) groups.set(key, [attempt]);
+    else list.push(attempt);
+  }
+
+  const out: QuestionProgress[] = [];
+  for (const list of groups.values()) {
+    list.sort((a, b) =>
+      a.submittedAt === b.submittedAt
+        ? a.attemptId.localeCompare(b.attemptId)
+        : a.submittedAt.localeCompare(b.submittedAt),
+    );
+    const first = list[0]!;
+    out.push(computeProgress(first.bankId, first.questionId, list));
+  }
+  return out;
+}

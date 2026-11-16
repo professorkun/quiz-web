@@ -1,50 +1,76 @@
+/**
+ * 应用入口（S3 · T3-3）：平台装配 → 五入口路由 → 页面。
+ *
+ * 页面是纯消费者：只知道 `usePlatform()` 和 `navigate()`，
+ * 不知道 IndexedDB、也不知道题库文件从哪来。这样 S6 换成云端存储、
+ * S8 打包成 App 时，页面一行都不用改。
+ */
+
 import { useEffect, useState } from "react";
 
-import type { BankPackage } from "@quiz/core";
+import type { BankContent } from "@quiz/core";
+import type { Platform } from "@quiz/platform";
 
-import { demoBank } from "./data/demoBank";
-import { loadJavawebBank } from "./data/javawebBank";
-import { PracticePage } from "./ui/PracticePage";
+import { BanksPage } from "./features/banks/BanksPage";
+import { LearnPage } from "./features/learn/LearnPage";
+import { MePage } from "./features/me/MePage";
+import { PracticePage } from "./features/practice/PracticePage";
+import { ReviewPage } from "./features/review/ReviewPage";
+import { PlatformProvider } from "./platform/PlatformProvider";
+import { navigate, parseRoute, type Route } from "./router";
+import { AppShell } from "./ui/AppShell";
 
-/**
- * 应用壳（S2 只做练习页，不做导航/首页/题库页——那是 S3）。
- * 需要六题型手测时访问 `?demo=1`，切换为演示题库（不算多题库切换 UI）。
- */
-export function App(): React.ReactElement {
-  const [bank, setBank] = useState<BankPackage | null>(null);
-  const [error, setError] = useState<string | null>(null);
+function renderRoute(route: Route): React.ReactElement {
+  switch (route) {
+    case "banks":
+      return <BanksPage />;
+    case "practice":
+      return <PracticePage />;
+    case "review":
+      return <ReviewPage />;
+    case "me":
+      return <MePage />;
+    case "learn":
+    default:
+      return <LearnPage />;
+  }
+}
+
+function Shell(): React.ReactElement {
+  const [route, setRoute] = useState<Route>(() => parseRoute(globalThis.location.hash));
 
   useEffect(() => {
-    try {
-      setBank(loadJavawebBank());
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    }
+    const onHashChange = (): void => setRoute(parseRoute(globalThis.location.hash));
+    globalThis.addEventListener("hashchange", onHashChange);
+    return () => globalThis.removeEventListener("hashchange", onHashChange);
   }, []);
 
-  if (error !== null) {
-    return (
-      <div className="wrap">
-        <div className="card">
-          <div className="notice" style={{ whiteSpace: "pre-wrap" }}>
-            题库加载失败：{error}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  return (
+    <AppShell
+      route={route}
+      onNavigate={(next) => {
+        navigate(next);
+        setRoute(next);
+      }}
+    >
+      {renderRoute(route)}
+    </AppShell>
+  );
+}
 
-  if (bank === null) {
-    return (
-      <div className="wrap">
-        <p className="muted">正在校验题库包…</p>
-      </div>
-    );
-  }
-
-  const demo =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("demo") === "1";
-
-  return <PracticePage bank={demo ? demoBank : bank} />;
+export function App(
+  props: {
+    /** 集成测试注入现成平台；生产环境不传，由 Provider 自己装配 IndexedDB */
+    readonly platform?: Platform;
+    readonly builtinBanks?: readonly BankContent[];
+  } = {},
+): React.ReactElement {
+  return (
+    <PlatformProvider
+      {...(props.platform === undefined ? {} : { platform: props.platform })}
+      {...(props.builtinBanks === undefined ? {} : { builtinBanks: props.builtinBanks })}
+    >
+      <Shell />
+    </PlatformProvider>
+  );
 }

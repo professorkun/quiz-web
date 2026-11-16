@@ -285,8 +285,7 @@ export const BankManifestSchema = z.object({
 });
 export type BankManifest = z.infer<typeof BankManifestSchema>;
 
-export const AttemptModeSchema = z.enum(["practice", "exam", "review"]);
-export type AttemptMode = z.infer<typeof AttemptModeSchema>;
+export const AttemptModeSchema = z.enum(["practice", "exam", "review"]);export type AttemptMode = z.infer<typeof AttemptModeSchema>;
 
 /**
  * 答题事件：**不可变**（ADR 要求）。
@@ -307,6 +306,11 @@ export const AttemptSchema = z.object({
   score: z.number().nonnegative(),
   maxScore: z.number().positive(),
   sessionId: IdStr.optional(),
+  /**
+   * 本题作答耗时。S4 的「学习时长」统计靠它，缺省表示未记录（不拿 0 冒充）。
+   * 由页面用注入的时钟算差值后写入，`core` 不读系统时间。
+   */
+  durationMs: z.number().int().nonnegative().optional(),
   /**
    * 从哪个旧数据源导入的（如 `mastery` / `wrong_questions` / `exam_records:17`）。
    * 迁移产生的 Attempt 必然缺原始时间戳与原始答案，标记来源是为了让「这条是推断出来的」
@@ -340,3 +344,64 @@ export const PracticeSessionSchema = z.object({
   finishedAt: z.string().optional(),
 });
 export type PracticeSession = z.infer<typeof PracticeSessionSchema>;
+
+/**
+ * 收藏：与错题**两条独立的线**。
+ *
+ * 单独建表而不是在 `QuestionProgress` 上打一个 `favorite` 布尔，是为了杜绝
+ * 「错题掌握时顺带把收藏清掉」——旧版 91 条掌握记录里就出现过这种连带删除。
+ */
+export const FavoriteEntrySchema = z.object({
+  bankId: IdStr,
+  questionId: QuestionIdSchema,
+  addedAt: z.string().min(1),
+});
+export type FavoriteEntry = z.infer<typeof FavoriteEntrySchema>;
+
+/** 练习设置只存用户偏好，不存种子（种子属于会话） */
+export const PracticeSettingsSchema = z.object({
+  order: z.enum(["sequential", "random"]),
+  topicIds: z.array(IdStr),
+  types: z.array(QuestionTypeSchema),
+  /** 0 表示不限 */
+  limit: z.number().int().nonnegative(),
+  onlyUnseen: z.boolean(),
+  onlyUnmastered: z.boolean(),
+  mode: z.enum(["practice", "review"]),
+});
+export type PracticeSettings = z.infer<typeof PracticeSettingsSchema>;
+
+export const AppSettingsSchema = z.object({
+  activeBankId: IdStr.nullable(),
+  /** 按题库分开存：切库不能把 A 库的筛选条件带到 B 库 */
+  practice: z.record(PracticeSettingsSchema),
+  updatedAt: z.string().min(1),
+});
+export type AppSettings = z.infer<typeof AppSettingsSchema>;
+
+/**
+ * 一份完整的学习数据快照：导出的文件、导入的校验、S6 的对账都共用这一份结构。
+ * `schemaVersion` 必须参与校验，否则版本迁移无从分支。
+ */
+export const LearningSnapshotSchema = z.object({
+  schemaVersion: z.number().int().positive(),
+  exportedAt: z.string().min(1),
+  attempts: z.array(AttemptSchema),
+  progress: z.array(QuestionProgressSchema),
+  favorites: z.array(FavoriteEntrySchema),
+  sessions: z.array(PracticeSessionSchema),
+  settings: AppSettingsSchema,
+});
+export type LearningSnapshot = z.infer<typeof LearningSnapshotSchema>;
+
+/**
+ * 一个题库「能跑起来」所需的全部内容：清单 + 题目 + 知识讲义。
+ *
+ * 单独抽出来是因为知识讲义不属于 `BankManifest`（清单要轻），
+ * 也不属于任何一道题；但换题库时它必须跟着换，否则「通用」就是假通用。
+ */
+export interface BankContent {
+  readonly manifest: BankManifest;
+  readonly questions: readonly Question[];
+  readonly knowledge: readonly KnowledgeModule[];
+}

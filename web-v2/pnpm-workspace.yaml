@@ -1,5 +1,7 @@
 packages:
   - "packages/*"
+  # 分层包（如 platform/web）比一层深，必须显式匹配，否则 pnpm 不把它当工作区包
+  - "packages/*/*"
   - "apps/*"
 
 # 构建脚本白名单必须放在 pnpm-workspace.yaml（根 package.json 的 pnpm 字段已被 pnpm 忽略）。

@@ -1,0 +1,239 @@
+// @vitest-environment jsdom
+/**
+ * 应用级集成用例（S3 验收 A/B/F 的机器证据）。
+ *
+ * 这里跑的是**真组件 + 真存储实现**（内存键值，同一份仓储代码），
+ * 只把 IndexedDB 换成内存——因为 jsdom 没有 IndexedDB，而换掉实现层
+ * 就测不到"页面 → 仓储 → 键值"这条链。
+ *
+ * 覆盖：五入口可达、空状态有引导、游客闭环（作答→错题→收藏）、筛选与搜索、
+ * 记录不串库。
+ */
+
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import { chemistryBank } from "@quiz/content";
+import type { BankContent } from "@quiz/core";
+import type { Clock } from "@quiz/platform";
+import { createPlatform, MemoryKeyValueStore } from "@quiz/platform-web";
+
+import { App } from "./App";
+import { ROUTE_LABEL, type Route } from "./router";
+
+const clock: Clock = { now: () => new Date("2026-11-16T09:00:00.000Z") };
+
+/** 第二个题库：只是换 bankId 的一份小库，用来验证"切库不串记录" */
+function otherBank(): BankContent {
+  const prefix = "other";
+  return {
+    manifest: {
+      schemaVersion: 1,
+      bankId: prefix,
+      title: "对照题库",
+      questionCount: 1,
+      topics: [{ topicId: `${prefix}:topic:a`, bankId: prefix, name: "对照", order: 0 }],
+      examTemplates: [],
+      createdAt: "2026-11-16T00:00:00.000Z",
+    },
+    questions: [
+      {
+        schemaVersion: 1,
+        bankId: prefix,
+        questionId: `${prefix}:single_choice:001`,
+        revision: "0000000000ff",
+        topicIds: [`${prefix}:topic:a`],
+        stem: "对照题库里的唯一一题",
+        legacyKeys: [],
+        type: "single_choice",
+        options: [
+          { optionId: "a", text: "甲" },
+          { optionId: "b", text: "乙" },
+        ],
+        answer: "a",
+      },
+    ],
+    knowledge: [],
+  };
+}
+
+async function setup() {
+  const kv = new MemoryKeyValueStore();
+  const builtinBanks = [chemistryBank, otherBank()];
+  const platform = createPlatform({ kv, builtinBanks, clock });
+  // 固定"原序 + 每题一轮"，让用例能确定自己点的是哪一道题
+  await platform.settings.savePractice("chem", {
+    order: "sequential",
+    topicIds: [],
+    types: [],
+    limit: 1,
+    onlyUnseen: false,
+    onlyUnmastered: false,
+    mode: "practice",
+  });
+  const view = render(<App platform={platform} builtinBanks={builtinBanks} />);
+  return { kv, platform, view };
+}
+
+async function go(route: Route): Promise<void> {
+  const buttons = await screen.findAllByRole("button", { name: ROUTE_LABEL[route] });
+  fireEvent.click(buttons[0]!);
+  await waitFor(() => expect(globalThis.location.hash).toBe(`#/${route}`));
+}
+
+beforeEach(() => {
+  globalThis.location.hash = "#/learn";
+});
+
+afterEach(() => {
+  cleanup();
+});
+
+describe("五入口", () => {
+  it("每个入口都能进入并有实质内容", async () => {
+    await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+
+    await go("banks");
+    expect(await screen.findByRole("heading", { name: "题库", level: 1 })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "知识讲义" })).toBeTruthy();
+
+    await go("practice");
+    expect(await screen.findByRole("heading", { name: /刷题/ })).toBeTruthy();
+
+    await go("review");
+    expect(await screen.findByRole("heading", { name: /复习/ })).toBeTruthy();
+
+    await go("me");
+    expect(await screen.findByRole("heading", { name: "我的", level: 1 })).toBeTruthy();
+    expect(screen.getByText("数据导入导出")).toBeTruthy();
+  });
+
+  it("新用户看到的是引导而不是白屏", async () => {
+    await setup();
+    expect(await screen.findByText(/还没有任何记录/)).toBeTruthy();
+
+    await go("review");
+    expect(await screen.findByText(/还没有错题/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: /收藏（0）/ }));
+    expect(await screen.findByText(/还没有收藏/)).toBeTruthy();
+  });
+});
+
+describe("游客闭环", () => {
+  it("答错一题后进入错题列表，收藏独立保留", async () => {
+    const { platform } = await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+
+    await go("practice");
+    fireEvent.click(await screen.findByRole("button", { name: "开始练习" }));
+
+    // 第一题（chem:single_choice:001，正确答案是"冰水混合物"）故意选错
+    await screen.findByText(/下列物质中属于纯净物的是/);
+    fireEvent.click(screen.getByText("空气"));
+    fireEvent.click(screen.getByRole("button", { name: "提交答案" }));
+
+    expect(await screen.findByText(/答错了/)).toBeTruthy();
+
+    // 作答事件已落库，且只追加一条
+    await waitFor(async () => {
+      const history = await platform.attempts.listByQuestion("chem", "chem:single_choice:001");
+      expect(history).toHaveLength(1);
+      expect(history[0]?.correct).toBe(false);
+      expect(history[0]?.isFirstAttempt).toBe(true);
+      expect(history[0]?.mode).toBe("practice");
+    });
+
+    // 收藏当前题
+    fireEvent.click(screen.getByRole("button", { name: "☆ 收藏" }));
+    expect(await screen.findByRole("button", { name: "★ 已收藏" })).toBeTruthy();
+
+    await go("review");
+    expect(await screen.findByRole("tab", { name: /错题（1）/ })).toBeTruthy();
+    expect(await screen.findByText(/错 1 次/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: /收藏（1）/ }));
+    expect(await screen.findByText(/收藏于/)).toBeTruthy();
+  });
+
+  it("提交后重算进度，错题数可被学习页读到", async () => {
+    const { platform } = await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("practice");
+    fireEvent.click(await screen.findByRole("button", { name: "开始练习" }));
+    await screen.findByText(/下列物质中属于纯净物的是/);
+    fireEvent.click(screen.getByText("空气"));
+    fireEvent.click(screen.getByRole("button", { name: "提交答案" }));
+
+    await waitFor(async () => {
+      const progress = await platform.progress.listByBank("chem");
+      expect(progress).toHaveLength(1);
+      expect(progress[0]?.wrongCount).toBe(1);
+    });
+
+    await go("learn");
+    // 学习页的错题 KPI 应为 1（不是靠内存状态，而是重新从存储取数）
+    const kpi = await screen.findByText("错题", { selector: ".kpi-label" });
+    expect(within(kpi.parentElement as HTMLElement).getByText("1")).toBeTruthy();
+  });
+});
+
+describe("题库页", () => {
+  it("按状态筛掉未做题，搜索无结果时给提示", async () => {
+    await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("banks");
+
+    expect(await screen.findByText(/命中 14 题/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "答对过" }));
+    expect(await screen.findByText(/命中 0 题/)).toBeTruthy();
+    expect(await screen.findByText(/没有符合条件的题目/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "清空筛选" }));
+    const input = screen.getByLabelText("搜索题干");
+    fireEvent.change(input, { target: { value: "不存在的关键词" } });
+    expect(await screen.findByText(/命中 0 题/)).toBeTruthy();
+
+    fireEvent.change(input, { target: { value: "纯净物" } });
+    expect(await screen.findByText(/命中 1 题/)).toBeTruthy();
+  });
+
+  it("切换题库后当前库有明确标识", async () => {
+    await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("banks");
+
+    const sw = await screen.findByRole("button", { name: /对照题库（1）/ });
+    fireEvent.click(sw);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /对照题库（1）/ }).className).toContain("on"),
+    );
+    expect(await screen.findByText(/命中 1 题/)).toBeTruthy();
+  });
+});
+
+describe("跨库隔离", () => {
+  it("在化学库答错不会污染对照题库的错题数", async () => {
+    const { platform } = await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("practice");
+    fireEvent.click(await screen.findByRole("button", { name: "开始练习" }));
+    await screen.findByText(/下列物质中属于纯净物的是/);
+    fireEvent.click(screen.getByText("空气"));
+    fireEvent.click(screen.getByRole("button", { name: "提交答案" }));
+
+    await waitFor(async () => {
+      expect(await platform.progress.listByBank("chem")).toHaveLength(1);
+    });
+    expect(await platform.progress.listByBank("other")).toHaveLength(0);
+
+    await go("banks");
+    fireEvent.click(await screen.findByRole("button", { name: /对照题库（1）/ }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /对照题库（1）/ }).className).toContain("on"),
+    );
+    await go("review");
+    expect(await screen.findByText(/还没有错题/)).toBeTruthy();
+  });
+});

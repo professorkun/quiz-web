@@ -98,3 +98,90 @@ h2 { font-size: 16px; margin: 0 0 8px; }
 .progress { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
 .progress > i { display: block; height: 100%; background: var(--pri); }
 .notice { background: var(--warn-l); color: var(--warn); border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; }
+
+/* ---------------- S3 应用壳与页面 ---------------- */
+.shell { display: flex; min-height: 100vh; align-items: stretch; }
+.sidebar { width: 216px; flex: 0 0 216px; border-right: 1px solid var(--line); background: var(--surface); padding: 18px 14px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; height: 100vh; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--pri); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.brand-title { font-weight: 700; font-size: 15px; }
+.nav { display: grid; gap: 4px; }
+.navitem { text-align: left; border: 1px solid transparent; background: transparent; border-radius: 8px; padding: 8px 10px; color: var(--text); }
+.navitem:hover { background: var(--bg); }
+.navitem.on { background: var(--pri-l); color: var(--pri); border-color: var(--pri-l); font-weight: 600; }
+.sidebar-foot { margin-top: auto; }
+.content { flex: 1; min-width: 0; padding: 18px 20px 28px; }
+.page { max-width: 1040px; }
+.page-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.page-head h1 { margin-bottom: 2px; }
+.bottomnav { display: none; }
+
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.kpi-num { font-size: 22px; font-weight: 700; }
+.kpi-num.ok { color: var(--ok); }
+.kpi-num.no { color: var(--no); }
+.kpi-sub { font-size: 13px; font-weight: 400; color: var(--muted); }
+.kpi-label { font-size: 12px; color: var(--muted); }
+
+.toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.input { flex: 1; min-width: 160px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--surface); }
+.input:focus { outline: 2px solid var(--pri-l); border-color: var(--pri); }
+
+.split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.listpane { max-height: 62vh; overflow: auto; }
+.qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.qrow { display: flex; align-items: flex-start; gap: 8px; width: 100%; text-align: left; border: 1px solid transparent; background: transparent; border-radius: 8px; padding: 8px; color: var(--text); }
+.qrow:hover { background: var(--bg); }
+.qrow.on { background: var(--pri-l); border-color: var(--pri); }
+.qrow-seq { flex: 0 0 24px; color: var(--muted); font-size: 12px; padding-top: 2px; }
+.qrow-main { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.qrow-stem { font-size: 14px; }
+.qrow-meta { font-size: 12px; color: var(--muted); }
+.badge { font-size: 11px; border-radius: 999px; padding: 1px 7px; border: 1px solid var(--line); color: var(--muted); height: fit-content; }
+.badge.unseen { background: var(--bg); }
+.badge.wrong { background: var(--no-l); color: var(--no); border-color: var(--no-l); }
+.badge.correct { background: var(--ok-l); color: var(--ok); border-color: var(--ok-l); }
+.badge.fav { background: var(--warn-l); color: var(--warn); border-color: var(--warn-l); }
+.badge.ok { background: var(--ok-l); color: var(--ok); border-color: var(--ok-l); margin-left: 6px; }
+
+.preview { max-height: 62vh; overflow: auto; }
+.preview-opts { margin: 8px 0; padding-left: 20px; display: grid; gap: 6px; }
+.preview-opts li { padding: 4px 6px; border-radius: 6px; }
+.preview-opts li.ans { background: var(--ok-l); }
+.knowledge { display: grid; gap: 8px; }
+.kmodule { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.kmodule summary { cursor: pointer; font-weight: 600; }
+.kmodule ul { margin: 8px 0; padding-left: 20px; }
+
+.empty { text-align: center; padding: 24px 12px; display: grid; gap: 8px; justify-items: center; }
+
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.tab { border: 1px solid var(--line); background: var(--surface); border-radius: 8px 8px 0 0; padding: 7px 12px; font-size: 13px; }
+.tab.on { border-color: var(--pri); background: var(--pri-l); color: var(--pri); font-weight: 600; }
+.tab:disabled { opacity: .5; }
+
+.rlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ritem { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.ritem-main { flex: 1; min-width: 0; }
+.ritem-stem { font-size: 14px; }
+
+.previewbox { border: 1px dashed var(--pri); border-radius: 10px; padding: 10px 12px; background: var(--pri-l); }
+.previewbox ul { margin: 6px 0; padding-left: 18px; font-size: 13px; }
+
+.notice.small { padding: 6px 10px; font-size: 12px; margin-bottom: 6px; }
+.notice.banner { margin-bottom: 14px; }
+.toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: #111827; color: #fff; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; max-width: min(720px, 92vw); box-shadow: 0 8px 24px rgba(0,0,0,.18); z-index: 50; font-size: 13px; }
+.toast .btn.ghost { color: #93c5fd; }
+
+@media (max-width: 860px) {
+  .shell { display: block; padding-bottom: 64px; }
+  .sidebar { display: none; }
+  .content { padding: 14px 12px 20px; }
+  .bottomnav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); z-index: 40; }
+  .bottomitem { flex: 1; border: 0; background: transparent; padding: 10px 4px; font-size: 13px; color: var(--muted); }
+  .bottomitem.on { color: var(--pri); font-weight: 600; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .split { grid-template-columns: minmax(0, 1fr); }
+  .listpane, .preview { max-height: none; }
+}
