@@ -27,6 +27,8 @@ exports/
 Thumbs.db
 desktop.ini
 .DS_Store
+# Windows 下 git-credential-manager 在仓库目录留下的注册标记（克隆时偶发）
+system-commandline-sentinel-files/
 
 # 说明：以下文件按方案 §5.2 初期仍提交，不可加入忽略
 # - JavaWeb期末题库.html / 题库网页/index.html（旧版发布产物，用于回归对照）
