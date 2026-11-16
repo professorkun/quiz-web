@@ -2,6 +2,10 @@ packages:
   - "packages/*"
   - "apps/*"
 
-# pnpm 10+ 把构建脚本白名单放在这里（package.json 里的同名字段不再生效）
+# 构建脚本白名单必须放在 pnpm-workspace.yaml（根 package.json 的 pnpm 字段已被 pnpm 忽略）。
+# pnpm 12 起改读 allowBuilds；onlyBuiltDependencies 保留，兼容 pnpm 10/11 的旧工具链。
+# S1 曾踩过这个坑：白名单放错位置时 add 会直接 ERR_PNPM_IGNORED_BUILDS。
 onlyBuiltDependencies:
   - esbuild
+allowBuilds:
+  esbuild: true

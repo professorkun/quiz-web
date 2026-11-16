@@ -13,7 +13,8 @@
 const FNV_OFFSET = 0x811c9dc5;
 const FNV_PRIME = 0x01000193;
 
-function fnv1a32(input: string, seed: number): number {
+/** 供 `practice/random.ts` 复用同一套哈希派生子种子（ADR-0003），不引入第二种算法 */
+export function fnv1a32(input: string, seed: number): number {
   let hash = seed >>> 0;
   for (let i = 0; i < input.length; i++) {
     hash ^= input.charCodeAt(i);
