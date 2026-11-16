@@ -1,0 +1,34 @@
+# WorkBuddy 本地项目数据：忽略但绝不删除
+.workbuddy/
+.wbapp_*.genie
+
+# 新版依赖与构建
+node_modules/
+web-v2/dist/
+web-v2/coverage/
+
+# 测试与临时文件
+playwright-report/
+test-results/
+_build/_check.js
+__pycache__/
+*.pyc
+*.log
+*.tmp
+
+# 本地环境和个人数据
+.env
+.env.*.local
+*.local.json
+backups/
+exports/
+
+# 操作系统杂项
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# 说明：以下文件按方案 §5.2 初期仍提交，不可加入忽略
+# - JavaWeb期末题库.html / 题库网页/index.html（旧版发布产物，用于回归对照）
+# - sdk.js / 题库网页/sdk.js（构建生成的运行时兜底）
+# - _build/data.json（迁移对照与数量验收依据）
