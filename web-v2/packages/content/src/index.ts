@@ -30,3 +30,6 @@ export type {
   MigrationStats,
 } from "./migrate.js";
 export type { LegacyDataJson, LegacyQuestion } from "./legacy.js";
+
+/** 第二学科题库（S3 · T3-10）：验证"换学科不改业务代码" */
+export { chemistryBank } from "./banks/chemistry.js";

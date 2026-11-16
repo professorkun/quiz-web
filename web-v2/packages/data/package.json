@@ -18,9 +18,11 @@
     "dryrun": "node scripts/dryrun-legacy.mjs"
   },
   "dependencies": {
-    "@quiz/core": "workspace:*"
+    "@quiz/core": "workspace:*",
+    "@quiz/platform": "workspace:*"
   },
   "devDependencies": {
+    "@quiz/platform-web": "workspace:*",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"
   }
