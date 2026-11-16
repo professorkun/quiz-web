@@ -5,7 +5,7 @@
  * 用演示题库跑真实组件交互，不 mock 引擎：选题、判分、会话保存全部走实际代码。
  */
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { demoBank } from "../data/demoBank";
@@ -55,8 +55,11 @@ describe("练习页集成", () => {
       if (index < 9) fireEvent.click(screen.getByText("下一题"));
     }
 
-    expect(screen.getByText("本轮完成")).toBeTruthy();
-    expect(screen.getByText(/答对 \d+/)).toBeTruthy();
+    // 断言限定在完成卡片内：简答题的自评按钮「没答对」也含「答对」字样，
+    // 全局正则会在末题是简答题时命中两个元素（题序随机，说明这必然发生）
+    const doneCard = screen.getByText("本轮完成").closest("section");
+    expect(doneCard).not.toBeNull();
+    expect(within(doneCard!).getByText(/答对 \d+/)).toBeTruthy();
   });
 
   it("刷新后仍在同一题，已答状态与选项顺序保持一致", async () => {
@@ -65,15 +68,24 @@ describe("练习页集成", () => {
     answerCurrent(first.container);
     fireEvent.click(screen.getByText("提交答案"));
 
+    // 「同一题」用 data-question-id 判定，不能用 .stem：填空题的题干由渲染器绘制
+    // （题型元数据 stemInRenderer），页面上没有 .stem 元素；而练习页默认随机种子，
+    // 首题随机到填空题时旧写法必然误报。
+    const cardBefore = first.container.querySelector<HTMLElement>("[data-question-id]");
+    expect(cardBefore).not.toBeNull();
+    const idBefore = cardBefore!.getAttribute("data-question-id");
+    const sectionBefore = cardBefore!.textContent ?? "";
     const feedbackBefore = first.container.querySelector(".feedback")?.textContent ?? "";
-    const stemBefore = first.container.querySelector(".stem")?.textContent ?? "";
+    expect(idBefore).toBeTruthy();
     expect(feedbackBefore).not.toBe("");
     first.unmount();
 
     const second = render(<PracticePage bank={demoBank} />);
     await waitFor(() => expect(second.container.querySelector(".feedback")).not.toBeNull());
-    expect(second.container.querySelector(".stem")?.textContent).toBe(stemBefore);
-    expect(second.container.querySelector(".feedback")?.textContent).toBe(feedbackBefore);
+    const cardAfter = second.container.querySelector<HTMLElement>("[data-question-id]");
+    expect(cardAfter?.getAttribute("data-question-id")).toBe(idBefore);
+    // 整块题面文本一致 = 题干、选项及其顺序、解析、得分与反馈逐项还原
+    expect(cardAfter?.textContent).toBe(sectionBefore);
     expect(screen.getByText(/第 1 \/ 10 题/)).toBeTruthy();
   });
 
