@@ -6,7 +6,7 @@
  * 旧版把 7 个知识点、讲义、卷面结构全写在 template.html 里，换一门课就得改源码。
  */
 
-import type { BankManifest, ExamTemplate, Question, Topic } from "@quiz/core";
+import type { BankManifest, ExamTemplate, KnowledgeModule, Question, Topic } from "@quiz/core";
 
 /** 一份题库包在磁盘上的形状（迁移器的输出契约） */
 export interface BankPackageFiles {
@@ -14,6 +14,8 @@ export interface BankPackageFiles {
   readonly questions: readonly Question[];
   readonly topics: readonly Topic[];
   readonly examTemplates: readonly ExamTemplate[];
+  /** 知识讲义（T1-7 从旧 POINTS 抽出），与 topics 一一对应 */
+  readonly knowledge: readonly KnowledgeModule[];
   /** 旧键 → 新 ID 的冻结映射（ADR-0001），迁移时一次生成、人工确认后入库 */
   readonly legacyMap: Readonly<Record<string, string>>;
 }

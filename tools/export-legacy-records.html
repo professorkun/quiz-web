@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>旧版学习记录导出（一次性工具）</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; margin: 40px auto; max-width: 760px; padding: 0 20px; color: #1a1a1a; }
+  h1 { font-size: 20px; }
+  #log { background: #f6f6f6; border-radius: 8px; padding: 14px 16px; white-space: pre-wrap; font-family: ui-monospace, Consolas, monospace; font-size: 13px; line-height: 1.6; }
+  .ok { color: #0a7d32; }
+  .err { color: #b42318; }
+  .muted { color: #666; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>旧版学习记录导出</h1>
+<p class="muted">本页只读，不发任何写请求。用于把云端的三张表导出成 JSON，供 S1 的 dry-run 使用。<br>
+它必须与旧版页面同源（同一 <code>127.0.0.1:8765</code>），才能复用你已经登录的会话。</p>
+<pre id="log">初始化…</pre>
+
+<script src="/sdk.js"></script>
+<script>
+const CFG = {
+  endpoint: "https://wbapp-x4curlcgbt2kilpzdqg6lh.app.workbuddy.host",
+  publishableKey: "wbpk_x4CUrLcGBT2kilPZDqg6lh_MMkjZifROvud0DrYI43eS20USuTPVGr1"
+};
+const logEl = document.getElementById("log");
+const out = (msg, cls) => {
+  const line = document.createElement("div");
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  logEl.appendChild(line);
+};
+
+(async () => {
+  logEl.textContent = "";
+  try {
+    const cloud = WorkBuddyCloud.createWorkBuddyCloud(CFG);
+    const session = await cloud.auth.getSession();
+    const user = session && session.data && session.data.user;
+    if (!user) {
+      out("未检测到登录会话。请先在同一浏览器打开旧版页面并登录，再回到本页刷新。", "err");
+      return;
+    }
+    out(`已登录：${user.name || user.id}`, "ok");
+
+    const tables = [
+      ["quiz_mastery", "q_key,q_type", 1000],
+      ["wrong_questions", "q_key,q_type,q_no,kp,stem,wrong_count,last_wrong_at", 1000],
+      ["exam_records", "*", 200],
+      ["drill_progress", "kp,q_type,q_keys,idx,res,total,updated_at", 10]
+    ];
+    const payload = { exportedAt: new Date().toISOString(), source: "workbuddy-cloud", tables: {} };
+
+    for (const [name, cols, limit] of tables) {
+      const r = await cloud.database.from(name).select(cols).limit(limit);
+      if (r.error) {
+        out(`读取 ${name} 失败：${r.error.message || r.error}`, "err");
+        payload.tables[name] = { error: String(r.error.message || r.error) };
+        continue;
+      }
+      const rows = r.data || [];
+      out(`读取 ${name}：${rows.length} 行`, "ok");
+      payload.tables[name] = rows;
+    }
+
+    const res = await fetch("/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      out(`保存失败：HTTP ${res.status}`, "err");
+      return;
+    }
+    const saved = await res.json();
+    out(`已写入：${saved.path}`, "ok");
+    out("可以对本页拍张照留证，然后关闭。", "muted");
+  } catch (e) {
+    out(`异常：${e && e.message ? e.message : e}`, "err");
+  }
+})();
+</script>
+</body>
+</html>

@@ -6,7 +6,12 @@
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r --if-present test",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
+    "migrate": "pnpm --filter @quiz/content migrate",
+    "knowledge": "node packages/content/scripts/extract-knowledge.mjs",
+    "dryrun": "pnpm --filter @quiz/data dryrun",
+    "verify": "pnpm check:boundaries && pnpm build && pnpm test"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

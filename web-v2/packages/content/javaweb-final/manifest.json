@@ -7,37 +7,44 @@
     {
       "topicId": "javaweb:topic:jdbc",
       "bankId": "javaweb",
-      "name": "jdbc"
+      "name": "JDBC",
+      "order": 6
     },
     {
       "topicId": "javaweb:topic:jsp",
       "bankId": "javaweb",
-      "name": "jsp"
+      "name": "JSP",
+      "order": 1
     },
     {
       "topicId": "javaweb:topic:mybatis",
       "bankId": "javaweb",
-      "name": "mybatis"
+      "name": "MyBatis",
+      "order": 5
     },
     {
       "topicId": "javaweb:topic:servlet",
       "bankId": "javaweb",
-      "name": "servlet"
+      "name": "Servlet",
+      "order": 2
     },
     {
       "topicId": "javaweb:topic:spring",
       "bankId": "javaweb",
-      "name": "spring"
+      "name": "Spring",
+      "order": 3
     },
     {
       "topicId": "javaweb:topic:springmvc",
       "bankId": "javaweb",
-      "name": "springmvc"
+      "name": "SpringMVC",
+      "order": 4
     },
     {
       "topicId": "javaweb:topic:web_base",
       "bankId": "javaweb",
-      "name": "web_base"
+      "name": "Web 基础",
+      "order": 0
     }
   ],
   "examTemplates": [

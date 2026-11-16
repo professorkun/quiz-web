@@ -218,6 +218,29 @@ export const TopicSchema = z.object({
 });
 export type Topic = z.infer<typeof TopicSchema>;
 
+/**
+ * 知识讲义（「知识」Tab 的内容）。
+ *
+ * 旧版把这批文字硬编码在 `template.html` 的 `POINTS` 常量里，
+ * 换一门课就得改业务源码——这是 S1 要拆掉的东西之一（T1-7）。
+ */
+export const KnowledgeItemSchema = z.object({
+  title: z.string().min(1),
+  detail: z.string().min(1),
+});
+export type KnowledgeItem = z.infer<typeof KnowledgeItemSchema>;
+
+export const KnowledgeModuleSchema = z.object({
+  moduleId: IdStr,
+  topicId: IdStr,
+  title: z.string().min(1),
+  summary: z.string().min(1),
+  items: z.array(KnowledgeItemSchema).min(1),
+  /** 易错点：旧版 `pits`，展示在模块末尾 */
+  pitfalls: z.array(z.string().min(1)).default([]),
+});
+export type KnowledgeModule = z.infer<typeof KnowledgeModuleSchema>;
+
 export const ExamTemplateSectionSchema = z.object({
   sectionId: IdStr,
   title: z.string().min(1),
@@ -284,6 +307,12 @@ export const AttemptSchema = z.object({
   score: z.number().nonnegative(),
   maxScore: z.number().positive(),
   sessionId: IdStr.optional(),
+  /**
+   * 从哪个旧数据源导入的（如 `mastery` / `wrong_questions` / `exam_records:17`）。
+   * 迁移产生的 Attempt 必然缺原始时间戳与原始答案，标记来源是为了让「这条是推断出来的」
+   * 一眼可见，而不是混进真实作答里冒充事实。
+   */
+  importedFrom: z.string().min(1).optional(),
 });
 export type Attempt = z.infer<typeof AttemptSchema>;
 

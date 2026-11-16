@@ -377,13 +377,21 @@ export function migrateLegacyBank(input: LegacyDataJson, options: MigrationOptio
 
   const topicIds = new Set<string>();
   for (const q of questions) for (const t of q.topicIds) topicIds.add(t);
+  const slugToLabel: Record<string, string> = {};
+  for (const [label, slug] of Object.entries(TOPIC_SLUGS)) slugToLabel[slug] = label;
+
   const topics: Topic[] = [...topicIds]
     .sort()
-    .map((topicId) => ({
-      topicId,
-      bankId,
-      name: topicId.split(":").pop() ?? topicId,
-    }));
+    .map((topicId) => {
+      const slug = topicId.split(":").pop() ?? topicId;
+      return {
+        topicId,
+        bankId,
+        // 名字用回中文原名，别把 slug 当展示文案
+        name: slugToLabel[slug] ?? slug,
+        order: Object.values(TOPIC_SLUGS).indexOf(slug),
+      };
+    });
 
   const byType: Record<string, number> = {};
   let codeBlankSlots = 0;

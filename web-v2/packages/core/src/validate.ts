@@ -21,6 +21,9 @@ export const ValidationCode = {
   DUP_LEGACY_KEY: "DUP_LEGACY_KEY",
   BANK_MISMATCH: "BANK_MISMATCH",
   QUESTION_COUNT_MISMATCH: "QUESTION_COUNT_MISMATCH",
+  /** 出现契约里没有的字段。默认拒绝，避免"字段名写错了却静默通过" */
+  UNKNOWN_FIELD: "UNKNOWN_FIELD",
+  SCHEMA_VERSION_UNSUPPORTED: "SCHEMA_VERSION_UNSUPPORTED",
 } as const;
 export type ValidationCode = (typeof ValidationCode)[keyof typeof ValidationCode];
 
@@ -43,9 +46,71 @@ export interface ValidateResult {
   readonly questions: readonly Question[];
 }
 
+const BASE_KEYS = [
+  "schemaVersion",
+  "questionId",
+  "bankId",
+  "revision",
+  "topicIds",
+  "stem",
+  "explanation",
+  "legacyKeys",
+  "type",
+] as const;
+
+const TYPE_KEYS: Readonly<Record<string, readonly string[]>> = {
+  single_choice: ["options", "answer"],
+  multiple_choice: ["options", "answer"],
+  true_false: ["answer"],
+  fill_blank: ["blanks"],
+  code_blank: ["files", "blanks"],
+  short_answer: ["rubric"],
+};
+
+const MANIFEST_KEYS = [
+  "schemaVersion",
+  "bankId",
+  "title",
+  "subject",
+  "questionCount",
+  "topics",
+  "examTemplates",
+  "createdAt",
+  "updatedAt",
+] as const;
+
+/**
+ * 未知字段策略：**拒绝并定位**，不静默丢弃。
+ *
+ * Zod 默认会把未知字段 strip 掉——这正是最危险的行为：把 `optons` 拼错成
+ * `optins`，解析照样成功，只是那个字段消失了。旧版就是因为「错了也不报」
+ * 才积累了那么多静默问题，这里必须反过来。
+ */
+function collectUnknownKeys(
+  raw: unknown,
+  allowed: readonly string[],
+  path: string,
+): ValidationIssue[] {
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return [];
+  const allowedSet = new Set(allowed);
+  const issues: ValidationIssue[] = [];
+  for (const key of Object.keys(raw as Record<string, unknown>)) {
+    if (!allowedSet.has(key)) {
+      issues.push({
+        code: ValidationCode.UNKNOWN_FIELD,
+        message: `出现契约里没有的字段「${key}」`,
+        path: `${path}.${key}`,
+      });
+    }
+  }
+  return issues;
+}
+
 export function validateBankPackage(input: unknown): ValidateResult {
   const issues: ValidationIssue[] = [];
   const questions: Question[] = [];
+
+  issues.push(...collectUnknownKeys((input as { manifest?: unknown } | null)?.manifest, MANIFEST_KEYS, "manifest"));
 
   const manifestParsed = BankManifestSchema.safeParse(
     (input as { manifest?: unknown } | null)?.manifest,
@@ -73,6 +138,11 @@ export function validateBankPackage(input: unknown): ValidateResult {
   }
 
   rawQuestions.forEach((raw, index) => {
+    const rawType = (raw as { type?: unknown } | null)?.type;
+    if (typeof rawType === "string") {
+      const allowed = [...BASE_KEYS, ...(TYPE_KEYS[rawType] ?? [])];
+      issues.push(...collectUnknownKeys(raw, allowed, `questions[${index}]`));
+    }
     const parsed = QuestionSchema.safeParse(raw);
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {

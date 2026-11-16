@@ -1,0 +1,285 @@
+[
+  {
+    "moduleId": "javaweb:kb:web_base",
+    "topicId": "javaweb:topic:web_base",
+    "title": "Web 基础",
+    "summary": "浏览器/服务器怎么协作、页面怎么被请求出来。",
+    "items": [
+      {
+        "title": "B/S 与 C/S",
+        "detail": "B/S 是浏览器/服务器，客户端只要有浏览器，升级只改服务器；C/S 需要装客户端，升级要重新分发。"
+      },
+      {
+        "title": "静态页与动态页",
+        "detail": "静态页内容写死，改一个字都要改文件；动态页由程序生成，能读数据库、随请求参数变化。"
+      },
+      {
+        "title": "Tomcat 的作用",
+        "detail": "接收 HTTP 请求，按 url 找到对应的 Servlet 或 JSP 处理，再把结果写回浏览器。"
+      },
+      {
+        "title": "GET 与 POST",
+        "detail": "GET 参数拼在 URL 上、长度有限、会被记录；POST 放在请求体里、可传大量数据，上传表单一般用 POST。"
+      },
+      {
+        "title": "WEB-INF 目录",
+        "detail": "里面的文件浏览器不能直接访问，只能由服务器内部转发过去，所以放在这里的 JSP 更安全。"
+      },
+      {
+        "title": "MVC 三层",
+        "detail": "模型负责数据与业务、视图负责展示（JSP）、控制器负责接收请求并调度（Servlet / Controller）。"
+      }
+    ],
+    "pitfalls": [
+      "重定向访问不到 WEB-INF 下的页面，只有 request 内部转发可以。",
+      "表单 method 不写默认是 GET，传中文容易乱码。"
+    ]
+  },
+  {
+    "moduleId": "javaweb:kb:jsp",
+    "topicId": "javaweb:topic:jsp",
+    "title": "JSP",
+    "summary": "内置对象、指令、动作标签，是填空和选择的高频区。",
+    "items": [
+      {
+        "title": "四个作用域",
+        "detail": "page 当前页面 → request 一次请求 → session 一次会话 → application 整个应用，范围由小到大。"
+      },
+      {
+        "title": "九大内置对象",
+        "detail": "request、response、session、application、out、pageContext、config、page、exception，不用 new 直接用。"
+      },
+      {
+        "title": "三个指令",
+        "detail": "page（导包、编码、会话开关）、include（静态包含）、taglib（引入标签库）。"
+      },
+      {
+        "title": "page 指令常用属性",
+        "detail": "language、contentType、import、session=\"false\"、errorPage、isErrorPage。"
+      },
+      {
+        "title": "七个动作标签",
+        "detail": "include、forward、useBean、setProperty、getProperty、param、plugin。"
+      },
+      {
+        "title": "JavaBean 规范",
+        "detail": "public 类、有无参构造、属性私有并配 get/set，容器才能用反射创建它。"
+      },
+      {
+        "title": "useBean 的三个属性",
+        "detail": "id 是变量名、class 是全限定类名、scope 指定存哪个作用域；没有 value 属性。"
+      },
+      {
+        "title": "setProperty 两种写法",
+        "detail": "property=\"*\" 把所有同名请求参数一次灌进 Bean；property=\"name\" 只赋一个属性。"
+      },
+      {
+        "title": "EL 表达式 ${}",
+        "detail": "按 page→request→session→application 顺序找属性，找不到输出空串，不报错。"
+      }
+    ],
+    "pitfalls": [
+      "getProperty 只有 name 和 property 两个属性，没有 value，也没有结束标签。",
+      "property=\"*\" 要求表单 name 与 Bean 属性名完全一致，否则那个属性拿不到值。",
+      "exception 对象只在 isErrorPage=\"true\" 的页面里能用。",
+      "<%@ include %> 是编译期合并成一个文件；<jsp:include> 是运行期分别执行再拼结果。"
+    ]
+  },
+  {
+    "moduleId": "javaweb:kb:servlet",
+    "topicId": "javaweb:topic:servlet",
+    "title": "Servlet",
+    "summary": "生命周期、单实例多线程、转发重定向，几乎是必考点。",
+    "items": [
+      {
+        "title": "生命周期四步",
+        "detail": "构造 → init → service（分派到 doGet/doPost）→ destroy。"
+      },
+      {
+        "title": "单实例多线程",
+        "detail": "容器只创建一个 Servlet 实例，多个请求由多个线程并发处理，所以成员变量要小心共享。"
+      },
+      {
+        "title": "init 与 destroy 只执行一次",
+        "detail": "分别在实例创建后、销毁前各执行一次；service 每次都执行。"
+      },
+      {
+        "title": "三种注册方式",
+        "detail": "@WebServlet 注解、web.xml 里配 servlet + servlet-mapping、直接实现 Servlet 接口。"
+      },
+      {
+        "title": "url-pattern 四种写法",
+        "detail": "精确匹配 /hello、路径匹配 /user/*、扩展名匹配 *.do、默认匹配 /。"
+      },
+      {
+        "title": "load-on-startup",
+        "detail": "配正整数，服务器启动时就创建实例；不配则第一次请求才创建。"
+      },
+      {
+        "title": "转发与重定向",
+        "detail": "forward 一次请求、地址栏不变、能带 request 属性、可访问 WEB-INF；sendRedirect 两次请求、地址栏变、不能带 request 属性。"
+      },
+      {
+        "title": "Config 与 Context",
+        "detail": "getServletConfig().getInitParameter() 取当前 Servlet 的 init-param；getServletContext().getInitParameter() 取全局 context-param。"
+      },
+      {
+        "title": "中文乱码",
+        "detail": "request.setCharacterEncoding(\"utf-8\") 必须在第一次 getParameter 之前；响应端用 setContentType(\"text/html;charset=utf-8\")。"
+      }
+    ],
+    "pitfalls": [
+      "doPost 里复用 doGet 要写 doGet(request, response)，两个参数别漏。",
+      "destroy 不要拼成 destory。",
+      "Filter 放行必须写 chain.doFilter(request, response)，漏了请求就断了。"
+    ]
+  },
+  {
+    "moduleId": "javaweb:kb:jdbc",
+    "topicId": "javaweb:topic:jdbc",
+    "title": "JDBC",
+    "summary": "五步流程和 PreparedStatement 是简答常客。",
+    "items": [
+      {
+        "title": "五步流程",
+        "detail": "加载驱动 → 建立连接 → 创建语句对象 → 执行 SQL → 关闭资源。"
+      },
+      {
+        "title": "加载驱动",
+        "detail": "Class.forName(\"com.mysql.jdbc.Driver\")，把驱动类注册到 DriverManager。"
+      },
+      {
+        "title": "三个核心接口",
+        "detail": "Connection 连接、Statement / PreparedStatement 执行、ResultSet 结果集。"
+      },
+      {
+        "title": "PreparedStatement 的好处",
+        "detail": "SQL 预编译、用 ? 占位传参、能防 SQL 注入、重复执行效率更高。"
+      },
+      {
+        "title": "两个执行方法",
+        "detail": "executeQuery 返回 ResultSet（查询用）；executeUpdate 返回影响行数（增删改用）。"
+      }
+    ],
+    "pitfalls": [
+      "关闭顺序与打开相反：ResultSet → Statement → Connection。",
+      "用字符串拼 SQL 会被注入，参数一律走 ? 占位。"
+    ]
+  },
+  {
+    "moduleId": "javaweb:kb:spring",
+    "topicId": "javaweb:topic:spring",
+    "title": "Spring",
+    "summary": "IOC、DI 两种注入、Bean 作用域与注解。",
+    "items": [
+      {
+        "title": "IOC 控制反转",
+        "detail": "对象的创建和依赖关系交给 Spring 容器，代码里不再自己 new。"
+      },
+      {
+        "title": "DI 依赖注入",
+        "detail": "容器把依赖“注入”进来，两种方式：属性注入（setter）、构造器注入（构造方法）。"
+      },
+      {
+        "title": "两个注入标签",
+        "detail": "<property> 对应 setter 注入；<constructor-arg> 对应构造方法注入。"
+      },
+      {
+        "title": "ref 与 value",
+        "detail": "ref 引用另一个 Bean 的 id；value 赋基本类型或字符串。"
+      },
+      {
+        "title": "Bean 作用域",
+        "detail": "singleton 默认，容器里只有一个实例；prototype 每次获取都新建。"
+      },
+      {
+        "title": "四个派生注解",
+        "detail": "@Component 通用，@Service 业务层、@Repository 持久层、@Controller 控制层，都是交给容器管理。"
+      },
+      {
+        "title": "两个注入注解",
+        "detail": "@Autowired 按类型找，@Resource 按名称找。"
+      }
+    ],
+    "pitfalls": [
+      "构造器注入必须用 constructor-arg，写成 property 不生效。",
+      "prototype 每次 getBean 都是新对象，singleton 才是同一个。"
+    ]
+  },
+  {
+    "moduleId": "javaweb:kb:springmvc",
+    "topicId": "javaweb:topic:springmvc",
+    "title": "SpringMVC",
+    "summary": "执行流程、三大组件、参数绑定与视图解析器。",
+    "items": [
+      {
+        "title": "执行流程",
+        "detail": "请求 → DispatcherServlet → HandlerMapping 找到处理方法 → HandlerAdapter 调用 → Controller 返回 ModelAndView → ViewResolver 解析 → 渲染视图。"
+      },
+      {
+        "title": "三大组件",
+        "detail": "HandlerMapping（找谁处理）、HandlerAdapter（怎么调）、ViewResolver（视图怎么解析）。"
+      },
+      {
+        "title": "两个基础注解",
+        "detail": "@Controller 声明控制器，@RequestMapping 映射请求路径。"
+      },
+      {
+        "title": "参数接收",
+        "detail": "同名参数自动绑定到对象；@RequestParam 取请求参数、@PathVariable 取路径变量、@RequestBody 读请求体。"
+      },
+      {
+        "title": "三种返回",
+        "detail": "String 当视图名；ModelAndView 带数据带视图；@ResponseBody 直接写响应体，不走视图解析。"
+      },
+      {
+        "title": "视图解析器",
+        "detail": "prefix + 返回值 + suffix。返回 \"loginSuccess\" 实际是 /WEB-INF/jsp/loginSuccess.jsp。"
+      },
+      {
+        "title": "web.xml 配置",
+        "detail": "配置 DispatcherServlet，用 contextConfigLocation 指定配置文件，url-pattern 写 /。"
+      }
+    ],
+    "pitfalls": [
+      "@ResponseBody 是写响应体，@RequestBody 是读请求体，方向相反，最容易记混。",
+      "url-pattern 写 /* 会把 JSP 也拦住，应该写 /。"
+    ]
+  },
+  {
+    "moduleId": "javaweb:kb:mybatis",
+    "topicId": "javaweb:topic:mybatis",
+    "title": "MyBatis",
+    "summary": "配置结构、映射四标签、#{} 与 ${}。",
+    "items": [
+      {
+        "title": "三个核心对象",
+        "detail": "SqlSessionFactoryBuilder 读配置建工厂 → SqlSessionFactory → SqlSession 执行 SQL。"
+      },
+      {
+        "title": "配置文件两块",
+        "detail": "environments（transactionManager + dataSource）和 mappers（映射文件在哪）。"
+      },
+      {
+        "title": "dataSource 三种类型",
+        "detail": "UNPOOLED 不用池、POOLED 用连接池、JNDI 从容器取。"
+      },
+      {
+        "title": "映射文件四标签",
+        "detail": "select、insert、update、delete，namespace 一般写接口全限定名。"
+      },
+      {
+        "title": "resultType 与 parameterType",
+        "detail": "resultType 是返回的单条记录类型，parameterType 是入参类型（可省略）。"
+      },
+      {
+        "title": "#{} 与 ${}",
+        "detail": "#{} 预编译占位、防注入；${} 字符串拼接，只在动态表名列名时用。"
+      }
+    ],
+    "pitfalls": [
+      "四个标签名就是增删改查的英文单词，拼错启动就报错。",
+      "mappers 里可以用 <package name=\"...\"/> 批量扫描接口。"
+    ]
+  }
+]

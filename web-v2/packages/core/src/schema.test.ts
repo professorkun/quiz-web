@@ -250,4 +250,22 @@ describe("题库包校验", () => {
     const r = validateBankPackage({ manifest: manifest({ questionCount: 5 }), questions: [q1] });
     expect(r.issues.map((i) => i.code)).toContain("QUESTION_COUNT_MISMATCH");
   });
+
+  it("未知字段默认拒绝并定位（不静默丢弃）", () => {
+    const withTypo = { ...q1, stemm: "把 stem 拼错的字段" } as unknown as Question;
+    const r = validateBankPackage({ manifest: manifest(), questions: [withTypo] });
+    expect(r.ok).toBe(false);
+    const issue = r.issues.find((i) => i.code === "UNKNOWN_FIELD");
+    expect(issue?.path).toBe("questions[0].stemm");
+    expect(issue?.message).toContain("stemm");
+  });
+
+  it("缺答案字段：报出具体题目与字段位置", () => {
+    const broken = { ...q1 } as Record<string, unknown>;
+    delete broken.answer;
+    const r = validateBankPackage({ manifest: manifest(), questions: [broken] });
+    expect(r.ok).toBe(false);
+    const issue = r.issues.find((i) => i.code === "SCHEMA_INVALID");
+    expect(issue?.path).toContain("questions[0].answer");
+  });
 });

@@ -16,6 +16,8 @@ export {
   ShortAnswerQuestionSchema,
   QuestionSchema,
   TopicSchema,
+  KnowledgeItemSchema,
+  KnowledgeModuleSchema,
   ExamTemplateSectionSchema,
   ExamTemplateSchema,
   BankManifestSchema,
@@ -34,6 +36,8 @@ export type {
   RubricPoint,
   Question,
   Topic,
+  KnowledgeItem,
+  KnowledgeModule,
   ExamTemplateSection,
   ExamTemplate,
   BankManifest,
@@ -47,6 +51,9 @@ export { makeQuestionId, parseQuestionId, nextSeq, padSeq } from "./ids.js";
 export type { ParsedQuestionId } from "./ids.js";
 
 export { canonicalize, computeRevision } from "./revision.js";
+
+export { gradeQuestion, normalizeAnswer } from "./grade.js";
+export type { GradeResult } from "./grade.js";
 
 export { ValidationCode, validateBankPackage } from "./validate.js";
 export type { ValidationIssue, BankPackage, ValidateResult } from "./validate.js";
