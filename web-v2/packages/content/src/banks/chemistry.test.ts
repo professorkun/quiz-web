@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { validateBankPackage } from "@quiz/core";
+import { gradeAnswer, validateBankPackage } from "@quiz/core";
 
 import { chemistryBank } from "./chemistry.js";
 
@@ -43,5 +43,65 @@ describe("化学题库", () => {
   it("bankId 与 JavaWeb 不冲突", () => {
     expect(chemistryBank.manifest.bankId).toBe("chem");
     expect(chemistryBank.questions.every((q) => q.bankId === "chem")).toBe(true);
+  });
+});
+
+/**
+ * 判分可用性（S3 验收 D-2）：换学科后判分器不改一行，也必须判得对。
+ *
+ * 这里刻意不 mock 判分：走的就是 `core` 的注册表与 `gradeAnswer`，
+ * 与 JavaWeb 题库用的是同一条路径。
+ */
+describe("化学题库可正常判分", () => {
+  function correctAnswer(question: (typeof chemistryBank.questions)[number]): unknown {
+    switch (question.type) {
+      case "single_choice":
+        return question.answer;
+      case "multiple_choice":
+        return question.answer;
+      case "true_false":
+        return question.answer;
+      case "fill_blank":
+        return Object.fromEntries(question.blanks.map((b) => [b.blankId, b.accepted[0]]));
+      case "code_blank":
+        return Object.fromEntries(question.blanks.map((b) => [b.blankId, b.accepted[0]]));
+      case "short_answer":
+        return "";
+    }
+  }
+
+  function wrongAnswer(question: (typeof chemistryBank.questions)[number]): unknown {
+    switch (question.type) {
+      case "single_choice": {
+        const other = question.options.find((o) => o.optionId !== question.answer);
+        return other?.optionId ?? question.answer;
+      }
+      case "multiple_choice": {
+        const other = question.options.find((o) => !question.answer.includes(o.optionId));
+        return [other?.optionId ?? question.options[0]!.optionId];
+      }
+      case "true_false":
+        return !question.answer;
+      case "fill_blank":
+        return Object.fromEntries(question.blanks.map((b) => [b.blankId, "肯定不对的答案"]));
+      case "code_blank":
+        return Object.fromEntries(question.blanks.map((b) => [b.blankId, "肯定不对的答案"]));
+      case "short_answer":
+        return "";
+    }
+  }
+
+  it("每道题的正确写法都判对", () => {
+    for (const question of chemistryBank.questions) {
+      const result = gradeAnswer(question, correctAnswer(question), 5);
+      expect(result.correct, `${question.questionId} 应判对`).toBe(true);
+    }
+  });
+
+  it("每道题的错答都判错", () => {
+    for (const question of chemistryBank.questions) {
+      const result = gradeAnswer(question, wrongAnswer(question), 5);
+      expect(result.correct, `${question.questionId} 应判错`).toBe(false);
+    }
   });
 });

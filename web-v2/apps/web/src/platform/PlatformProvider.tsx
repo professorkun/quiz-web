@@ -77,9 +77,12 @@ export function PlatformProvider(props: {
   /** 测试或其它端可注入现成平台（跳过 IndexedDB 装配） */
   readonly platform?: Platform;
   readonly builtinBanks?: readonly BankContent[];
+  /** 存储不可用的原因（注入平台时由调用方给出），显示为顶部横幅 */
+  readonly storageWarning?: string;
 }): React.ReactElement {
   const injected = props.platform;
   const builtinBanks = props.builtinBanks ?? BUILTIN_BANKS;
+  const storageWarning = props.storageWarning;
   const [state, setState] = useState<State | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
@@ -99,10 +102,13 @@ export function PlatformProvider(props: {
 
     const boot = async (): Promise<void> => {
       try {
-        const { platform, degraded } =
+        const created =
           injected === undefined
             ? await createWebPlatform({ builtinBanks })
-            : { platform: injected, degraded: null };
+            : { platform: injected, degraded: null as string | null };
+        const platform = created.platform;
+        // 注入平台时允许调用方带入"存储不可用"的说明（测试、S6 云同步失败都走这条）
+        const degraded = storageWarning ?? created.degraded;
         const banks = await loadBanks(platform);
         if (banks.length === 0) throw new Error("没有可用题库：内置题库加载失败");
 
@@ -131,7 +137,7 @@ export function PlatformProvider(props: {
       cancelled = true;
       if (toastTimer.current !== null) clearTimeout(toastTimer.current);
     };
-  }, [showToast, injected, builtinBanks]);
+  }, [showToast, injected, builtinBanks, storageWarning]);
 
   const selectBank = useCallback(
     async (bankId: string) => {

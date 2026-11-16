@@ -63,12 +63,15 @@ export function App(
     /** 集成测试注入现成平台；生产环境不传，由 Provider 自己装配 IndexedDB */
     readonly platform?: Platform;
     readonly builtinBanks?: readonly BankContent[];
+    /** 存储不可用说明（注入平台时使用） */
+    readonly storageWarning?: string;
   } = {},
 ): React.ReactElement {
   return (
     <PlatformProvider
       {...(props.platform === undefined ? {} : { platform: props.platform })}
       {...(props.builtinBanks === undefined ? {} : { builtinBanks: props.builtinBanks })}
+      {...(props.storageWarning === undefined ? {} : { storageWarning: props.storageWarning })}
     >
       <Shell />
     </PlatformProvider>

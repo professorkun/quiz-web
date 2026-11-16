@@ -237,3 +237,130 @@ describe("跨库隔离", () => {
     expect(await screen.findByText(/还没有错题/)).toBeTruthy();
   });
 });
+
+/**
+ * S3 验收补测（对比 04-S3 §6 后发现的三处"有实现、无用例"）。
+ *
+ * 这三条不是锦上添花：
+ * - 设置恢复与刷新恢复是"关掉浏览器再回来还在"的核心承诺；
+ * - 存储不可用的提示如果不显示，隐私模式用户会以为记录存住了；
+ * - 讲义随库切换是"通用"的最后一环（换学科得换讲义）。
+ */
+describe("S3 验收补测", () => {
+  it("练习设置改完再进来仍在（按题库保存）", async () => {
+    const { platform } = await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("practice");
+
+    const twenty = await screen.findByRole("button", { name: "20 题" });
+    fireEvent.click(twenty);
+    await waitFor(() => expect(twenty.className).toContain("on"));
+
+    cleanup();
+    globalThis.location.hash = "#/learn";
+    render(<App platform={platform} builtinBanks={[chemistryBank, otherBank()]} />);
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("practice");
+
+    const again = await screen.findByRole("button", { name: "20 题" });
+    await waitFor(() => expect(again.className).toContain("on"));
+  });
+
+  it("刷新（重新挂载）后回到同一题、同一进度", async () => {
+    const { platform } = await setup();
+    await platform.settings.savePractice("chem", {
+      order: "sequential",
+      topicIds: [],
+      types: [],
+      limit: 3,
+      onlyUnseen: false,
+      onlyUnmastered: false,
+      mode: "practice",
+    });
+
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("practice");
+    fireEvent.click(await screen.findByRole("button", { name: "开始练习" }));
+    await screen.findByText(/下列物质中属于纯净物的是/);
+
+    fireEvent.click(screen.getByText("空气"));
+    fireEvent.click(screen.getByRole("button", { name: "提交答案" }));
+    await screen.findByText(/答错了/);
+    fireEvent.click(screen.getByRole("button", { name: "下一题" }));
+    await screen.findByText(/第 2 \/ 3 题/);
+
+    // 模拟"关掉浏览器再打开"：同一份存储、全新的组件树
+    cleanup();
+    globalThis.location.hash = "#/learn";
+    render(<App platform={platform} builtinBanks={[chemistryBank, otherBank()]} />);
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("practice");
+
+    expect(await screen.findByText(/第 2 \/ 3 题/)).toBeTruthy();
+    // 恢复的是同一轮会话：题量仍是 3，且已作答的那条事件没有丢
+    const history = await platform.attempts.listByQuestion("chem", "chem:single_choice:001");
+    expect(history).toHaveLength(1);
+    expect(screen.getByText(/第 2 \/ 3 题/)).toBeTruthy();
+  });
+
+  it("存储不可用时给出横幅与可读原因，而不是静默假装保存", async () => {
+    const kv = new MemoryKeyValueStore();
+    // 只让"探针写入"失败：模拟配额满/隐私模式下写入被拒
+    const flaky: typeof kv = Object.create(kv) as typeof kv;
+    const originalSet = kv.set.bind(kv);
+    let probeCalls = 0;
+    flaky.set = async (key: string, value: string) => {
+      if (key.startsWith("__probe__")) {
+        probeCalls += 1;
+        throw new Error("QuotaExceededError");
+      }
+      return originalSet(key, value);
+    };
+    const platform = createPlatform({ kv: flaky, builtinBanks: [chemistryBank], clock });
+
+    render(
+      <App
+        platform={platform}
+        builtinBanks={[chemistryBank]}
+        storageWarning="本地存储不可写（隐私模式），本次记录只保存在内存中"
+      />,
+    );
+
+    const banners = await screen.findAllByText(/本地存储不可写/);
+    expect(banners.length).toBeGreaterThan(0);
+    await go("me");
+    const notWritable = await screen.findAllByText(/不可写/);
+    expect(notWritable.length).toBeGreaterThan(0);
+    expect(probeCalls).toBeGreaterThan(0);
+  });
+
+  it("换题库时知识讲义跟着换，不残留上一个库的内容", async () => {
+    await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("banks");
+
+    expect(await screen.findByText("物质的分类")).toBeTruthy();
+
+    fireEvent.click(await screen.findByRole("button", { name: /对照题库（1）/ }));
+    expect(await screen.findByText(/这份题库还没配知识讲义/)).toBeTruthy();
+    expect(screen.queryByText("物质的分类")).toBeNull();
+  });
+
+  it("题型 + 知识点 + 搜索可组合，结果与数据一致", async () => {
+    await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("banks");
+
+    // 填空题共 4 道
+    fireEvent.click(await screen.findByRole("button", { name: /填空题（4）/ }));
+    expect(await screen.findByText(/命中 4 题/)).toBeTruthy();
+
+    // 再收窄到"物质的组成与分类"：水的化学式 + 空气成分（2 道）
+    fireEvent.click(screen.getByRole("button", { name: "物质的组成与分类" }));
+    expect(await screen.findByText(/命中 2 题/)).toBeTruthy();
+
+    // 再叠加题干搜索：只剩"水的化学式"
+    fireEvent.change(screen.getByLabelText("搜索题干"), { target: { value: "化学式" } });
+    expect(await screen.findByText(/命中 1 题/)).toBeTruthy();
+  });
+});

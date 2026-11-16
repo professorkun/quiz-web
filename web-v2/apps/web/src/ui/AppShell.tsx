@@ -57,8 +57,8 @@ export function AppShell(props: AppShellProps): React.ReactElement {
       <main className="content">
         {degraded === null ? null : (
           <div className="notice banner">
-            本地存储不可用（{degraded}）。当前可以继续作答，但关闭页面后记录会丢失；
-            建议先排除隐私模式或清理空间。
+            {degraded}。当前仍可继续作答，但关闭页面后这些记录会丢失；
+            建议先排除隐私模式或清理空间，或导出备份后再继续。
           </div>
         )}
 

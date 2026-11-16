@@ -42,11 +42,11 @@ pnpm verify
 | 包 | 用例数 | 结果 |
 | --- | --- | --- |
 | `@quiz/core` | 102 | 全绿 |
-| `@quiz/content` | 15 | 全绿 |
+| `@quiz/content` | 17 | 全绿 |
 | `@quiz/platform-web` | 16 | 全绿 |
 | `@quiz/data` | 20 | 全绿 |
-| `@quiz/web` | 26 | 全绿 |
-| 合计 | **179** | **0 失败** |
+| `@quiz/web` | 31 | 全绿 |
+| 合计 | **186** | **0 失败** |
 
 附带扫描：
 
@@ -77,7 +77,7 @@ node scripts/check-extension-point.mjs → PASS（apps/web 34 个文件无按题
 | 跨库不串（UI 层） | `app.test.tsx > 在化学库答错不会污染对照题库的错题数` |
 | 第二学科合法性 | `chemistry.test.ts`（5 条：校验通过、≥3 题型、≤20 题、知识点闭合、bankId 不冲突） |
 
-### 2.3 门禁逐条（AI 只给证据，不下结论）
+### 2.3 门禁逐条（复核结论见 `s3-gate-review.md`）
 
 | 门禁 | 证据 | 状态 |
 | --- | --- | --- |
