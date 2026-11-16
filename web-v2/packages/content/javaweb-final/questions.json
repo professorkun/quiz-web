@@ -1,0 +1,4798 @@
+[
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:001",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:web_base"
+    ],
+    "stem": "下列关于 B/S 架构的描述，错误的是（　　）",
+    "explanation": "B/S 客户端只要浏览器，装专用软件是 C/S。",
+    "legacyKeys": [
+      "choice-1"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "客户端只需安装浏览器即可访问系统"
+      },
+      {
+        "optionId": "o2",
+        "text": "客户端需要安装专用软件"
+      },
+      {
+        "optionId": "o3",
+        "text": "业务逻辑都在服务器端处理"
+      },
+      {
+        "optionId": "o4",
+        "text": "便于系统的维护和升级"
+      }
+    ],
+    "answer": "o2",
+    "revision": "a904c51e40a6"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:002",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:web_base"
+    ],
+    "stem": "在 Java Web 开发中，用于管理项目依赖并进行项目构建的工具是（　　）",
+    "explanation": "Maven 管依赖与构建；Tomcat 是容器、MySQL 是库、Eclipse 是 IDE。",
+    "legacyKeys": [
+      "choice-2"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "Maven"
+      },
+      {
+        "optionId": "o2",
+        "text": "Tomcat"
+      },
+      {
+        "optionId": "o3",
+        "text": "MySQL"
+      },
+      {
+        "optionId": "o4",
+        "text": "Eclipse"
+      }
+    ],
+    "answer": "o1",
+    "revision": "bae76b7e9a99"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:003",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "在 JSP 页面中写 <%! int count = 0; %>，其作用是（　　）",
+    "explanation": "<%! %> 声明的内容进入 Servlet 类体成为成员；<% %> 才是方法内局部。",
+    "legacyKeys": [
+      "choice-3"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "向页面输出 count 的值"
+      },
+      {
+        "optionId": "o2",
+        "text": "声明一个成员变量"
+      },
+      {
+        "optionId": "o3",
+        "text": "定义一个方法内的局部变量"
+      },
+      {
+        "optionId": "o4",
+        "text": "引入一个 Java 包"
+      }
+    ],
+    "answer": "o2",
+    "revision": "e132f7a4c960"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:004",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "在 JSP 页面中声明变量和方法应使用的标识符是（　　）",
+    "explanation": "四种标识符按\"声明 / 片段 / 输出 / 注释\"记。",
+    "legacyKeys": [
+      "choice-4"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "<% %>"
+      },
+      {
+        "optionId": "o2",
+        "text": "<%! %>"
+      },
+      {
+        "optionId": "o3",
+        "text": "<%= %>"
+      },
+      {
+        "optionId": "o4",
+        "text": "<%-- --%>"
+      }
+    ],
+    "answer": "o2",
+    "revision": "31142f14e90c"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:005",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "下列选项中，不属于 JSP 动作标签的是（　　）",
+    "explanation": "<%@ include %> 是 include 指令（编译期静态包含），不属于动作标签。",
+    "legacyKeys": [
+      "choice-5"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "<jsp:include>"
+      },
+      {
+        "optionId": "o2",
+        "text": "<jsp:forward>"
+      },
+      {
+        "optionId": "o3",
+        "text": "<jsp:useBean>"
+      },
+      {
+        "optionId": "o4",
+        "text": "<%@ include %>"
+      }
+    ],
+    "answer": "o4",
+    "revision": "fc46d7ee71f8"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:006",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "用于获取 Bean 属性的动作是（　　）",
+    "explanation": "get 取、set 设、useBean 创建/查找，三件套一组。",
+    "legacyKeys": [
+      "choice-6"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "<jsp:getProperty>"
+      },
+      {
+        "optionId": "o2",
+        "text": "<jsp:setProperty>"
+      },
+      {
+        "optionId": "o3",
+        "text": "<jsp:useBean>"
+      },
+      {
+        "optionId": "o4",
+        "text": "<jsp:forward>"
+      }
+    ],
+    "answer": "o1",
+    "revision": "3f8b349fce65"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:007",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "JSP 中 <jsp:setProperty name=\"user\" property=\"*\" /> 的含义是（　　）",
+    "explanation": "property=\"*\" 自动匹配全部同名参数，所以表单 name 要与属性一致。",
+    "legacyKeys": [
+      "choice-7"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "把 user 对象的所有属性输出到页面"
+      },
+      {
+        "optionId": "o2",
+        "text": "把请求中与 user 属性同名的参数全部赋值给 user"
+      },
+      {
+        "optionId": "o3",
+        "text": "创建 id 为 user 的对象"
+      },
+      {
+        "optionId": "o4",
+        "text": "删除 user 对象的所有属性"
+      }
+    ],
+    "answer": "o2",
+    "revision": "120071b3ee74"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:008",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "下列选项中，代表会话、保存用户一次浏览器会话数据的内置对象是（　　）",
+    "explanation": "session 一次会话，常存登录状态。",
+    "legacyKeys": [
+      "choice-8"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "session"
+      },
+      {
+        "optionId": "o2",
+        "text": "request"
+      },
+      {
+        "optionId": "o3",
+        "text": "application"
+      },
+      {
+        "optionId": "o4",
+        "text": "out"
+      }
+    ],
+    "answer": "o1",
+    "revision": "841f2381a6a5"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:009",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "在 JSP 中，request 与 session 的区别在于（　　）",
+    "explanation": "request 一次请求、转发能带走、重定向带不走；session 一次会话（默认 30 分钟）。",
+    "legacyKeys": [
+      "choice-9"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "request 覆盖一次请求，session 覆盖一次会话"
+      },
+      {
+        "optionId": "o2",
+        "text": "request 覆盖一次会话，session 覆盖一次请求"
+      },
+      {
+        "optionId": "o3",
+        "text": "两者都覆盖整个应用"
+      },
+      {
+        "optionId": "o4",
+        "text": "两者只在当前页面有效"
+      }
+    ],
+    "answer": "o1",
+    "revision": "3aa391833aef"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:010",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "要在页面上输出 request 作用域中名为 msg 的数据，下列写法正确的是（　　）",
+    "explanation": "${msg} 是 EL，按 page→request→session→application 依次查找；<%= %> 只能取页面内 Java 变量。",
+    "legacyKeys": [
+      "choice-10"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "<%= msg %>"
+      },
+      {
+        "optionId": "o2",
+        "text": "${msg}"
+      },
+      {
+        "optionId": "o3",
+        "text": "<jsp:getProperty name=\"msg\"/>"
+      },
+      {
+        "optionId": "o4",
+        "text": "<% msg %>"
+      }
+    ],
+    "answer": "o2",
+    "revision": "c8cd537ca74a"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:011",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "下列不属于 JSP 内置对象的是（　　）",
+    "explanation": "connection 是 JDBC 连接对象，要自己创建，九个内置对象里没有它。",
+    "legacyKeys": [
+      "choice-11"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "out"
+      },
+      {
+        "optionId": "o2",
+        "text": "application"
+      },
+      {
+        "optionId": "o3",
+        "text": "config"
+      },
+      {
+        "optionId": "o4",
+        "text": "connection"
+      }
+    ],
+    "answer": "o4",
+    "revision": "58e20a9e2b6d"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:012",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "关于 <%@ include file=\"\" %> 静态包含，说法正确的是（　　）",
+    "explanation": "指令包含：编译期合并源码、只生成一个 Servlet、不能传参。",
+    "legacyKeys": [
+      "choice-12"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "运行时引入被包含页面"
+      },
+      {
+        "optionId": "o2",
+        "text": "编译阶段把两个 JSP 合并成一个文件再翻译"
+      },
+      {
+        "optionId": "o3",
+        "text": "可以传递参数给被包含页面"
+      },
+      {
+        "optionId": "o4",
+        "text": "被包含页面会单独翻译成一个 Servlet"
+      }
+    ],
+    "answer": "o2",
+    "revision": "ad070028568b"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:013",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "下列动作标签中，能够在服务器内部把请求转发到另一页面的是（　　）",
+    "explanation": "<jsp:forward> 服务器内部跳转，地址栏不变；include 是包含、param 是传参。",
+    "legacyKeys": [
+      "choice-13"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "<jsp:include>"
+      },
+      {
+        "optionId": "o2",
+        "text": "<jsp:forward>"
+      },
+      {
+        "optionId": "o3",
+        "text": "<jsp:useBean>"
+      },
+      {
+        "optionId": "o4",
+        "text": "<jsp:param>"
+      }
+    ],
+    "answer": "o2",
+    "revision": "83ff6206cea3"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:014",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "下列关于 JavaBean 规范的说法，不正确的是（　　）",
+    "explanation": "JavaBean 三规范：public 类 + 无参构造 + 属性 private 配 getter/setter。",
+    "legacyKeys": [
+      "choice-14"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "必须是 public 类"
+      },
+      {
+        "optionId": "o2",
+        "text": "必须提供无参的构造方法"
+      },
+      {
+        "optionId": "o3",
+        "text": "属性必须声明为 public，以便直接访问"
+      },
+      {
+        "optionId": "o4",
+        "text": "属性一般声明为 private，通过 getter 和 setter 访问"
+      }
+    ],
+    "answer": "o3",
+    "revision": "53d4edbc6b26"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:015",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "以下哪个方法可以在 request 对象中设置属性？（　　）",
+    "explanation": "setAttribute 存域属性、getAttribute 取；getParameter 取请求参数，没有 setParameter。",
+    "legacyKeys": [
+      "choice-15"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "getAttribute()"
+      },
+      {
+        "optionId": "o2",
+        "text": "getParameter()"
+      },
+      {
+        "optionId": "o3",
+        "text": "setAttribute()"
+      },
+      {
+        "optionId": "o4",
+        "text": "setParameter()"
+      }
+    ],
+    "answer": "o3",
+    "revision": "fb8fc7090e03"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:016",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "Servlet 生命周期中，只会执行一次的方法是（　　）",
+    "explanation": "构造 1 次、init 1 次、service 每次、destroy 1 次。",
+    "legacyKeys": [
+      "choice-16"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "service()"
+      },
+      {
+        "optionId": "o2",
+        "text": "doGet()"
+      },
+      {
+        "optionId": "o3",
+        "text": "init() 和 destroy()"
+      },
+      {
+        "optionId": "o4",
+        "text": "doPost()"
+      }
+    ],
+    "answer": "o3",
+    "revision": "cafd207c8bc4"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:017",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "下列选项中，不属于 Servlet 生命周期方法的是（　　）",
+    "explanation": "main() 是普通 Java 程序入口，与 Servlet 无关。",
+    "legacyKeys": [
+      "choice-17"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "init()"
+      },
+      {
+        "optionId": "o2",
+        "text": "service()"
+      },
+      {
+        "optionId": "o3",
+        "text": "destroy()"
+      },
+      {
+        "optionId": "o4",
+        "text": "main()"
+      }
+    ],
+    "answer": "o4",
+    "revision": "45e78adde13c"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:018",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "关于 Servlet 的工作方式，下列说法正确的是（　　）",
+    "explanation": "单实例多线程，所以成员变量（如计数器的 hitCount）有线程安全问题。",
+    "legacyKeys": [
+      "choice-18"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "每次请求都会创建一个新的 Servlet 实例"
+      },
+      {
+        "optionId": "o2",
+        "text": "容器中通常只有一个实例，多个请求由多个线程并发处理"
+      },
+      {
+        "optionId": "o3",
+        "text": "init() 方法在每次请求时都会被调用"
+      },
+      {
+        "optionId": "o4",
+        "text": "Servlet 只能实现 Servlet 接口，不能继承 HttpServlet"
+      }
+    ],
+    "answer": "o2",
+    "revision": "85df46a6ee6d"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:019",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "下列关于 Servlet 和 JSP 的说法，错误的是（　　）",
+    "explanation": "JSP 里当然能写 Java（脚本片段、表达式），只是不推荐。",
+    "legacyKeys": [
+      "choice-19"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "JSP 页面会被容器翻译成 Servlet 源代码再编译运行"
+      },
+      {
+        "optionId": "o2",
+        "text": "Servlet 输出页面需要使用 response 输出 HTML"
+      },
+      {
+        "optionId": "o3",
+        "text": "JSP 页面中不能编写 Java 代码"
+      },
+      {
+        "optionId": "o4",
+        "text": "Servlet 擅长业务逻辑处理，JSP 擅长页面展示输出"
+      }
+    ],
+    "answer": "o3",
+    "revision": "e637399bd8ca"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:020",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "下列说法中，正确的是（　　）",
+    "explanation": "继承 HttpServlet 即间接实现 Servlet 接口；两个 do 可同重写、可用注解、单实例。",
+    "legacyKeys": [
+      "choice-20"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "Servlet 中不能同时重写 doGet 和 doPost 方法"
+      },
+      {
+        "optionId": "o2",
+        "text": "Servlet 必须直接或间接实现 Servlet 接口"
+      },
+      {
+        "optionId": "o3",
+        "text": "Servlet 只能在 web.xml 中配置"
+      },
+      {
+        "optionId": "o4",
+        "text": "Servlet 每处理一次请求就会创建一个新实例"
+      }
+    ],
+    "answer": "o2",
+    "revision": "a67c58e2782d"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:021",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "下列方法中，能够把请求转发到另一个资源、且地址栏不变的是（　　）",
+    "explanation": "forward 一次请求、地址栏不变、能访问 WEB-INF；sendRedirect 是二次请求。",
+    "legacyKeys": [
+      "choice-21"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "response.sendRedirect(\"a.jsp\")"
+      },
+      {
+        "optionId": "o2",
+        "text": "request.getRequestDispatcher(\"a.jsp\").forward(request, response)"
+      },
+      {
+        "optionId": "o3",
+        "text": "response.sendError(500)"
+      },
+      {
+        "optionId": "o4",
+        "text": "request.getParameter(\"a\")"
+      }
+    ],
+    "answer": "o2",
+    "revision": "fe02a0f261dd"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:022",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "Filter 接口中用于执行过滤逻辑的方法是（　　）",
+    "explanation": "Filter：init 初始化、doFilter 过滤（放行调 chain.doFilter）、destroy 销毁。",
+    "legacyKeys": [
+      "choice-22"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "init()"
+      },
+      {
+        "optionId": "o2",
+        "text": "doFilter()"
+      },
+      {
+        "optionId": "o3",
+        "text": "destroy()"
+      },
+      {
+        "optionId": "o4",
+        "text": "service()"
+      }
+    ],
+    "answer": "o2",
+    "revision": "248a02443b8a"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:023",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "在 Servlet 配置中，使用注解配置时，下列哪种写法是正确的（　　）",
+    "explanation": "属性名是 name 和 urlPatterns，不是 url、也不是 servletName。",
+    "legacyKeys": [
+      "choice-23"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "@WebServlet(name = \"HelloServlet\", url = \"/HelloServlet\")"
+      },
+      {
+        "optionId": "o2",
+        "text": "@WebServlet(\"HelloServlet\")"
+      },
+      {
+        "optionId": "o3",
+        "text": "@WebServlet(name = \"HelloServlet\", urlPatterns = {\"/HelloServlet\"})"
+      },
+      {
+        "optionId": "o4",
+        "text": "@WebServlet(servletName = \"HelloServlet\", urlPatterns = {\"/HelloServlet\"})"
+      }
+    ],
+    "answer": "o3",
+    "revision": "4ffb5f4db806"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:024",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "在 web.xml 中配置 Servlet 时，<servlet> 与 <servlet-mapping> 通过什么关联（　　）",
+    "explanation": "两处 servlet-name 必须完全一致，容器靠它把路径映射到类。",
+    "legacyKeys": [
+      "choice-24"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "相同的 <servlet-class>"
+      },
+      {
+        "optionId": "o2",
+        "text": "相同的 <servlet-name>"
+      },
+      {
+        "optionId": "o3",
+        "text": "相同的 <url-pattern>"
+      },
+      {
+        "optionId": "o4",
+        "text": "相同的 <load-on-startup>"
+      }
+    ],
+    "answer": "o2",
+    "revision": "ef8e4360511d"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:025",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "Servlet 中获取表单参数值应使用的方法是（　　）",
+    "explanation": "getParameter 取表单/URL 参数返回 String；getAttribute 取域属性返回 Object。",
+    "legacyKeys": [
+      "choice-25"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "request.getAttribute(\"name\")"
+      },
+      {
+        "optionId": "o2",
+        "text": "request.getParameter(\"name\")"
+      },
+      {
+        "optionId": "o3",
+        "text": "response.getParameter(\"name\")"
+      },
+      {
+        "optionId": "o4",
+        "text": "request.getParameterValues(\"name\")"
+      }
+    ],
+    "answer": "o2",
+    "revision": "14027a21174e"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:026",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jdbc"
+    ],
+    "stem": "JDBC 操作数据库的正确顺序是（　　）\n①创建 Statement　②加载驱动　③关闭资源　④建立连接　⑤执行 SQL 并处理结果",
+    "explanation": "正确顺序：②加载驱动 → ④建立连接 → ①创建 Statement → ⑤执行 SQL 并处理结果 → ③关闭资源。驱动必须先加载，资源必须最后关闭。",
+    "legacyKeys": [
+      "choice-26"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "②④①⑤③"
+      },
+      {
+        "optionId": "o2",
+        "text": "②①④⑤③"
+      },
+      {
+        "optionId": "o3",
+        "text": "④②①③⑤"
+      },
+      {
+        "optionId": "o4",
+        "text": "②④⑤①③"
+      }
+    ],
+    "answer": "o1",
+    "revision": "2f9460e61215"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:027",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jdbc"
+    ],
+    "stem": "Statement 的 executeUpdate() 方法的返回值类型是（　　）",
+    "explanation": "executeUpdate 返回 int 影响行数；executeQuery 返回 ResultSet。",
+    "legacyKeys": [
+      "choice-27"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "ResultSet"
+      },
+      {
+        "optionId": "o2",
+        "text": "int"
+      },
+      {
+        "optionId": "o3",
+        "text": "boolean"
+      },
+      {
+        "optionId": "o4",
+        "text": "void"
+      }
+    ],
+    "answer": "o2",
+    "revision": "a7d8dec25de9"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:028",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:web_base"
+    ],
+    "stem": "执行查询 SQL 后，用于存放返回数据的对象是（　　）",
+    "explanation": "用 rs.next() 移游标、getXxx 取值。",
+    "legacyKeys": [
+      "choice-28"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "Connection"
+      },
+      {
+        "optionId": "o2",
+        "text": "Statement"
+      },
+      {
+        "optionId": "o3",
+        "text": "ResultSet"
+      },
+      {
+        "optionId": "o4",
+        "text": "DriverManager"
+      }
+    ],
+    "answer": "o3",
+    "revision": "d80f81048c0c"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:029",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jdbc"
+    ],
+    "stem": "JDBC 中，用于执行预编译 SQL 语句的对象是（　　）",
+    "explanation": "PreparedStatement 用 ? 占位、预编译、可防注入。",
+    "legacyKeys": [
+      "choice-29"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "Connection"
+      },
+      {
+        "optionId": "o2",
+        "text": "PreparedStatement"
+      },
+      {
+        "optionId": "o3",
+        "text": "ResultSet"
+      },
+      {
+        "optionId": "o4",
+        "text": "DriverManager"
+      }
+    ],
+    "answer": "o2",
+    "revision": "898072d991a5"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:030",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 框架的两大核心思想是（　　）",
+    "explanation": "IoC 解决对象创建与解耦，AOP 解决日志事务等横切逻辑。",
+    "legacyKeys": [
+      "choice-30"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "IoC 和 AOP"
+      },
+      {
+        "optionId": "o2",
+        "text": "MVC 和 JDBC"
+      },
+      {
+        "optionId": "o3",
+        "text": "Servlet 和 JSP"
+      },
+      {
+        "optionId": "o4",
+        "text": "ORM 和 XML"
+      }
+    ],
+    "answer": "o1",
+    "revision": "7a364e96f112"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:031",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "IoC（控制反转）的含义是（　　）",
+    "explanation": "控制权从\"程序自己 new\"反转给\"容器创建并注入\"。",
+    "legacyKeys": [
+      "choice-31"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "由程序员手动创建和管理对象"
+      },
+      {
+        "optionId": "o2",
+        "text": "将对象的创建和依赖关系的管理交给 Spring 容器"
+      },
+      {
+        "optionId": "o3",
+        "text": "反转程序的执行顺序"
+      },
+      {
+        "optionId": "o4",
+        "text": "由数据库管理对象"
+      }
+    ],
+    "answer": "o2",
+    "revision": "6143a2a682c5"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:032",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "在 Spring 配置文件中，实现构造器注入应使用的元素是（　　）",
+    "explanation": "<property> 是 setter 注入；<constructor-arg> 才靠有参构造。",
+    "legacyKeys": [
+      "choice-32"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "<property>"
+      },
+      {
+        "optionId": "o2",
+        "text": "<constructor-arg>"
+      },
+      {
+        "optionId": "o3",
+        "text": "<bean>"
+      },
+      {
+        "optionId": "o4",
+        "text": "<import>"
+      }
+    ],
+    "answer": "o2",
+    "revision": "7a4f05860978"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:033",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 中，若某属性没有提供 set 方法，则不能使用下列哪种注入方式（　　）",
+    "explanation": "属性注入的原理就是调 setXxx()，没有 set 方法就注不进去。",
+    "legacyKeys": [
+      "choice-33"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "属性（setter）注入"
+      },
+      {
+        "optionId": "o2",
+        "text": "构造器注入"
+      },
+      {
+        "optionId": "o3",
+        "text": "注解注入"
+      },
+      {
+        "optionId": "o4",
+        "text": "以上都不能"
+      }
+    ],
+    "answer": "o1",
+    "revision": "a9233f77eb02"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:034",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "在 Spring 框架中，使用 ApplicationContext 对象获取 Bean 对象的方法是（　　）",
+    "explanation": "ctx.getBean(\"userService\") 或 ctx.getBean(UserService.class)。",
+    "legacyKeys": [
+      "choice-34"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "getClass()"
+      },
+      {
+        "optionId": "o2",
+        "text": "getBean()"
+      },
+      {
+        "optionId": "o3",
+        "text": "getPojo()"
+      },
+      {
+        "optionId": "o4",
+        "text": "getObject()"
+      }
+    ],
+    "answer": "o2",
+    "revision": "50aa408a1f15"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:035",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 中，AOP 主要解决的问题是（　　）",
+    "explanation": "AOP 抽离横切关注点；D 是 ORM 的职责。",
+    "legacyKeys": [
+      "choice-35"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "把日志、事务、权限等横切逻辑从业务代码中抽离"
+      },
+      {
+        "optionId": "o2",
+        "text": "实现页面跳转"
+      },
+      {
+        "optionId": "o3",
+        "text": "管理数据库连接池"
+      },
+      {
+        "optionId": "o4",
+        "text": "把 Java 对象映射成数据库表"
+      }
+    ],
+    "answer": "o1",
+    "revision": "875754e29e8c"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:036",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "在 Spring MVC 中，负责统一接收并分发请求的核心组件是（　　）",
+    "explanation": "DispatcherServlet 接收分发；HandlerMapping 只找、ViewResolver 只解析。",
+    "legacyKeys": [
+      "choice-36"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "DispatcherServlet"
+      },
+      {
+        "optionId": "o2",
+        "text": "HandlerMapping"
+      },
+      {
+        "optionId": "o3",
+        "text": "ViewResolver"
+      },
+      {
+        "optionId": "o4",
+        "text": "Controller"
+      }
+    ],
+    "answer": "o1",
+    "revision": "595fe447209f"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:037",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "下列关于 @RequestMapping 说法，错误的是（　　）",
+    "explanation": "类和方法上都能写，类上相当于加一级路径前缀。",
+    "legacyKeys": [
+      "choice-37"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "@RequestMapping 只能写在方法上，不能写在控制器类上"
+      },
+      {
+        "optionId": "o2",
+        "text": "可以通过 method 属性限定允许的 HTTP 请求方式"
+      },
+      {
+        "optionId": "o3",
+        "text": "建立请求 URL 与控制器方法之间的映射关系"
+      },
+      {
+        "optionId": "o4",
+        "text": "@PostMapping 等价于 @RequestMapping(method = RequestMethod.POST)"
+      }
+    ],
+    "answer": "o1",
+    "revision": "580146f919c2"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:038",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "在 SpringMVC 中，@Controller 注解作用是（　　）",
+    "explanation": "@Controller 控制层、@Service 业务层、@Repository 持久层，本质都是 @Component。",
+    "legacyKeys": [
+      "choice-38"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "将类标识为业务层组件"
+      },
+      {
+        "optionId": "o2",
+        "text": "将类标识为控制器组件"
+      },
+      {
+        "optionId": "o3",
+        "text": "用于数据持久层类上"
+      },
+      {
+        "optionId": "o4",
+        "text": "用来做依赖注入"
+      }
+    ],
+    "answer": "o2",
+    "revision": "84cf293d4183"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:039",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:web_base"
+    ],
+    "stem": "关于 MVC 中视图（View）的职责，说法正确的是（　　）",
+    "explanation": "Model 封装数据业务、View 展示渲染、Controller 接收调度。",
+    "legacyKeys": [
+      "choice-39"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "接收浏览器请求，调用业务代码"
+      },
+      {
+        "optionId": "o2",
+        "text": "封装数据，处理数据库交互"
+      },
+      {
+        "optionId": "o3",
+        "text": "展示数据，渲染页面给用户"
+      },
+      {
+        "optionId": "o4",
+        "text": "编写业务逻辑"
+      }
+    ],
+    "answer": "o3",
+    "revision": "ab63603c267c"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:040",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "Spring MVC 使用哪个关键字设定重定向？（　　）",
+    "explanation": "return \"redirect:/login.jsp\"；forward: 是转发；不加前缀走解析器。",
+    "legacyKeys": [
+      "choice-40"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "redirect"
+      },
+      {
+        "optionId": "o2",
+        "text": "sendRedirect"
+      },
+      {
+        "optionId": "o3",
+        "text": "forward"
+      },
+      {
+        "optionId": "o4",
+        "text": "findForward"
+      }
+    ],
+    "answer": "o1",
+    "revision": "d5c70f4ba20a"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:041",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "在 SpringMVC 中，控制器方法返回 ModelAndView 对象，若要设置跳转页面名称，使用哪个方法（　　）",
+    "explanation": "setViewName 设视图名，addObject 存数据，这两个别写反。",
+    "legacyKeys": [
+      "choice-41"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "setViewName()"
+      },
+      {
+        "optionId": "o2",
+        "text": "addObject()"
+      },
+      {
+        "optionId": "o3",
+        "text": "setAttribute()"
+      },
+      {
+        "optionId": "o4",
+        "text": "put()"
+      }
+    ],
+    "answer": "o1",
+    "revision": "8f30a79c740b"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:042",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "在 Spring MVC 中，用于把处理结果和视图一起返回给 DispatcherServlet 的类是（　　）",
+    "explanation": "ModelAndView 同时带模型与视图，交给 DispatcherServlet 再转 ViewResolver。",
+    "legacyKeys": [
+      "choice-42"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "ModelAndView"
+      },
+      {
+        "optionId": "o2",
+        "text": "HttpServletRequest"
+      },
+      {
+        "optionId": "o3",
+        "text": "HttpSession"
+      },
+      {
+        "optionId": "o4",
+        "text": "ViewResolver"
+      }
+    ],
+    "answer": "o1",
+    "revision": "1f3a317999c6"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:043",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "下列注解中，用于获取 URL 路径中占位符值（如 /user/1 中的 1）的是（　　）",
+    "explanation": "@PathVariable 配 @RequestMapping(\"/user/{id}\") 取路径值；@RequestParam 取 ? 后参数。",
+    "legacyKeys": [
+      "choice-43"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "@RequestParam"
+      },
+      {
+        "optionId": "o2",
+        "text": "@PathVariable"
+      },
+      {
+        "optionId": "o3",
+        "text": "@ResponseBody"
+      },
+      {
+        "optionId": "o4",
+        "text": "@ModelAttribute"
+      }
+    ],
+    "answer": "o2",
+    "revision": "ee3250eca7ea"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:044",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 的核心配置文件通常是（　　）",
+    "explanation": "mybatis-config.xml 配数据源、事务、映射文件位置。",
+    "legacyKeys": [
+      "choice-44"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "mybatis-config.xml"
+      },
+      {
+        "optionId": "o2",
+        "text": "web.xml"
+      },
+      {
+        "optionId": "o3",
+        "text": "pom.xml"
+      },
+      {
+        "optionId": "o4",
+        "text": "applicationContext.xml"
+      }
+    ],
+    "answer": "o1",
+    "revision": "d8b18d824a57"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:045",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "下列关于 MyBatis 的说法，错误的是（　　）",
+    "explanation": "元素顺序固定：properties→settings→typeAliases→environments→mappers。",
+    "legacyKeys": [
+      "choice-45"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "MyBatis 是半自动持久层框架"
+      },
+      {
+        "optionId": "o2",
+        "text": "支持 XML 映射和注解两种方式开发 SQL"
+      },
+      {
+        "optionId": "o3",
+        "text": "配置文件中元素的先后顺序可以随意调整"
+      },
+      {
+        "optionId": "o4",
+        "text": "通过创建 SqlSessionFactory 来创建 SqlSession 对象"
+      }
+    ],
+    "answer": "o3",
+    "revision": "c73f0108f1da"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:046",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "在 MyBatis 映射文件中，用于执行数据库插入操作的标签是（　　）",
+    "explanation": "四标签与 SQL 一一对应，拼写必须准（别写 updata、selete）。",
+    "legacyKeys": [
+      "choice-46"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "<select>"
+      },
+      {
+        "optionId": "o2",
+        "text": "<insert>"
+      },
+      {
+        "optionId": "o3",
+        "text": "<update>"
+      },
+      {
+        "optionId": "o4",
+        "text": "<delete>"
+      }
+    ],
+    "answer": "o2",
+    "revision": "999017189980"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:047",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 映射文件中，用于执行查询语句的元素是（　　）",
+    "explanation": "查询用 select，通常还要写 resultType 或 resultMap。",
+    "legacyKeys": [
+      "choice-47"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "<query>"
+      },
+      {
+        "optionId": "o2",
+        "text": "<select>"
+      },
+      {
+        "optionId": "o3",
+        "text": "<find>"
+      },
+      {
+        "optionId": "o4",
+        "text": "<get>"
+      }
+    ],
+    "answer": "o2",
+    "revision": "a19ad73a0e86"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:048",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 中，能够有效防止 SQL 注入的占位符写法是（　　）",
+    "explanation": "#{} 预编译成 ?，参数由 JDBC 安全设置，能防注入。",
+    "legacyKeys": [
+      "choice-48"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "${name}"
+      },
+      {
+        "optionId": "o2",
+        "text": "#{name}"
+      },
+      {
+        "optionId": "o3",
+        "text": "@{name}"
+      },
+      {
+        "optionId": "o4",
+        "text": "&{name}"
+      }
+    ],
+    "answer": "o2",
+    "revision": "2e627914d812"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:049",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 全局配置文件 mybatis-config.xml 中，配置数据库连接信息（driver、url、username、password）的元素是（　　）",
+    "explanation": "层级：environments → environment → transactionManager + dataSource → 四个 property。",
+    "legacyKeys": [
+      "choice-49"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "<environments> 下的 <dataSource>"
+      },
+      {
+        "optionId": "o2",
+        "text": "<mappers>"
+      },
+      {
+        "optionId": "o3",
+        "text": "<select>"
+      },
+      {
+        "optionId": "o4",
+        "text": "<settings>"
+      }
+    ],
+    "answer": "o1",
+    "revision": "51613e6893fa"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:050",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 映射文件中，namespace 的作用是（　　）",
+    "explanation": "namespace + id 共同定位一条 SQL；接口代理时 namespace 必须等于接口全限定名。",
+    "legacyKeys": [
+      "choice-50"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "指定数据库名"
+      },
+      {
+        "optionId": "o2",
+        "text": "唯一标识这个映射文件，通常与 Mapper 接口全限定名一致"
+      },
+      {
+        "optionId": "o3",
+        "text": "指定返回结果类型"
+      },
+      {
+        "optionId": "o4",
+        "text": "指定 SQL 语句的 ID"
+      }
+    ],
+    "answer": "o2",
+    "revision": "7f44c46c30c6"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:051",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "关于 MyBatis 的 <transactionManager type=\"JDBC\" />，下列说法正确的是（　　）",
+    "explanation": "事务用 transactionManager，连接池是 dataSource 的 type=\"POOLED\"，别混。",
+    "legacyKeys": [
+      "choice-51"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "表示使用 JDBC 的方式管理事务（提交、回滚）"
+      },
+      {
+        "optionId": "o2",
+        "text": "表示使用连接池"
+      },
+      {
+        "optionId": "o3",
+        "text": "表示数据库类型是 MySQL"
+      },
+      {
+        "optionId": "o4",
+        "text": "表示开启二级缓存"
+      }
+    ],
+    "answer": "o1",
+    "revision": "7ce0efeb41f8"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:052",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "JSP 的 page 指令中，用于导入 Java 包（如 java.util.*）的属性是（　　）",
+    "explanation": "page 指令的 import 相当于 Java 的 import，多个包可用逗号分隔或写多个 import 属性。",
+    "legacyKeys": [
+      "choice-52"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "import"
+      },
+      {
+        "optionId": "o2",
+        "text": "package"
+      },
+      {
+        "optionId": "o3",
+        "text": "include"
+      },
+      {
+        "optionId": "o4",
+        "text": "contentType"
+      }
+    ],
+    "answer": "o1",
+    "revision": "a863f6bdb4a5"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:053",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "JSP 的 page 指令中 isErrorPage=\"true\" 的作用是（　　）",
+    "explanation": "只有 isErrorPage=\"true\" 的页面才有 exception 对象；跳错页是 errorPage 属性，别混。",
+    "legacyKeys": [
+      "choice-53"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "指定出错时跳转到当前页"
+      },
+      {
+        "optionId": "o2",
+        "text": "声明当前页是错误处理页，可以使用 exception 内置对象"
+      },
+      {
+        "optionId": "o3",
+        "text": "关闭当前页的 session"
+      },
+      {
+        "optionId": "o4",
+        "text": "设置页面的字符编码"
+      }
+    ],
+    "answer": "o2",
+    "revision": "4bd5a188de8a"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:054",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "在 web.xml 中配置 <load-on-startup>1</load-on-startup> 的作用是（　　）",
+    "explanation": "数字越小越早创建；配了它，服务器启动时就实例化并调 init，而不是等第一次请求。",
+    "legacyKeys": [
+      "choice-54"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "让服务器启动时就创建 Servlet 实例并调用 init"
+      },
+      {
+        "optionId": "o2",
+        "text": "设置 Servlet 的访问路径"
+      },
+      {
+        "optionId": "o3",
+        "text": "指定请求方式"
+      },
+      {
+        "optionId": "o4",
+        "text": "设置会话超时时间"
+      }
+    ],
+    "answer": "o1",
+    "revision": "7b624dd8f05e"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:055",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "<url-pattern> 写成 *.do 表示（　　）",
+    "explanation": "/xxx 精确匹配、*.do 扩展名匹配、/ 拦截全部（含静态资源）。",
+    "legacyKeys": [
+      "choice-55"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "精确匹配 /do"
+      },
+      {
+        "optionId": "o2",
+        "text": "扩展名匹配，所有以 .do 结尾的请求都交给该 Servlet"
+      },
+      {
+        "optionId": "o3",
+        "text": "拦截所有请求"
+      },
+      {
+        "optionId": "o4",
+        "text": "匹配根路径"
+      }
+    ],
+    "answer": "o2",
+    "revision": "9a521b13842c"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:056",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "request.getParameterValues(\"hobby\") 的返回值类型是（　　）",
+    "explanation": "一个名字对应多个值（复选框）时返回 String[]，单值用 getParameter 返回 String。",
+    "legacyKeys": [
+      "choice-56"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "String"
+      },
+      {
+        "optionId": "o2",
+        "text": "String[]"
+      },
+      {
+        "optionId": "o3",
+        "text": "Object"
+      },
+      {
+        "optionId": "o4",
+        "text": "java.util.List"
+      }
+    ],
+    "answer": "o2",
+    "revision": "e589c25a8da2"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:057",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "下列选项中，用于获取当前 Web 应用初始化参数（web.xml 中 <context-param>）的对象是（　　）",
+    "explanation": "context-param 是应用级参数，用 application（ServletContext）取；init-param 是 Servlet 级，用 config 取。",
+    "legacyKeys": [
+      "choice-57"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "config（ServletConfig）"
+      },
+      {
+        "optionId": "o2",
+        "text": "application（ServletContext）"
+      },
+      {
+        "optionId": "o3",
+        "text": "session"
+      },
+      {
+        "optionId": "o4",
+        "text": "pageContext"
+      }
+    ],
+    "answer": "o2",
+    "revision": "8df3689fc67b"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:058",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring Bean 的作用域中，每次从容器获取都创建新实例的是（　　）",
+    "explanation": "singleton 默认、prototype 每次新建，另有 request、session。",
+    "legacyKeys": [
+      "choice-58"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "singleton"
+      },
+      {
+        "optionId": "o2",
+        "text": "prototype"
+      },
+      {
+        "optionId": "o3",
+        "text": "request"
+      },
+      {
+        "optionId": "o4",
+        "text": "session"
+      }
+    ],
+    "answer": "o2",
+    "revision": "b9b8e6c759c9"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:059",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 中，@Autowired 注解默认按什么方式注入依赖（　　）",
+    "explanation": "@Autowired 按类型，@Resource 按名称——两者最本质的区别。",
+    "legacyKeys": [
+      "choice-59"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "按名称"
+      },
+      {
+        "optionId": "o2",
+        "text": "按类型"
+      },
+      {
+        "optionId": "o3",
+        "text": "按声明顺序"
+      },
+      {
+        "optionId": "o4",
+        "text": "按 bean 的 id"
+      }
+    ],
+    "answer": "o2",
+    "revision": "c851522ff530"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:060",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "SpringMVC 中，把方法返回值直接写入响应体、不走视图解析的注解是（　　）",
+    "explanation": "@ResponseBody 写响应体；@RequestBody 读请求体，方向相反别混。",
+    "legacyKeys": [
+      "choice-60"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "@RequestBody"
+      },
+      {
+        "optionId": "o2",
+        "text": "@ResponseBody"
+      },
+      {
+        "optionId": "o3",
+        "text": "@RequestParam"
+      },
+      {
+        "optionId": "o4",
+        "text": "@ModelAttribute"
+      }
+    ],
+    "answer": "o2",
+    "revision": "fc89c206f8d2"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:061",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 的 <mappers> 中，用于批量扫描整个包下映射文件的元素是（　　）",
+    "explanation": "<package name=\"com.mapper\"/> 扫描整包，等价于逐个写 <mapper resource=\"\">。",
+    "legacyKeys": [
+      "choice-61"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "<mapper resource=\"\">"
+      },
+      {
+        "optionId": "o2",
+        "text": "<package name=\"\">"
+      },
+      {
+        "optionId": "o3",
+        "text": "<scan>"
+      },
+      {
+        "optionId": "o4",
+        "text": "<import>"
+      }
+    ],
+    "answer": "o2",
+    "revision": "3d1d04ad5ac3"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:single_choice:062",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 的 dataSource 中，不使用连接池的 type 取值是（　　）",
+    "explanation": "POOLED 连接池、UNPOOLED 直连不用池、JNDI 用容器数据源。",
+    "legacyKeys": [
+      "choice-62"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "optionId": "o1",
+        "text": "POOLED"
+      },
+      {
+        "optionId": "o2",
+        "text": "UNPOOLED"
+      },
+      {
+        "optionId": "o3",
+        "text": "JNDI"
+      },
+      {
+        "optionId": "o4",
+        "text": "NONE"
+      }
+    ],
+    "answer": "o2",
+    "revision": "c6382dbbcab2"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:001",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:web_base"
+    ],
+    "stem": "动态网页就是页面上带有动画、轮播图、滚动特效的网页。",
+    "explanation": "动态网页指内容由服务器动态生成、可与数据库交互，与有没有动画无关。",
+    "legacyKeys": [
+      "judge-1"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "941212390188"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:002",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:web_base"
+    ],
+    "stem": "MVC 模式的主要目的是实现数据、业务逻辑和界面展示的分离。",
+    "explanation": "Model 数据业务、View 展示、Controller 调度，目的就是解耦。",
+    "legacyKeys": [
+      "judge-2"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "307f7fa496fd"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:003",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "JSP 注释 <%-- --%> 会出现在客户端浏览器的页面源代码中。",
+    "explanation": "JSP 注释翻译阶段就丢弃，不发给浏览器；会出现在源码的是 HTML 注释 <!-- -->。",
+    "legacyKeys": [
+      "judge-3"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "b8189a551337"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:004",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "使用 <jsp:forward> 转发后，浏览器地址栏中的 URL 不会改变。",
+    "explanation": "转发是服务器内部行为，一次请求，地址栏不变。",
+    "legacyKeys": [
+      "judge-4"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "fef5d3b8f04b"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:005",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "JSP 页面第一次被访问时会被翻译成 Servlet 源文件并编译成 class 文件，之后再访问直接执行。",
+    "explanation": "这正是 JSP 第一次访问慢、之后变快的原因；JSP 本质就是 Servlet。",
+    "legacyKeys": [
+      "judge-5"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "1ea3d7953437"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:006",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "<jsp:include> 动作属于编译期静态包含，被包含页面的源码会原样合并进来。",
+    "explanation": "<jsp:include> 是运行期动态包含；编译期静态包含是 <%@ include %> 指令。",
+    "legacyKeys": [
+      "judge-6"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "ecb95bc1716a"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:007",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:web_base"
+    ],
+    "stem": "使用 forward 转发后，浏览器地址栏会变成目标页面的地址。",
+    "explanation": "转发地址栏不变，只有重定向才变。",
+    "legacyKeys": [
+      "judge-7"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "d9e3944c9762"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:008",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "JSP 的 page 指令中 contentType 用于设置响应的内容类型和字符编码，可以避免中文乱码。",
+    "explanation": "典型写法 contentType=\"text/html; charset=UTF-8\"；POST 取参前还要 setCharacterEncoding。",
+    "legacyKeys": [
+      "judge-8"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "63c6cf789ac4"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:009",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "<jsp:useBean> 的 scope 属性只能取 page。",
+    "explanation": "scope 可取 page、request、session、application 四个值，默认 page。",
+    "legacyKeys": [
+      "judge-9"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "fff886230b51"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:010",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "<jsp:param> 可以单独使用，不必嵌在其他标签中。",
+    "explanation": "<jsp:param> 只能作为 include 或 forward 的子元素，用于给目标页面传参。",
+    "legacyKeys": [
+      "judge-10"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "ee7a270c0cde"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:011",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "session 作用域中的数据在浏览器关闭后会立即从服务器端销毁。",
+    "explanation": "关浏览器只是会话 Cookie 失效，服务端 session 仍在，要到超时或 invalidate() 才销毁。",
+    "legacyKeys": [
+      "judge-11"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "337b61ee2798"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:012",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "Servlet 是多实例单线程运行的，因此不存在线程安全问题。",
+    "explanation": "说反了：单实例多线程，成员变量被多线程共享，恰恰有线程安全问题。",
+    "legacyKeys": [
+      "judge-12"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "f241d46dcce4"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:013",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "过滤器（Filter）可以在请求到达 Servlet 之前对其进行拦截和处理。",
+    "explanation": "doFilter 在到达目标资源前执行，常用于登录校验、统一编码。",
+    "legacyKeys": [
+      "judge-13"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "2fede13db9cb"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:014",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "HttpServlet 的 doPost() 方法用于处理 POST 请求。",
+    "explanation": "GET→doGet，POST→doPost，表单 method=\"post\" 走 doPost。",
+    "legacyKeys": [
+      "judge-14"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "2d455bfb36a1"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:015",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "过滤器不仅可以拦截 Servlet 的请求，还可以拦截 JSP、HTML 等其他 Web 资源的请求。",
+    "explanation": "url-pattern 配 /* 时 Servlet、JSP、HTML、图片都经过它。",
+    "legacyKeys": [
+      "judge-15"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "b89c093a42d7"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:016",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "每次请求到达时，Servlet 容器都会调用一次 service() 方法。",
+    "explanation": "service 每请求一次，并按请求方式分发给 doGet/doPost；一次的只有 init 和 destroy。",
+    "legacyKeys": [
+      "judge-16"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "78e018b322d9"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:017",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "Servlet 的 destroy() 方法在服务器关闭或应用卸载时调用，可用于释放资源。",
+    "explanation": "destroy 只执行一次，典型用于关连接、停线程、存统计。",
+    "legacyKeys": [
+      "judge-17"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "98fb5bad8ede"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:018",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "response.sendRedirect() 之后，原 request 作用域中的数据仍然可以在新页面取到。",
+    "explanation": "重定向是二次请求，得到新 request，原域数据丢失；要保留用 forward 或放 session。",
+    "legacyKeys": [
+      "judge-18"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "263adf4ef203"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:019",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "一个 Servlet 类可以实现多个 url-pattern，即多个访问路径映射到同一个 Servlet。",
+    "explanation": "web.xml 可写多个 url-pattern 指向同一 servlet-name，注解可写 @WebServlet({\"/a\",\"/b\"})。",
+    "legacyKeys": [
+      "judge-19"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "5b2e744d5df7"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:020",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jdbc"
+    ],
+    "stem": "使用 JDBC 访问数据库时，第一步是执行 SQL 语句。",
+    "explanation": "第一步加载驱动 Class.forName，然后建连接、建 Statement，才执行 SQL。",
+    "legacyKeys": [
+      "judge-20"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "a37700d9d798"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:021",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jdbc"
+    ],
+    "stem": "MySQL 中使用 limit 关键字可以实现分页查询。",
+    "explanation": "select * from user limit 起始下标, 每页条数，下标从 0 开始。",
+    "legacyKeys": [
+      "judge-21"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "19d3ed52e5a8"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:022",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jdbc"
+    ],
+    "stem": "Statement 的 executeQuery() 方法用于执行增删改操作，返回受影响的行数。",
+    "explanation": "说反了：executeQuery 查询返回 ResultSet；executeUpdate 增删改返回 int。",
+    "legacyKeys": [
+      "judge-22"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "d855b51e928b"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:023",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jdbc"
+    ],
+    "stem": "JDBC 中关闭资源时应按 Connection → Statement → ResultSet 的顺序关闭。",
+    "explanation": "应逆序关闭：ResultSet → Statement → Connection，后打开的先关。",
+    "legacyKeys": [
+      "judge-23"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "37a421453f38"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:024",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 是一个重量级的框架，使用它必须编写大量代码。",
+    "explanation": "Spring 是轻量级、非侵入式，普通 POJO 加注解或配置即可。",
+    "legacyKeys": [
+      "judge-24"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "35b30a01fec4"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:025",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 支持声明式事务管理，不用手动编写事务提交、回滚代码。",
+    "explanation": "XML 或 @Transactional 声明即可，由 AOP 织入事务逻辑。",
+    "legacyKeys": [
+      "judge-25"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "64acefb741ab"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:026",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "singleton 是 Spring Bean 默认作用域，整个容器只有一个对象实例。",
+    "explanation": "作用域有 singleton（默认）、prototype、request、session。",
+    "legacyKeys": [
+      "judge-26"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "2ed827106541"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:027",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "构造器注入时，配置文件中使用 <property> 标签指定构造函数参数。",
+    "explanation": "构造器注入用 <constructor-arg>，<property> 是属性注入用的。",
+    "legacyKeys": [
+      "judge-27"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "7c63845b9804"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:028",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "ApplicationContext 是 BeanFactory 的子接口，功能更强大。",
+    "explanation": "额外提供国际化、事件发布、资源加载等能力。",
+    "legacyKeys": [
+      "judge-28"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "71a7d73f8ca7"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:029",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 是侵入式框架，业务类必须继承框架提供的父类才能被管理。",
+    "explanation": "非侵入式，POJO 加注解或配置即可，不必继承或实现框架类。",
+    "legacyKeys": [
+      "judge-29"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "b6f577775ba7"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:030",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 的属性注入依赖 set 方法，构造器注入依赖有参构造方法。",
+    "explanation": "属性注入：无参构造 + setXxx()；构造器注入：有参构造直接传依赖。",
+    "legacyKeys": [
+      "judge-30"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "36c5c2233b08"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:031",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 的属性注入要求类中提供无参构造方法。",
+    "explanation": "先调无参构造创建对象，再 set 赋值；写了有参构造就必须补回无参构造。",
+    "legacyKeys": [
+      "judge-31"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "2ecc73b3d6cb"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:032",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "Spring MVC 是 Spring 框架的子框架，主要用于 Web 网页开发。",
+    "explanation": "Spring 是基础容器，SpringMVC 是它 Web 层的 MVC 实现。",
+    "legacyKeys": [
+      "judge-32"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "7a4a67876b01"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:033",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "视图解析器可以直接将 ModelAndView 渲染为 HTML 页面返回给用户。",
+    "explanation": "解析器只把逻辑视图名拼成真实路径，渲染由视图（如 JSP）完成。",
+    "legacyKeys": [
+      "judge-33"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "d1b7abe62b11"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:034",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "Spring MVC 中，@RequestMapping 只能写在方法上。",
+    "explanation": "类和方法上都能写；类上相当于加一级路径前缀，如 /user + /login。",
+    "legacyKeys": [
+      "judge-34"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "c3bf64ca0edc"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:035",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "DispatcherServlet 需要在 web.xml 中配置，通常把 url-pattern 配成 /，让所有请求先经过它。",
+    "explanation": "它就是前端控制器，配 / 表示拦截所有请求，还要配 contextConfigLocation。",
+    "legacyKeys": [
+      "judge-35"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "6876c37d2b5c"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:036",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "ORM 框架将数据库表数据与 Java 对象进行映射。",
+    "explanation": "一行记录 ↔ 一个对象，一个字段 ↔ 一个属性；MyBatis 属半自动 ORM。",
+    "legacyKeys": [
+      "judge-36"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "7a345065e8b7"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:037",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "一个 MyBatis 配置文件中只能引入一个映射文件。",
+    "explanation": "<mappers> 下可写多个 <mapper>，也可用 <package> 批量扫描。",
+    "legacyKeys": [
+      "judge-37"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "b38bc79e8ddb"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:038",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "MyBatis 中 ${} 与 #{} 的作用完全等价，可以互相替换。",
+    "explanation": "#{} 预编译防注入；${} 字符串拼接有注入风险，只在动态表名/列名时用。",
+    "legacyKeys": [
+      "judge-38"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "ea7683903091"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:039",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "只有 page 指令中 isErrorPage=\"true\" 的页面才能使用 exception 内置对象。",
+    "explanation": "exception 只有错误页可用，这也是 page 指令 isErrorPage 存在的意义。",
+    "legacyKeys": [
+      "judge-39"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "742ed01f0d68"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:040",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "forward 转发可以访问 WEB-INF 目录下的资源，sendRedirect 重定向不能。",
+    "explanation": "转发是服务器内部行为，能访问 WEB-INF；重定向由浏览器发起，访问不到 WEB-INF。",
+    "legacyKeys": [
+      "judge-40"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "9ed132fc24b4"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:041",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "SpringMVC 中除了返回 ModelAndView，也可以用 Model 或 ModelMap 存数据、方法返回 String 视图名。",
+    "explanation": "三种写法：ModelAndView、Model/ModelMap + String、直接往 request 放数据。",
+    "legacyKeys": [
+      "judge-41"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "4c9d5886375a"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:042",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 映射文件中 parameterType 必须显式写出，不能省略。",
+    "explanation": "可省略，MyBatis 会按传入对象类型自动推断；省略后不同类型要小心。",
+    "legacyKeys": [
+      "judge-42"
+    ],
+    "type": "true_false",
+    "answer": false,
+    "revision": "db08d1a6f49c"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:043",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 的 dataSource 配置中，type=\"POOLED\" 表示使用连接池。",
+    "explanation": "POOLED 即连接池；UNPOOLED 不用池，JNDI 用容器提供的数据源。",
+    "legacyKeys": [
+      "judge-43"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "36464bd3d57e"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:044",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 中 @Resource 默认按名称注入，@Autowired 默认按类型注入。",
+    "explanation": "@Autowired 按类型（同名冲突时配合 @Qualifier），@Resource 按名称。",
+    "legacyKeys": [
+      "judge-44"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "46bc1b15d9e4"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:true_false:045",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "JSP 的 page 指令中 session=\"false\" 表示当前页面不创建 session 对象。",
+    "explanation": "默认 session=\"true\" 会自动创建 session；设为 false 则页面上不能用 session 对象。",
+    "legacyKeys": [
+      "judge-45"
+    ],
+    "type": "true_false",
+    "answer": true,
+    "revision": "ce81cab4cfdb"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:001",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:web_base"
+    ],
+    "stem": "{{b1}}（万维网）是一种基于超文本和 HTTP 的、全球性的、动态交互的、跨平台的分布式图形信息系统。",
+    "explanation": "关键词：超文本、HTTP、分布式、跨平台。",
+    "legacyKeys": [
+      "blank-1"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "Web"
+        ],
+        "hint": "关键词：超文本、HTTP、分布式、跨平台。"
+      }
+    ],
+    "revision": "a3a37d37bf0d"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:002",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:web_base"
+    ],
+    "stem": "<%= 6 > 2 ? (8 > 3 ? \"A\" : \"B\") : \"C\" %> 的输出结果是 {{b1}}。",
+    "explanation": "外层 6>2 真取前段，内层 8>3 真取 A；嵌套三元从内向外看。",
+    "legacyKeys": [
+      "blank-2"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "A"
+        ],
+        "hint": "外层 6>2 真取前段，内层 8>3 真取 A；嵌套三元从内向外看。"
+      }
+    ],
+    "revision": "d9cf7c72dce0"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:003",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "JSP 中实现\"包含\"的两种方式：编译期静态包含用指令 {{b1}}，运行期动态包含用动作标签 {{b2}}。",
+    "explanation": "前者编译期、一个 Servlet、不能传参；后者运行期、能传参。",
+    "legacyKeys": [
+      "blank-3"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "<%@ include file=\"\" %>"
+        ],
+        "hint": "前者编译期、一个 Servlet、不能传参；后者运行期、能传参。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "<jsp:include page=\"\" />"
+        ],
+        "hint": "前者编译期、一个 Servlet、不能传参；后者运行期、能传参。"
+      }
+    ],
+    "revision": "ac1c05aeb5ff"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:004",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "JSP 九大内置对象中，代表整个 Web 应用、服务器关闭才失效的是 {{b1}}（ServletContext）；代表当前页面上下文、可获取其他内置对象的是 {{b2}}（PageContext）。",
+    "explanation": "名字和类型一起写更稳：ServletContext / PageContext。",
+    "legacyKeys": [
+      "blank-4"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "application"
+        ],
+        "hint": "名字和类型一起写更稳：ServletContext / PageContext。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "pageContext"
+        ],
+        "hint": "名字和类型一起写更稳：ServletContext / PageContext。"
+      }
+    ],
+    "revision": "f15781ae425b"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:005",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "JSP 三种脚本元素中，声明成员变量或方法用 {{b1}}，编写局部代码用 {{b2}}，输出表达式用 {{b3}}。",
+    "explanation": "记\"声明 / 片段 / 输出\"。",
+    "legacyKeys": [
+      "blank-5"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "<%! %>"
+        ],
+        "hint": "记\"声明 / 片段 / 输出\"。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "<% %>"
+        ],
+        "hint": "记\"声明 / 片段 / 输出\"。"
+      },
+      {
+        "blankId": "b3",
+        "accepted": [
+          "<%= %>"
+        ],
+        "hint": "记\"声明 / 片段 / 输出\"。"
+      }
+    ],
+    "revision": "59c2c8c4822f"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:006",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "<jsp:useBean> 的三个属性是 {{b1}}、{{b2}}、{{b3}}。",
+    "explanation": "class 写全限定类名（带包），scope 默认 page。",
+    "legacyKeys": [
+      "blank-6"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "id"
+        ],
+        "hint": "class 写全限定类名（带包），scope 默认 page。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "class"
+        ],
+        "hint": "class 写全限定类名（带包），scope 默认 page。"
+      },
+      {
+        "blankId": "b3",
+        "accepted": [
+          "scope"
+        ],
+        "hint": "class 写全限定类名（带包），scope 默认 page。"
+      }
+    ],
+    "revision": "2fa5b72141ae"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:007",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "开发一个 Servlet 需要三个步骤：继承 {{b1}} 类、重写 doGet 和 doPost 方法、通过注解 {{b2}} 或 web.xml 配置访问路径。",
+    "explanation": "注解属性是 urlPatterns；web.xml 靠 servlet-name 关联。",
+    "legacyKeys": [
+      "blank-7"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "HttpServlet"
+        ],
+        "hint": "注解属性是 urlPatterns；web.xml 靠 servlet-name 关联。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "@WebServlet"
+        ],
+        "hint": "注解属性是 urlPatterns；web.xml 靠 servlet-name 关联。"
+      }
+    ],
+    "revision": "99fb654b00ed"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:008",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "Servlet 的生命周期分为初始化阶段、{{b1}}（处理请求阶段）和销毁阶段三个阶段。",
+    "explanation": "init → service（再分 doGet/doPost）→ destroy。",
+    "legacyKeys": [
+      "blank-8"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "服务阶段"
+        ],
+        "hint": "init → service（再分 doGet/doPost）→ destroy。"
+      }
+    ],
+    "revision": "7a88656b1623"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:009",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "Servlet 处理 GET 请求重写 {{b1}} 方法，处理 POST 请求重写 {{b2}} 方法；通常后者内部直接调用前者。",
+    "explanation": "参数都是 (HttpServletRequest, HttpServletResponse)，都要 throws。",
+    "legacyKeys": [
+      "blank-9"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "doGet"
+        ],
+        "hint": "参数都是 (HttpServletRequest, HttpServletResponse)，都要 throws。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "doPost"
+        ],
+        "hint": "参数都是 (HttpServletRequest, HttpServletResponse)，都要 throws。"
+      }
+    ],
+    "revision": "b41414467646"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:010",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jdbc"
+    ],
+    "stem": "JDBC 中加载数据库驱动使用 {{b1}} 方法，建立连接使用 {{b2}} 类的 getConnection() 方法。",
+    "explanation": "Class.forName(\"com.mysql.jdbc.Driver\")；url 形如 jdbc:mysql://localhost:3306/库名。",
+    "legacyKeys": [
+      "blank-10"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "Class.forName()"
+        ],
+        "hint": "Class.forName(\"com.mysql.jdbc.Driver\")；url 形如 jdbc:mysql://localhost:3306/库名。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "DriverManager"
+        ],
+        "hint": "Class.forName(\"com.mysql.jdbc.Driver\")；url 形如 jdbc:mysql://localhost:3306/库名。"
+      }
+    ],
+    "revision": "1a0ca25f5a4a"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:011",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jdbc"
+    ],
+    "stem": "PreparedStatement 接口中，使用 {{b1}} 作为 SQL 语句的参数占位符，通过 {{b2}} 方法为占位符赋值。",
+    "explanation": "下标从 1 开始：pstmt.setString(1, name)。",
+    "legacyKeys": [
+      "blank-11"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "?"
+        ],
+        "hint": "下标从 1 开始：pstmt.setString(1, name)。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "setXxx()"
+        ],
+        "hint": "下标从 1 开始：pstmt.setString(1, name)。"
+      }
+    ],
+    "revision": "6fa53cd22549"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:012",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:web_base"
+    ],
+    "stem": "执行查询 SQL 后，存放查询返回数据的对象是 {{b1}}。",
+    "explanation": "rs.next() 移游标，getString(\"name\") / getInt(1) 取值。",
+    "legacyKeys": [
+      "blank-12"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "ResultSet"
+        ],
+        "hint": "rs.next() 移游标，getString(\"name\") / getInt(1) 取值。"
+      }
+    ],
+    "revision": "2488c67c2709"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:013",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 中依赖注入的两种常用方式是 {{b1}} 注入和 {{b2}} 注入；前者在 XML 中使用 property 元素，后者使用 {{b3}} 元素。",
+    "explanation": "属性注入靠 set 方法，构造器注入靠有参构造。",
+    "legacyKeys": [
+      "blank-13"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "属性（setter）"
+        ],
+        "hint": "属性注入靠 set 方法，构造器注入靠有参构造。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "构造器"
+        ],
+        "hint": "属性注入靠 set 方法，构造器注入靠有参构造。"
+      },
+      {
+        "blankId": "b3",
+        "accepted": [
+          "constructor-arg"
+        ],
+        "hint": "属性注入靠 set 方法，构造器注入靠有参构造。"
+      }
+    ],
+    "revision": "02065e22f606"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:014",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 依赖注入中，注入引用类型使用 {{b1}} 属性，注入普通值使用 {{b2}} 属性。",
+    "explanation": "ref 指向另一个 bean 的 id，value 给普通值。",
+    "legacyKeys": [
+      "blank-14"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "ref"
+        ],
+        "hint": "ref 指向另一个 bean 的 id，value 给普通值。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "value"
+        ],
+        "hint": "ref 指向另一个 bean 的 id，value 给普通值。"
+      }
+    ],
+    "revision": "80366a591646"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:015",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 中，{{b1}} 注解用于将类标识为 Bean，交给 Spring 容器管理。",
+    "explanation": "@Controller / @Service / @Repository 都是它的语义细分，还要配 component-scan。",
+    "legacyKeys": [
+      "blank-15"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "@Component"
+        ],
+        "hint": "@Controller / @Service / @Repository 都是它的语义细分，还要配 component-scan。"
+      }
+    ],
+    "revision": "d89e674b3e8d"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:016",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "Spring MVC 的视图解析器通过配置 {{b1}}（前缀）和 {{b2}}（后缀）两个属性，把逻辑视图名拼成真实路径。",
+    "explanation": "prefix=/WEB-INF/jsp/、suffix=.jsp → 返回 \"loginSuccess\" 拼成 /WEB-INF/jsp/loginSuccess.jsp。",
+    "legacyKeys": [
+      "blank-16"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "prefix"
+        ],
+        "hint": "prefix=/WEB-INF/jsp/、suffix=.jsp → 返回 \"loginSuccess\" 拼成 /WEB-INF/jsp/loginSuccess.jsp。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "suffix"
+        ],
+        "hint": "prefix=/WEB-INF/jsp/、suffix=.jsp → 返回 \"loginSuccess\" 拼成 /WEB-INF/jsp/loginSuccess.jsp。"
+      }
+    ],
+    "revision": "0678e4e4e696"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:017",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 映射文件中，parameterType 用于指定 {{b1}}，resultType 用于指定 {{b2}}。",
+    "explanation": "一进一出，别互换。",
+    "legacyKeys": [
+      "blank-17"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "传入参数的类型（入参类型）"
+        ],
+        "hint": "一进一出，别互换。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "查询结果封装成的类型（结果类型）"
+        ],
+        "hint": "一进一出，别互换。"
+      }
+    ],
+    "revision": "01f7085c21c7"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:018",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 全局配置中，数据源的四项配置是 driver、url、{{b1}}、{{b2}}。",
+    "explanation": "四项固定是 driver、url、username、password，少一个连不上。",
+    "legacyKeys": [
+      "blank-18"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "username"
+        ],
+        "hint": "四项固定是 driver、url、username、password，少一个连不上。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "password"
+        ],
+        "hint": "四项固定是 driver、url、username、password，少一个连不上。"
+      }
+    ],
+    "revision": "7a87589edc6f"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:019",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 的核心处理类是 {{b1}}。",
+    "explanation": "读配置 → SqlSessionFactoryBuilder → SqlSessionFactory → openSession() → SqlSession。",
+    "legacyKeys": [
+      "blank-19"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "SqlSession"
+        ],
+        "hint": "读配置 → SqlSessionFactoryBuilder → SqlSessionFactory → openSession() → SqlSession。"
+      }
+    ],
+    "revision": "3a1ab2933633"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:020",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 映射文件中，用于增删改查的四个元素分别是 {{b1}}、{{b2}}、{{b3}}、{{b4}}。",
+    "explanation": "别写 updata、selete。",
+    "legacyKeys": [
+      "blank-20"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "insert"
+        ],
+        "hint": "别写 updata、selete。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "delete"
+        ],
+        "hint": "别写 updata、selete。"
+      },
+      {
+        "blankId": "b3",
+        "accepted": [
+          "update"
+        ],
+        "hint": "别写 updata、selete。"
+      },
+      {
+        "blankId": "b4",
+        "accepted": [
+          "select"
+        ],
+        "hint": "别写 updata、selete。"
+      }
+    ],
+    "revision": "005059838c22"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:021",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "在 Spring 配置文件中，使用 {{b1}} 标签定义 Bean。",
+    "explanation": "<bean id=\"userService\" class=\"com.service.UserServiceImpl\"/>。",
+    "legacyKeys": [
+      "blank-21"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "<bean>"
+        ],
+        "hint": "<bean id=\"userService\" class=\"com.service.UserServiceImpl\"/>。"
+      }
+    ],
+    "revision": "8bbcdb1cf32f"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:022",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:web_base"
+    ],
+    "stem": "request 对象中获取当前会话对象的方法是 {{b1}}；获取项目根路径（上下文路径）的方法是 {{b2}}。",
+    "explanation": "前者取 HttpSession，后者取形如 /项目名的根路径。",
+    "legacyKeys": [
+      "blank-22"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "getSession()"
+        ],
+        "hint": "前者取 HttpSession，后者取形如 /项目名的根路径。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "getContextPath()"
+        ],
+        "hint": "前者取 HttpSession，后者取形如 /项目名的根路径。"
+      }
+    ],
+    "revision": "cac4c95519a9"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:023",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "JSP 的 page 指令中，导入 Java 包用 {{b1}} 属性；声明当前页为错误处理页用 {{b2}} 属性；出错时跳转到指定页面用 {{b3}} 属性。",
+    "explanation": "三个都是 page 指令属性：导包、声明自己是错误页、出错时跳到哪页。",
+    "legacyKeys": [
+      "blank-23"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "import"
+        ],
+        "hint": "三个都是 page 指令属性：导包、声明自己是错误页、出错时跳到哪页。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "isErrorPage"
+        ],
+        "hint": "三个都是 page 指令属性：导包、声明自己是错误页、出错时跳到哪页。"
+      },
+      {
+        "blankId": "b3",
+        "accepted": [
+          "errorPage"
+        ],
+        "hint": "三个都是 page 指令属性：导包、声明自己是错误页、出错时跳到哪页。"
+      }
+    ],
+    "revision": "2cff7101620f"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:024",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "SpringMVC 中，把请求参数绑定到方法形参的注解是 {{b1}}；取 URL 路径占位符值的注解是 {{b2}}。",
+    "explanation": "前者取 ? 后参数（可设 required、defaultValue），后者取路径占位符。",
+    "legacyKeys": [
+      "blank-24"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "@RequestParam"
+        ],
+        "hint": "前者取 ? 后参数（可设 required、defaultValue），后者取路径占位符。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "@PathVariable"
+        ],
+        "hint": "前者取 ? 后参数（可设 required、defaultValue），后者取路径占位符。"
+      }
+    ],
+    "revision": "4738e025115e"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:025",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "SpringMVC 的三个核心组件：负责查找处理器的是 {{b1}}，负责调用处理器的是 {{b2}}，负责解析视图名的是 {{b3}}。",
+    "explanation": "一个\"找\"、一个\"调\"、一个\"解析\"，三者别混。",
+    "legacyKeys": [
+      "blank-25"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "HandlerMapping"
+        ],
+        "hint": "一个\"找\"、一个\"调\"、一个\"解析\"，三者别混。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "HandlerAdapter"
+        ],
+        "hint": "一个\"找\"、一个\"调\"、一个\"解析\"，三者别混。"
+      },
+      {
+        "blankId": "b3",
+        "accepted": [
+          "ViewResolver"
+        ],
+        "hint": "一个\"找\"、一个\"调\"、一个\"解析\"，三者别混。"
+      }
+    ],
+    "revision": "91e3375f51f3"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:026",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 中构建 SqlSessionFactory 的类是 {{b1}}，从工厂获取 SqlSession 的方法是 {{b2}}。",
+    "explanation": "顺序：读配置 → Builder 建 Factory → openSession() 得 SqlSession。",
+    "legacyKeys": [
+      "blank-26"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "SqlSessionFactoryBuilder"
+        ],
+        "hint": "顺序：读配置 → Builder 建 Factory → openSession() 得 SqlSession。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "openSession()"
+        ],
+        "hint": "顺序：读配置 → Builder 建 Factory → openSession() 得 SqlSession。"
+      }
+    ],
+    "revision": "fe2151cf7c69"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:fill_blank:027",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "MyBatis 的 dataSource 中，type 取 {{b1}} 表示使用连接池，取 {{b2}} 表示不使用连接池。",
+    "explanation": "另有 JNDI，表示用容器提供的数据源。",
+    "legacyKeys": [
+      "blank-27"
+    ],
+    "type": "fill_blank",
+    "blanks": [
+      {
+        "blankId": "b1",
+        "accepted": [
+          "POOLED"
+        ],
+        "hint": "另有 JNDI，表示用容器提供的数据源。"
+      },
+      {
+        "blankId": "b2",
+        "accepted": [
+          "UNPOOLED"
+        ],
+        "hint": "另有 JNDI，表示用容器提供的数据源。"
+      }
+    ],
+    "revision": "ce242885066f"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:short_answer:001",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "请简述 JSP 的动作标签及其功能。（P42）",
+    "explanation": "① <jsp:include>　② <jsp:forward>　③ <jsp:param>　④ <jsp:useBean>／JavaBean　⑤ <jsp:setProperty>／设值　⑥ <jsp:getProperty>／获取／output　⑦ <jsp:plugin>",
+    "legacyKeys": [
+      "short-1"
+    ],
+    "type": "short_answer",
+    "rubric": [
+      {
+        "pointId": "p1",
+        "text": "① 包含标签 <jsp:include>：用于在当前页面中包含静态或动态资源；",
+        "score": 0.71
+      },
+      {
+        "pointId": "p2",
+        "text": "② 转发标签 <jsp:forward>：将当前请求转发到可以处理这个请求的文件上；",
+        "score": 0.71
+      },
+      {
+        "pointId": "p3",
+        "text": "③ 参数标签 <jsp:param>：用于设置和传递参数；",
+        "score": 0.71
+      },
+      {
+        "pointId": "p4",
+        "text": "④ 创建 Bean 标签 <jsp:useBean>：用于寻找和初始化 JavaBean 组件；",
+        "score": 0.71
+      },
+      {
+        "pointId": "p5",
+        "text": "⑤ 设置属性值标签 <jsp:setProperty>：用于设置 JavaBean 组件的值；",
+        "score": 0.71
+      },
+      {
+        "pointId": "p6",
+        "text": "⑥ 获取属性值标签 <jsp:getProperty>：用于获取 JavaBean 组件的值，将值插入 output 中；",
+        "score": 0.71
+      },
+      {
+        "pointId": "p7",
+        "text": "⑦ <jsp:plugin>：用于在生成的 HTML 页面中包含 Applet 和 JavaBean 对象。",
+        "score": 0.74
+      }
+    ],
+    "revision": "fb179d7a0ae7"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:short_answer:002",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "JSP 的内置对象有哪些？并作简要描述。（P53）",
+    "explanation": "① request　② response　③ PrintWriter　④ session　⑤ ServletContext　⑥ ServletConfig　⑦ PageContext　⑧ page　⑨ Exception",
+    "legacyKeys": [
+      "short-2"
+    ],
+    "type": "short_answer",
+    "rubric": [
+      {
+        "pointId": "p1",
+        "text": "① request：HttpServletRequest 类的实例；",
+        "score": 0.55
+      },
+      {
+        "pointId": "p2",
+        "text": "② response：HttpServletResponse 类的实例；",
+        "score": 0.55
+      },
+      {
+        "pointId": "p3",
+        "text": "③ out：PrintWriter 类的实例，用于把结果输出至网页上；",
+        "score": 0.55
+      },
+      {
+        "pointId": "p4",
+        "text": "④ session：HttpSession 类的实例；",
+        "score": 0.55
+      },
+      {
+        "pointId": "p5",
+        "text": "⑤ application：ServletContext 类的实例，与应用上下文有关；",
+        "score": 0.55
+      },
+      {
+        "pointId": "p6",
+        "text": "⑥ config：ServletConfig 类的实例；",
+        "score": 0.55
+      },
+      {
+        "pointId": "p7",
+        "text": "⑦ pageContext：PageContext 类的实例，提供对 JSP 页面所有对象以及命名空间的访问；",
+        "score": 0.55
+      },
+      {
+        "pointId": "p8",
+        "text": "⑧ page：类似于 Java 类中的 this 关键字；",
+        "score": 0.55
+      },
+      {
+        "pointId": "p9",
+        "text": "⑨ exception：Exception 类的对象，代表 JSP 页面发生错误时所对应的异常对象。",
+        "score": 0.6
+      }
+    ],
+    "revision": "4720fac3e958"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:short_answer:003",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jdbc"
+    ],
+    "stem": "请简述 JDBC 访问数据库的五个步骤。（P82-84）",
+    "explanation": "① 加载 JDBC　② 建立　③ 执行　④ 查询　⑤ 关闭",
+    "legacyKeys": [
+      "short-3"
+    ],
+    "type": "short_answer",
+    "rubric": [
+      {
+        "pointId": "p1",
+        "text": "① 加载 JDBC 驱动程序；",
+        "score": 1
+      },
+      {
+        "pointId": "p2",
+        "text": "② 建立数据库连接；",
+        "score": 1
+      },
+      {
+        "pointId": "p3",
+        "text": "③ 执行 SQL 语句；",
+        "score": 1
+      },
+      {
+        "pointId": "p4",
+        "text": "④ 获取查询结果；",
+        "score": 1
+      },
+      {
+        "pointId": "p5",
+        "text": "⑤ 关闭连接。",
+        "score": 1
+      }
+    ],
+    "revision": "ebd96b7a8c39"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:short_answer:004",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jdbc"
+    ],
+    "stem": "请说明 Statement 执行 SQL 语句的两个方法。（P81）",
+    "explanation": "executeUpdate；executeQuery",
+    "legacyKeys": [
+      "short-4"
+    ],
+    "type": "short_answer",
+    "rubric": [
+      {
+        "pointId": "p1",
+        "text": "insert、update 和 delete 语句调用 executeUpdate(String sql) 方法；",
+        "score": 2.5
+      },
+      {
+        "pointId": "p2",
+        "text": "select 语句调用 executeQuery(String sql) 方法。",
+        "score": 2.5
+      }
+    ],
+    "revision": "955933e180f6"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:short_answer:005",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "请简述 Spring 框架的特点。（P141）",
+    "explanation": "① 解耦　② 集成　③ Java EE　④ 程序测试　⑤ AOP　⑥ 声明式",
+    "legacyKeys": [
+      "short-5"
+    ],
+    "type": "short_answer",
+    "rubric": [
+      {
+        "pointId": "p1",
+        "text": "① 便于解耦，简化开发；",
+        "score": 0.83
+      },
+      {
+        "pointId": "p2",
+        "text": "② 便于集成各类优秀框架；",
+        "score": 0.83
+      },
+      {
+        "pointId": "p3",
+        "text": "③ 降低了 Java EE API 的使用难度；",
+        "score": 0.83
+      },
+      {
+        "pointId": "p4",
+        "text": "④ 便于程序测试；",
+        "score": 0.83
+      },
+      {
+        "pointId": "p5",
+        "text": "⑤ 支持 AOP 编程；",
+        "score": 0.83
+      },
+      {
+        "pointId": "p6",
+        "text": "⑥ 支持声明式事务管理。",
+        "score": 0.85
+      }
+    ],
+    "revision": "b46d3fddfba3"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:short_answer:006",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:spring"
+    ],
+    "stem": "Spring 中依赖注入的两种常用方式是什么？（P151、156）",
+    "explanation": "① 属性（setter）　② 构造函数（构造器）",
+    "legacyKeys": [
+      "short-6"
+    ],
+    "type": "short_answer",
+    "rubric": [
+      {
+        "pointId": "p1",
+        "text": "① Bean 的属性注入（setter 注入）；",
+        "score": 2.5
+      },
+      {
+        "pointId": "p2",
+        "text": "② Bean 的构造函数注入（构造器注入）。",
+        "score": 2.5
+      }
+    ],
+    "revision": "52e6dfdfcd83"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:short_answer:007",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "Spring MVC 的接口 DispatcherServlet 的主要作用是什么？（P185）",
+    "explanation": "前端控制器；接收请求；响应结果；转发器；统一分发；HandlerMapping",
+    "legacyKeys": [
+      "short-7"
+    ],
+    "type": "short_answer",
+    "rubric": [
+      {
+        "pointId": "p1",
+        "text": "DispatcherServlet 是 Spring MVC 提供的前端控制器，主要作用是接收请求并响应结果，相当于转发器与中央处理器。Spring MVC 的所有请求都经过 DispatcherServlet 统一分发；在分发给 Controller 之前，需要借助 Spring MVC 提供的 HandlerMapping 定位到具体的 Controller。",
+        "score": 5
+      }
+    ],
+    "revision": "861c140516bc"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:short_answer:008",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "Spring MVC 常用的注解有哪些？（P189）",
+    "explanation": "@Controller、@RequestMapping、@PathVariable、@RequestParam、@RequestBody、@ModelAttribute、@SessionAttributes",
+    "legacyKeys": [
+      "short-8"
+    ],
+    "type": "short_answer",
+    "rubric": [
+      {
+        "pointId": "p1",
+        "text": "① @Controller；② @RequestMapping；③ @PathVariable；④ @RequestParam；⑤ @RequestBody；⑥ @ModelAttribute；⑦ @SessionAttributes。",
+        "score": 5
+      }
+    ],
+    "revision": "6f0614467865"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:code_blank:001",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "应用题 1：用户注册程序 V1.0（JSP 动作标签）",
+    "explanation": "id 是自己起的变量名（user），class 是全限定类名（带包 com.test），两个别填反；表单 name 必须与实体属性同名，property=\"*\" 才能自动匹配。",
+    "legacyKeys": [
+      "app-1"
+    ],
+    "type": "code_blank",
+    "files": [
+      {
+        "fileId": "f1",
+        "label": "（1）User.java",
+        "language": "java",
+        "code": "package com.test;\n\npublic ___(1-1)___ User {\n    ___(1-2)___ String name;\n    private String password;\n    private ___(1-3)___ age;\n\n    public ___(1-4)___ getName() { return name; }\n    public ___(1-5)___ setName(String name) { this.name = name; }\n\n    public String getPassword() { return password; }\n    public void setPassword(String password) { this.password = password; }\n\n    public ___(1-6)___ getAge() { return age; }\n    public void setAge(int age) { this.age = age; }\n}",
+        "solutionCode": "// 包声明：类所在的包名；useBean 的 class 属性要写成\"包名.类名\"\npackage com.test;\n\n// 实体类（JavaBean）：必须是 public，容器才能用反射创建它\npublic class User {\n\n    // 属性 1：姓名，String 类型；private 封装，外部只能经 get/set 访问\n    private String name;\n\n    // 属性 2：密码，String 类型\n    private String password;\n\n    // 属性 3：年龄，基本类型 int（不是 Integer）\n    private int age;\n\n    // get 方法：返回类型与属性一致；方法名 = get + 首字母大写的属性名\n    public String getName() { return name; }\n\n    // set 方法：固定返回 void；this.name 用来区分\"属性\"和\"同名参数\"\n    public void setName(String name) { this.name = name; }\n\n    // 密码的 get，方法名必须叫 getPassword，与属性 password 对应\n    public String getPassword() { return password; }\n\n    // 密码的 set\n    public void setPassword(String password) { this.password = password; }\n\n    // int 属性的 get 返回 int\n    public int getAge() { return age; }\n\n    // 年龄的 set\n    public void setAge(int age) { this.age = age; }\n}"
+      },
+      {
+        "fileId": "f2",
+        "label": "（2）register.html",
+        "language": "html",
+        "code": "<form ___(1-7)___=\"post\" ___(1-8)___=\"register.jsp\">\n    <table>\n        <tr><td>姓名:<input type=\"text\" ___(1-9)___=\"name\" /></td></tr>\n        <tr><td>密码:<input ___(1-10)___=\"password\" name=\"password\" /></td></tr>\n        <tr><td>年龄:<input type=\"text\" name=\"age\" /></td></tr>\n        <tr><td><input ___(1-11)___=\"submit\" value=\"注册\" /></td></tr>\n    </table>\n</form>",
+        "solutionCode": "<!-- 表单开始：method 指定请求方式（表单默认就是 POST）；action 指定提交给哪个页面 -->\n<form method=\"post\" action=\"register.jsp\">\n    <table>\n        <!-- 姓名框：type=\"text\" 普通文本框；name 必须与 User 的属性名 name 完全一致 -->\n        <tr><td>姓名:<input type=\"text\" name=\"name\" /></td></tr>\n\n        <!-- 密码框：type=\"password\" 输入内容显示为圆点，传过去的仍是明文 -->\n        <tr><td>密码:<input type=\"password\" name=\"password\" /></td></tr>\n\n        <!-- 年龄框：age 是 int，但表单传的都是字符串，由 setProperty 自动转成 int -->\n        <tr><td>年龄:<input type=\"text\" name=\"age\" /></td></tr>\n\n        <!-- 提交按钮：只有 type=\"submit\" 才会提交表单；value 是按钮上的文字 -->\n        <tr><td><input type=\"submit\" value=\"注册\" /></td></tr>\n    </table>\n</form>\n<!-- 三个 name 与 User 的三个属性同名，这是后面 property=\"*\" 能自动赋值的前提 -->"
+      },
+      {
+        "fileId": "f3",
+        "label": "（3）register.jsp",
+        "language": "jsp",
+        "code": "<%@ ___(1-12)___ language=\"java\" ___(1-13)___=\"text/html; charset=UTF-8\" %>\n<___(1-14)___ ___(1-15)___=\"user\" ___(1-16)___=\"com.test.User\" ___(1-17)___=\"request\" />\n<___(1-18)___ name=\"user\" ___(1-19)___=\"*\" />\n<html>\n<body>\n    <h3>用户注册成功</h3>\n    姓名：<___(1-20)___ name=\"user\" property=\"name\" /><br>\n    密码：<jsp:getProperty name=\"user\" property=\"password\" /><br>\n    年龄：<jsp:getProperty name=\"user\" property=\"age\" />\n</body>\n</html>",
+        "solutionCode": "<%-- 第 1 行：page 指令。language 固定 java；contentType 定响应类型与编码，防中文乱码 --%>\n<%@ page language=\"java\" contentType=\"text/html; charset=UTF-8\" %>\n\n<%-- 第 2 行：创建/查找 JavaBean。id 变量名、class 全限定名、scope 作用域 --%>\n<jsp:useBean id=\"user\" class=\"com.test.User\" scope=\"request\" />\n\n<%-- 第 3 行：一次性赋值。property=\"*\" 表示把请求里所有同名参数全部设进 bean --%>\n<jsp:setProperty name=\"user\" property=\"*\" />\n\n<html>\n<body>\n    <h3>用户注册成功</h3>\n\n    <%-- 第 4 行起：取值输出。name 填 useBean 的 id（user），property 填属性名 --%>\n    姓名：<jsp:getProperty name=\"user\" property=\"name\" /><br>\n    密码：<jsp:getProperty name=\"user\" property=\"password\" /><br>\n    年龄：<jsp:getProperty name=\"user\" property=\"age\" />\n</body>\n</html>\n<%-- 注意：getProperty 只有 name 和 property 两个属性，没有 value，也没有结束标签 --%>"
+      }
+    ],
+    "blanks": [
+      {
+        "blankId": "1-1",
+        "fileId": "f1",
+        "accepted": [
+          "class"
+        ]
+      },
+      {
+        "blankId": "1-2",
+        "fileId": "f1",
+        "accepted": [
+          "private"
+        ]
+      },
+      {
+        "blankId": "1-3",
+        "fileId": "f1",
+        "accepted": [
+          "int"
+        ]
+      },
+      {
+        "blankId": "1-4",
+        "fileId": "f1",
+        "accepted": [
+          "String"
+        ]
+      },
+      {
+        "blankId": "1-5",
+        "fileId": "f1",
+        "accepted": [
+          "void"
+        ]
+      },
+      {
+        "blankId": "1-6",
+        "fileId": "f1",
+        "accepted": [
+          "int"
+        ]
+      },
+      {
+        "blankId": "1-7",
+        "fileId": "f2",
+        "accepted": [
+          "method"
+        ]
+      },
+      {
+        "blankId": "1-8",
+        "fileId": "f2",
+        "accepted": [
+          "action"
+        ]
+      },
+      {
+        "blankId": "1-9",
+        "fileId": "f2",
+        "accepted": [
+          "name"
+        ]
+      },
+      {
+        "blankId": "1-10",
+        "fileId": "f2",
+        "accepted": [
+          "type"
+        ]
+      },
+      {
+        "blankId": "1-11",
+        "fileId": "f2",
+        "accepted": [
+          "type"
+        ]
+      },
+      {
+        "blankId": "1-12",
+        "fileId": "f3",
+        "accepted": [
+          "page"
+        ]
+      },
+      {
+        "blankId": "1-13",
+        "fileId": "f3",
+        "accepted": [
+          "contentType"
+        ]
+      },
+      {
+        "blankId": "1-14",
+        "fileId": "f3",
+        "accepted": [
+          "jsp:useBean"
+        ]
+      },
+      {
+        "blankId": "1-15",
+        "fileId": "f3",
+        "accepted": [
+          "id"
+        ]
+      },
+      {
+        "blankId": "1-16",
+        "fileId": "f3",
+        "accepted": [
+          "class"
+        ]
+      },
+      {
+        "blankId": "1-17",
+        "fileId": "f3",
+        "accepted": [
+          "scope"
+        ]
+      },
+      {
+        "blankId": "1-18",
+        "fileId": "f3",
+        "accepted": [
+          "jsp:setProperty"
+        ]
+      },
+      {
+        "blankId": "1-19",
+        "fileId": "f3",
+        "accepted": [
+          "property"
+        ]
+      },
+      {
+        "blankId": "1-20",
+        "fileId": "f3",
+        "accepted": [
+          "jsp:getProperty"
+        ]
+      }
+    ],
+    "revision": "f9b690fb843c"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:code_blank:002",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:jsp"
+    ],
+    "stem": "应用题 2：用户登录程序 V1.0（JSP 内置对象）",
+    "explanation": "getParameter 返回 String，没有该参数时是 null，先判 null 再 equals；setCharacterEncoding 必须写在所有取参数之前；sendError 是两个参数，sendRedirect 是一个。",
+    "legacyKeys": [
+      "app-2"
+    ],
+    "type": "code_blank",
+    "files": [
+      {
+        "fileId": "f1",
+        "label": "（1）index.jsp",
+        "language": "jsp",
+        "code": "<%@ page language=\"java\" contentType=\"text/html; charset=UTF-8\" %>\n<html>\n<body>\n    <form name=\"form1\" ___(2-1)___=\"post\" ___(2-2)___=\"deal.jsp\">\n        用户名：<input ___(2-3)___=\"user\" type=\"text\" /><br>\n        密　码：<input name=\"pwd\" ___(2-4)___=\"password\" /><br>\n        <input type=\"submit\" value=\"提交\" />\n        <input ___(2-5)___=\"reset\" value=\"重置\" />\n    </form>\n</body>\n</html>",
+        "solutionCode": "<%-- page 指令：language 定脚本语言，contentType 定响应类型与编码 --%>\n<%@ page language=\"java\" contentType=\"text/html; charset=UTF-8\" %>\n<html>\n<body>\n    <%-- 表单：method 提交方式、action 交给谁处理 --%>\n    <form name=\"form1\" method=\"post\" action=\"deal.jsp\">\n\n        <%-- 文本框：name=\"user\" 就是后端 getParameter(\"user\") 要的键名 --%>\n        用户名：<input name=\"user\" type=\"text\" /><br>\n\n        <%-- 密码框：注意这里的键名是 pwd，不是 password --%>\n        密　码：<input name=\"pwd\" type=\"password\" /><br>\n\n        <%-- 提交按钮：把表单数据发给 action 指定的页面 --%>\n        <input type=\"submit\" value=\"提交\" />\n\n        <%-- 重置按钮：清空表单，不提交 --%>\n        <input type=\"reset\" value=\"重置\" />\n    </form>\n</body>\n</html>"
+      },
+      {
+        "fileId": "f2",
+        "label": "（2）deal.jsp",
+        "language": "jsp",
+        "code": "<%@ page language=\"java\" contentType=\"text/html; charset=UTF-8\" %>\n<html>\n<body>\n<%\n    request.___(2-6)___(\"utf-8\");\n    ___(2-8)___ user = request.___(2-7)___(\"user\");\n    String pwd = request.getParameter(\"pwd\");\n\n    if (user.___(2-9)___(\"admin\") && pwd.equals(\"123\")) {\n        response.___(2-10)___(\"success.jsp\");\n    } else {\n        response.___(2-11)___(500, \"请输入正确的用户名和密码！\");\n    }\n%>\n</body>\n</html>",
+        "solutionCode": "<%@ page language=\"java\" contentType=\"text/html; charset=UTF-8\" %>\n<html>\n<body>\n<%-- <% %> 是脚本片段，里面的 Java 代码会放进 service 方法里执行 --%>\n<%\n    // ① 设请求编码为 utf-8，解决 POST 中文乱码；必须写在取参数之前\n    request.setCharacterEncoding(\"utf-8\");\n\n    // ② 取表单参数，返回 String；键名对应 input 的 name=\"user\"\n    String user = request.getParameter(\"user\");\n\n    // ③ 同理取密码，键名是 pwd\n    String pwd  = request.getParameter(\"pwd\");\n\n    // ④ 判断：字符串比较用 equals，不能用 ==；&& 表示两个条件都要成立\n    if (user.equals(\"admin\") && pwd.equals(\"123\")) {\n\n        // ⑤ 成功：重定向到 success.jsp，浏览器会重新发请求，地址栏会变\n        response.sendRedirect(\"success.jsp\");\n\n    } else {\n\n        // ⑥ 失败：输出 500 状态码 + 提示文字，注意是两个参数\n        response.sendError(500, \"请输入正确的用户名和密码！\");\n    }\n%>\n</body>\n</html>"
+      }
+    ],
+    "blanks": [
+      {
+        "blankId": "2-1",
+        "fileId": "f1",
+        "accepted": [
+          "method"
+        ]
+      },
+      {
+        "blankId": "2-2",
+        "fileId": "f1",
+        "accepted": [
+          "action"
+        ]
+      },
+      {
+        "blankId": "2-3",
+        "fileId": "f1",
+        "accepted": [
+          "name"
+        ]
+      },
+      {
+        "blankId": "2-4",
+        "fileId": "f1",
+        "accepted": [
+          "type"
+        ]
+      },
+      {
+        "blankId": "2-5",
+        "fileId": "f1",
+        "accepted": [
+          "type"
+        ]
+      },
+      {
+        "blankId": "2-6",
+        "fileId": "f2",
+        "accepted": [
+          "setCharacterEncoding"
+        ]
+      },
+      {
+        "blankId": "2-7",
+        "fileId": "f2",
+        "accepted": [
+          "getParameter"
+        ]
+      },
+      {
+        "blankId": "2-8",
+        "fileId": "f2",
+        "accepted": [
+          "String"
+        ]
+      },
+      {
+        "blankId": "2-9",
+        "fileId": "f2",
+        "accepted": [
+          "equals"
+        ]
+      },
+      {
+        "blankId": "2-10",
+        "fileId": "f2",
+        "accepted": [
+          "sendRedirect"
+        ]
+      },
+      {
+        "blankId": "2-11",
+        "fileId": "f2",
+        "accepted": [
+          "sendError"
+        ]
+      }
+    ],
+    "revision": "430992ef4853"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:code_blank:003",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:servlet"
+    ],
+    "stem": "应用题 3：网站计数器（Servlet）",
+    "explanation": "hitCount 必须是成员变量，写成 doGet 里的局部变量每次请求都归零；destroy() 别拼成 destory()；Servlet 单实例多线程，成员变量被所有请求共用。",
+    "legacyKeys": [
+      "app-3"
+    ],
+    "type": "code_blank",
+    "files": [
+      {
+        "fileId": "f1",
+        "label": "（1）PageHitCounter.java",
+        "language": "java",
+        "code": "package com.servlet;\n\nimport java.io.IOException;\nimport java.io.PrintWriter;\nimport javax.servlet.ServletException;\nimport javax.servlet.annotation.WebServlet;\nimport javax.servlet.http.HttpServlet;\nimport javax.servlet.http.HttpServletRequest;\nimport javax.servlet.http.HttpServletResponse;\n\n___(3-1)___(\"/PageHitCounter\")\npublic class PageHitCounter ___(3-2)___ ___(3-3)___ {\n\n    private ___(3-4)___ hitCount;\n\n    public ___(3-5)___ init() {\n        ___(3-6)___ = 0;\n    }\n\n    public void doGet(___(3-7)___ request, ___(3-8)___ response)\n            throws ServletException, ___(3-9)___ {\n        response.___(3-10)___(\"text/html;charset=utf-8\");\n        ___(3-11)___ out = response.___(3-12)___();\n        ___(3-13)___++;\n        out.___(3-14)___(\"<h1>网站访问次数：\" + hitCount + \"</h1>\");\n    }\n\n    public void doPost(HttpServletRequest request, HttpServletResponse response)\n            throws ServletException, IOException {\n        ___(3-15)___(request, response);\n    }\n\n    public void ___(3-16)___() {\n        System.out.println(\"Servlet销毁，释放资源\");\n    }\n}",
+        "solutionCode": "// 包声明：这个 Servlet 放在 com.servlet 包下\npackage com.servlet;\n\n// 异常类：方法签名里 throws 要用到\nimport java.io.IOException;\n\n// 输出流类：往浏览器写内容用\nimport java.io.PrintWriter;\n\n// Servlet 异常类，方法签名里要声明\nimport javax.servlet.ServletException;\n\n// 注解类：用它配置访问路径，替代 web.xml\nimport javax.servlet.annotation.WebServlet;\n\n// 父类：继承它才能直接重写 doGet / doPost\nimport javax.servlet.http.HttpServlet;\n\n// 请求对象类型：doGet 的第一个参数\nimport javax.servlet.http.HttpServletRequest;\n\n// 响应对象类型：doGet 的第二个参数\nimport javax.servlet.http.HttpServletResponse;\n\n// 注解配置访问路径，必须以 / 开头；等价于 web.xml 里的 <url-pattern>\n@WebServlet(\"/PageHitCounter\")\n\n// 继承 HttpServlet（不是 implements）；Servlet 是单实例、多线程的\npublic class PageHitCounter extends HttpServlet {\n\n    // 成员变量，不是局部变量：所有请求共享它，计数才能一直累加\n    private int hitCount;\n\n    // 初始化方法：实例创建后调用一次，适合放初始值\n    public void init() {\n        // 计数器清零，写在这里只执行一次\n        hitCount = 0;\n    }\n\n    // 处理 GET 请求；两个异常必须声明，少一个都编译不过\n    public void doGet(HttpServletRequest request, HttpServletResponse response)\n            throws ServletException, IOException {\n\n        // 告诉浏览器返回的是 UTF-8 的 HTML，防中文乱码\n        response.setContentType(\"text/html;charset=utf-8\");\n\n        // 取得输出流，用它往页面写内容\n        PrintWriter out = response.getWriter();\n\n        // 每访问一次加 1；因为是成员变量，所以是累加而不是每次从 1 开始\n        hitCount++;\n\n        // 把数字拼进 HTML 里输出\n        out.print(\"<h1>网站访问次数：\" + hitCount + \"</h1>\");\n    }\n\n    // 处理 POST 请求\n    public void doPost(HttpServletRequest request, HttpServletResponse response)\n            throws ServletException, IOException {\n        // 表单是 POST 时也走同一套逻辑，直接转调 doGet\n        doGet(request, response);\n    }\n\n    // 销毁方法：服务器关闭或应用卸载时调用一次\n    public void destroy() {\n        // 在这里释放资源（真实项目是关连接、停线程、存统计）\n        System.out.println(\"Servlet销毁，释放资源\");\n    }\n}"
+      },
+      {
+        "fileId": "f2",
+        "label": "（2）web.xml",
+        "language": "xml",
+        "code": "<servlet>\n    <servlet-name>PageHitCounter</servlet-name>\n    <___(3-17)___>com.servlet.PageHitCounter</___(3-17)___>\n</servlet>\n<servlet-mapping>\n    <servlet-name>PageHitCounter</servlet-name>\n    <___(3-18)___>/PageHitCounter</___(3-18)___>\n</servlet-mapping>",
+        "solutionCode": "<!-- 第一块：声明\"有一个 Servlet\" -->\n<servlet>\n    <!-- 内部名字；与下面 mapping 里的必须一字不差 -->\n    <servlet-name>PageHitCounter</servlet-name>\n    <!-- 全限定类名：包名 + 类名 -->\n    <servlet-class>com.servlet.PageHitCounter</servlet-class>\n</servlet>\n\n<!-- 第二块：建立\"访问路径 → Servlet\"的映射 -->\n<servlet-mapping>\n    <!-- 靠这个名字关联到上面那个 servlet -->\n    <servlet-name>PageHitCounter</servlet-name>\n    <!-- 浏览器访问的路径，必须 / 开头，精确匹配 -->\n    <url-pattern>/PageHitCounter</url-pattern>\n</servlet-mapping>\n<!-- 可选：加 <load-on-startup>1</load-on-startup> 让启动就创建实例 -->"
+      },
+      {
+        "fileId": "f3",
+        "label": "（3）Filter（延伸）",
+        "language": "java",
+        "code": "@___(3-19)___(\"/*\")\npublic class LoginFilter ___(3-20)___ Filter {\n\n    public void ___(3-21)___(ServletRequest request, ServletResponse response,\n                              FilterChain chain) throws IOException, ServletException {\n        // 判断登录……\n        chain.___(3-22)___(request, response);\n    }\n}",
+        "solutionCode": "// 注解配置拦截路径：/* 表示所有请求（Servlet、JSP、HTML、图片都过）\n@WebFilter(\"/*\")\n\n// 实现 Filter 接口，注意是 implements，不是 extends\npublic class LoginFilter implements Filter {\n\n    // 核心方法：每次请求经过过滤器时都会执行\n    public void doFilter(ServletRequest request, ServletResponse response,\n                         FilterChain chain) throws IOException, ServletException {\n\n        // 这里做登录校验，不通过就跳转或直接 return，不再往下走\n        // ...\n\n        // 放行：把请求交给下一个过滤器或目标资源；不写这行请求就到不了 Servlet\n        chain.doFilter(request, response);\n    }\n}"
+      }
+    ],
+    "blanks": [
+      {
+        "blankId": "3-1",
+        "fileId": "f1",
+        "accepted": [
+          "@WebServlet"
+        ]
+      },
+      {
+        "blankId": "3-2",
+        "fileId": "f1",
+        "accepted": [
+          "extends"
+        ]
+      },
+      {
+        "blankId": "3-3",
+        "fileId": "f1",
+        "accepted": [
+          "HttpServlet"
+        ]
+      },
+      {
+        "blankId": "3-4",
+        "fileId": "f1",
+        "accepted": [
+          "int"
+        ]
+      },
+      {
+        "blankId": "3-5",
+        "fileId": "f1",
+        "accepted": [
+          "void"
+        ]
+      },
+      {
+        "blankId": "3-6",
+        "fileId": "f1",
+        "accepted": [
+          "hitCount"
+        ]
+      },
+      {
+        "blankId": "3-7",
+        "fileId": "f1",
+        "accepted": [
+          "HttpServletRequest"
+        ]
+      },
+      {
+        "blankId": "3-8",
+        "fileId": "f1",
+        "accepted": [
+          "HttpServletResponse"
+        ]
+      },
+      {
+        "blankId": "3-9",
+        "fileId": "f1",
+        "accepted": [
+          "IOException"
+        ]
+      },
+      {
+        "blankId": "3-10",
+        "fileId": "f1",
+        "accepted": [
+          "setContentType"
+        ]
+      },
+      {
+        "blankId": "3-11",
+        "fileId": "f1",
+        "accepted": [
+          "PrintWriter"
+        ]
+      },
+      {
+        "blankId": "3-12",
+        "fileId": "f1",
+        "accepted": [
+          "getWriter"
+        ]
+      },
+      {
+        "blankId": "3-13",
+        "fileId": "f1",
+        "accepted": [
+          "hitCount"
+        ]
+      },
+      {
+        "blankId": "3-14",
+        "fileId": "f1",
+        "accepted": [
+          "print"
+        ]
+      },
+      {
+        "blankId": "3-15",
+        "fileId": "f1",
+        "accepted": [
+          "doGet"
+        ]
+      },
+      {
+        "blankId": "3-16",
+        "fileId": "f1",
+        "accepted": [
+          "destroy"
+        ]
+      },
+      {
+        "blankId": "3-17",
+        "fileId": "f2",
+        "accepted": [
+          "servlet-class"
+        ]
+      },
+      {
+        "blankId": "3-18",
+        "fileId": "f2",
+        "accepted": [
+          "url-pattern"
+        ]
+      },
+      {
+        "blankId": "3-19",
+        "fileId": "f3",
+        "accepted": [
+          "@WebFilter"
+        ]
+      },
+      {
+        "blankId": "3-20",
+        "fileId": "f3",
+        "accepted": [
+          "implements"
+        ]
+      },
+      {
+        "blankId": "3-21",
+        "fileId": "f3",
+        "accepted": [
+          "doFilter"
+        ]
+      },
+      {
+        "blankId": "3-22",
+        "fileId": "f3",
+        "accepted": [
+          "doFilter"
+        ]
+      }
+    ],
+    "revision": "535747349954"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:code_blank:004",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:springmvc"
+    ],
+    "stem": "应用题 4：SpringMVC 参数传递",
+    "explanation": "表单 name 与实体属性必须同名，SpringMVC 才会自动 set；配了视图解析器后返回 \"loginSuccess\" 会拼成 /WEB-INF/jsp/loginSuccess.jsp，写全路径的就别再配前后缀；addObject 存数据、setViewName 设视图，别写反；DispatcherServlet 的 url-pattern 是单个 /，不是 /*。",
+    "legacyKeys": [
+      "app-4"
+    ],
+    "type": "code_blank",
+    "files": [
+      {
+        "fileId": "f1",
+        "label": "（1）LoginController.java",
+        "language": "java",
+        "code": "___(4-1)___\npublic class LoginController {\n\n    ___(4-2)___(\"/login\")\n    public String login(___(4-3)___ u) {\n        System.out.println(\"loginName:\" + u.getLoginName());\n        System.out.println(\"password:\" + u.getPassword());\n        return \"___(4-4)___\";\n    }\n}",
+        "solutionCode": "// 类上注解：标识这是控制器，交给 Spring 容器管理（本质是 @Component）\n@Controller\n\n// 控制器类，不需要继承或实现任何框架接口\npublic class LoginController {\n\n    // 方法上注解：把 /login 这个请求映射到本方法，所以表单的 action 写 login\n    @RequestMapping(\"/login\")\n\n    // 形参写成实体类 User，SpringMVC 会按同名规则自动把表单参数 set 进去\n    public String login(User u) {\n\n        // 打印验证：能取到值说明封装成功（get 后缀与属性名一致）\n        System.out.println(\"loginName:\" + u.getLoginName());\n\n        // 同理取密码\n        System.out.println(\"password:\" + u.getPassword());\n\n        // 返回逻辑视图名，由视图解析器拼成 /WEB-INF/jsp/loginSuccess.jsp\n        return \"loginSuccess\";\n    }\n}"
+      },
+      {
+        "fileId": "f2",
+        "label": "（2）login.jsp",
+        "language": "jsp",
+        "code": "<%@ page contentType=\"text/html;charset=UTF-8\" language=\"java\" %>\n<html>\n<body>\n    <h3>用户登录</h3>\n    <form action=\"___(4-5)___\" method=\"post\">\n        帐号:<input type=\"text\" name=\"___(4-6)___\"><br>\n        密码:<input type=\"text\" name=\"___(4-7)___\"><br>\n        <input type=\"submit\" value=\"登录\">\n    </form>\n</body>\n</html>",
+        "solutionCode": "<%@ page contentType=\"text/html;charset=UTF-8\" language=\"java\" %>\n<html>\n<body>\n    <h3>用户登录</h3>\n\n    <%-- action=\"login\" 对应控制器上的 @RequestMapping(\"/login\")；method 指定提交方式 --%>\n    <form action=\"login\" method=\"post\">\n\n        <%-- 帐号框：name 与 User 的属性 loginName 同名，才能自动封装 --%>\n        帐号:<input type=\"text\" name=\"loginName\"><br>\n\n        <%-- 密码框：name 与属性 password 同名；用 text 也能传值，只是不明文遮住 --%>\n        密码:<input type=\"text\" name=\"password\"><br>\n\n        <%-- 提交按钮 --%>\n        <input type=\"submit\" value=\"登录\">\n    </form>\n</body>\n</html>"
+      },
+      {
+        "fileId": "f3",
+        "label": "（3）HelloController.java",
+        "language": "java",
+        "code": "public class HelloController ___(4-8)___ Controller {\n\n    public ___(4-9)___ handleRequest(HttpServletRequest request,\n                                     HttpServletResponse response) {\n        ___(4-10)___ mv = new ModelAndView();\n        mv.___(4-11)___(\"msg\", \"hello world!\");\n        mv.___(4-12)___(\"/WEB-INF/jsp/hello.jsp\");\n        return mv;\n    }\n}",
+        "solutionCode": "// 实现 Controller 接口：SpringMVC 早期写法，一个类只处理一个请求\npublic class HelloController implements Controller {\n\n    // 接口规定的方法名与参数，必须原样重写；返回值是 ModelAndView\n    public ModelAndView handleRequest(HttpServletRequest request,\n                                      HttpServletResponse response) {\n\n        // 创建\"模型 + 视图\"的载体\n        ModelAndView mv = new ModelAndView();\n\n        // 存数据：key 是 msg，页面上就用 ${msg} 取\n        mv.addObject(\"msg\", \"hello world!\");\n\n        // 设视图：这里写全路径，说明没有走视图解析器的前后缀\n        mv.setViewName(\"/WEB-INF/jsp/hello.jsp\");\n\n        // 返回给 DispatcherServlet，由它解析视图并渲染\n        return mv;\n    }\n}"
+      },
+      {
+        "fileId": "f4",
+        "label": "（4）hello.jsp",
+        "language": "jsp",
+        "code": "<%@ page contentType=\"text/html;charset=UTF-8\" language=\"java\" %>\n<html>\n<body>\n    ___(4-13)___\n</body>\n</html>",
+        "solutionCode": "<%@ page contentType=\"text/html;charset=UTF-8\" language=\"java\" %>\n<html>\n<body>\n    <%-- EL 表达式：按 page→request→session→application 顺序找 msg 并输出 --%>\n    ${msg}\n</body>\n</html>"
+      },
+      {
+        "fileId": "f5",
+        "label": "（5）web.xml",
+        "language": "xml",
+        "code": "<servlet>\n    <servlet-name>springmvc</servlet-name>\n    <servlet-class>___(4-14)___</servlet-class>\n    <init-param>\n        <param-name>contextConfigLocation</param-name>\n        <param-value>classpath:springmvc.xml</param-value>\n    </init-param>\n</servlet>\n<servlet-mapping>\n    <servlet-name>springmvc</servlet-name>\n    <url-pattern>___(4-15)___</url-pattern>\n</servlet-mapping>",
+        "solutionCode": "<servlet>\n    <!-- 前端控制器的内部名字，下面 mapping 要用同名 -->\n    <servlet-name>springmvc</servlet-name>\n\n    <!-- SpringMVC 的核心类，全限定名要背准 -->\n    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>\n\n    <!-- 初始化参数：告诉它 SpringMVC 的配置文件在哪 -->\n    <init-param>\n        <!-- 参数名固定写 contextConfigLocation，不能改 -->\n        <param-name>contextConfigLocation</param-name>\n        <!-- classpath: 表示从类路径（src 下）找 -->\n        <param-value>classpath:springmvc.xml</param-value>\n    </init-param>\n</servlet>\n\n<servlet-mapping>\n    <!-- 与上面一致，才能关联起来 -->\n    <servlet-name>springmvc</servlet-name>\n    <!-- 单个 / 表示拦截所有请求（注意不是 /*） -->\n    <url-pattern>/</url-pattern>\n</servlet-mapping>"
+      },
+      {
+        "fileId": "f6",
+        "label": "（6）springmvc.xml",
+        "language": "xml",
+        "code": "<context:component-scan ___(4-16)___=\"com.controller\" />\n\n<bean class=\"org.springframework.web.servlet.view.InternalResourceViewResolver\">\n    <property name=\"prefix\" value=\"___(4-17)___\" />\n    <property name=\"suffix\" value=\"___(4-18)___\" />\n</bean>",
+        "solutionCode": "<!-- 1. 开启注解扫描：Spring 只扫描这个包及其子包下带 @Controller 等注解的类 -->\n<context:component-scan base-package=\"com.controller\" />\n\n<!-- 2. 配置视图解析器：把\"逻辑视图名\"拼成\"真实路径\" -->\n<bean class=\"org.springframework.web.servlet.view.InternalResourceViewResolver\">\n    <!-- 前缀：返回 \"loginSuccess\" 时先拼上它 -->\n    <property name=\"prefix\" value=\"/WEB-INF/jsp/\" />\n    <!-- 后缀：再拼上它，最终得到 /WEB-INF/jsp/loginSuccess.jsp -->\n    <property name=\"suffix\" value=\".jsp\" />\n</bean>\n<!-- 配了前后缀后控制器只写视图名；若控制器自己写全路径，就别再配这两个属性 -->"
+      }
+    ],
+    "blanks": [
+      {
+        "blankId": "4-1",
+        "fileId": "f1",
+        "accepted": [
+          "@Controller"
+        ]
+      },
+      {
+        "blankId": "4-2",
+        "fileId": "f1",
+        "accepted": [
+          "@RequestMapping"
+        ]
+      },
+      {
+        "blankId": "4-3",
+        "fileId": "f1",
+        "accepted": [
+          "User"
+        ]
+      },
+      {
+        "blankId": "4-4",
+        "fileId": "f1",
+        "accepted": [
+          "loginSuccess"
+        ]
+      },
+      {
+        "blankId": "4-5",
+        "fileId": "f2",
+        "accepted": [
+          "login"
+        ]
+      },
+      {
+        "blankId": "4-6",
+        "fileId": "f2",
+        "accepted": [
+          "loginName"
+        ]
+      },
+      {
+        "blankId": "4-7",
+        "fileId": "f2",
+        "accepted": [
+          "password"
+        ]
+      },
+      {
+        "blankId": "4-8",
+        "fileId": "f3",
+        "accepted": [
+          "implements"
+        ]
+      },
+      {
+        "blankId": "4-9",
+        "fileId": "f3",
+        "accepted": [
+          "ModelAndView"
+        ]
+      },
+      {
+        "blankId": "4-10",
+        "fileId": "f3",
+        "accepted": [
+          "ModelAndView"
+        ]
+      },
+      {
+        "blankId": "4-11",
+        "fileId": "f3",
+        "accepted": [
+          "addObject"
+        ]
+      },
+      {
+        "blankId": "4-12",
+        "fileId": "f3",
+        "accepted": [
+          "setViewName"
+        ]
+      },
+      {
+        "blankId": "4-13",
+        "fileId": "f4",
+        "accepted": [
+          "${msg}"
+        ]
+      },
+      {
+        "blankId": "4-14",
+        "fileId": "f5",
+        "accepted": [
+          "org.springframework.web.servlet.DispatcherServlet"
+        ]
+      },
+      {
+        "blankId": "4-15",
+        "fileId": "f5",
+        "accepted": [
+          "/"
+        ]
+      },
+      {
+        "blankId": "4-16",
+        "fileId": "f6",
+        "accepted": [
+          "base-package"
+        ]
+      },
+      {
+        "blankId": "4-17",
+        "fileId": "f6",
+        "accepted": [
+          "/WEB-INF/jsp/"
+        ]
+      },
+      {
+        "blankId": "4-18",
+        "fileId": "f6",
+        "accepted": [
+          ".jsp"
+        ]
+      }
+    ],
+    "revision": "aad5744c5cfe"
+  },
+  {
+    "schemaVersion": 1,
+    "questionId": "javaweb:code_blank:005",
+    "bankId": "javaweb",
+    "topicIds": [
+      "javaweb:topic:mybatis"
+    ],
+    "stem": "应用题 5：MyBatis 配置与映射",
+    "explanation": "四标签拼写 select/insert/update/delete，别写 updata、selete；resultType 是结果类型、parameterType 是入参类型，别互换；用 #{} 不用 ${}；配置元素顺序不能调换：properties → settings → typeAliases → environments → mappers。",
+    "legacyKeys": [
+      "app-5"
+    ],
+    "type": "code_blank",
+    "files": [
+      {
+        "fileId": "f1",
+        "label": "（1）mybatis-config.xml",
+        "language": "xml",
+        "code": "<configuration>\n    <___(5-1)___ default=\"mysql\">\n        <environment ___(5-2)___=\"mysql\">\n            <___(5-3)___ type=\"JDBC\" />\n            <dataSource ___(5-4)___=\"POOLED\">\n                <property name=\"___(5-5)___\"   value=\"com.mysql.jdbc.Driver\" />\n                <property name=\"___(5-6)___\"   value=\"jdbc:mysql://localhost:3306/mybatis\" />\n                <property name=\"___(5-7)___\"   value=\"root\" />\n                <property name=\"___(5-8)___\"   value=\"root\" />\n            </dataSource>\n        </environment>\n    </___(5-1)___>\n\n    <___(5-9)___>\n        <mapper ___(5-10)___=\"com/mapper/UserMapper.xml\" />\n    </___(5-9)___>\n</configuration>",
+        "solutionCode": "<!-- 根元素，整个文件只有这一个 -->\n<configuration>\n\n    <!-- 环境集合；default 指定默认用哪个环境，值是某个 environment 的 id -->\n    <environments default=\"mysql\">\n\n        <!-- 一个环境：id 是它的名字，与上面的 default 对应 -->\n        <environment id=\"mysql\">\n\n            <!-- 事务管理器：JDBC 表示用 JDBC 的 Connection 提交 / 回滚 -->\n            <transactionManager type=\"JDBC\" />\n\n            <!-- 数据源：POOLED = 使用连接池（另有 UNPOOLED、JNDI） -->\n            <dataSource type=\"POOLED\">\n\n                <!-- 驱动类名；MySQL 8.x 是 com.mysql.cj.jdbc.Driver -->\n                <property name=\"driver\"   value=\"com.mysql.jdbc.Driver\" />\n\n                <!-- 连接串：协议://主机:端口/库名 -->\n                <property name=\"url\"      value=\"jdbc:mysql://localhost:3306/mybatis\" />\n\n                <!-- 数据库用户名 -->\n                <property name=\"username\" value=\"root\" />\n\n                <!-- 数据库密码；四项缺一项都连不上 -->\n                <property name=\"password\" value=\"root\" />\n            </dataSource>\n        </environment>\n    </environments>\n\n    <!-- 注册映射文件的位置，写在最后 -->\n    <mappers>\n        <!-- 按类路径写相对路径，用 / 分隔；漏注册会报 Invalid bound statement -->\n        <mapper resource=\"com/mapper/UserMapper.xml\" />\n    </mappers>\n</configuration>\n<!-- 顺序不能调换：properties → settings → typeAliases → environments → mappers -->"
+      },
+      {
+        "fileId": "f2",
+        "label": "（2）UserMapper.xml",
+        "language": "xml",
+        "code": "<mapper ___(5-11)___=\"com.mapper.UserMapper\">\n\n    <___(5-12)___ id=\"selectAllUsers\" ___(5-13)___=\"com.pojo.User\">\n        select id, name, sex, age from user\n    </___(5-12)___>\n\n    <___(5-14)___ id=\"deleteUserById\">\n        delete from user where id = ___(5-18)___\n    </___(5-14)___>\n\n    <___(5-15)___ id=\"addUser\" ___(5-16)___=\"com.pojo.User\">\n        insert into user(name, sex, age) values(#{name}, #{sex}, #{age})\n    </___(5-15)___>\n\n    <___(5-17)___ id=\"updateUserById\" parameterType=\"com.pojo.User\">\n        update user set name = #{name}, sex = #{sex}, age = #{age} where id = #{id}\n    </___(5-17)___>\n\n</mapper>",
+        "solutionCode": "<!-- 命名空间：通常等于 Mapper 接口的全限定名，全局唯一 -->\n<mapper namespace=\"com.mapper.UserMapper\">\n\n    <!-- 查：select。resultType 指定\"一行记录封装成什么对象\" -->\n    <select id=\"selectAllUsers\" resultType=\"com.pojo.User\">\n        <!-- SQL 语句；查出的多行由 MyBatis 自动装成 List<User> -->\n        select id, name, sex, age from user\n    </select>\n\n    <!-- 删：delete。只有一个 #{id} 参数，parameterType 可以省略 -->\n    <delete id=\"deleteUserById\">\n        <!-- #{} 生成预编译占位符 ?，能防 SQL 注入 -->\n        delete from user where id = #{id}\n    </delete>\n\n    <!-- 增：insert。parameterType 指定入参类型，这里是一个 User 对象 -->\n    <insert id=\"addUser\" parameterType=\"com.pojo.User\">\n        <!-- 三个列对应三个属性，一一对应 -->\n        insert into user(name, sex, age) values(#{name}, #{sex}, #{age})\n    </insert>\n\n    <!-- 改：update。id 是这条 SQL 的唯一标识，与接口方法名一致 -->\n    <update id=\"updateUserById\" parameterType=\"com.pojo.User\">\n        update user set name = #{name}, sex = #{sex}, age = #{age} where id = #{id}\n    </update>\n\n</mapper>\n<!-- 四个标签就是增删改查的英文单词：insert / delete / update / select -->"
+      }
+    ],
+    "blanks": [
+      {
+        "blankId": "5-1",
+        "fileId": "f1",
+        "accepted": [
+          "environments"
+        ]
+      },
+      {
+        "blankId": "5-2",
+        "fileId": "f1",
+        "accepted": [
+          "id"
+        ]
+      },
+      {
+        "blankId": "5-3",
+        "fileId": "f1",
+        "accepted": [
+          "transactionManager"
+        ]
+      },
+      {
+        "blankId": "5-4",
+        "fileId": "f1",
+        "accepted": [
+          "type"
+        ]
+      },
+      {
+        "blankId": "5-5",
+        "fileId": "f1",
+        "accepted": [
+          "driver"
+        ]
+      },
+      {
+        "blankId": "5-6",
+        "fileId": "f1",
+        "accepted": [
+          "url"
+        ]
+      },
+      {
+        "blankId": "5-7",
+        "fileId": "f1",
+        "accepted": [
+          "username"
+        ]
+      },
+      {
+        "blankId": "5-8",
+        "fileId": "f1",
+        "accepted": [
+          "password"
+        ]
+      },
+      {
+        "blankId": "5-9",
+        "fileId": "f1",
+        "accepted": [
+          "mappers"
+        ]
+      },
+      {
+        "blankId": "5-10",
+        "fileId": "f1",
+        "accepted": [
+          "resource"
+        ]
+      },
+      {
+        "blankId": "5-11",
+        "fileId": "f2",
+        "accepted": [
+          "namespace"
+        ]
+      },
+      {
+        "blankId": "5-12",
+        "fileId": "f2",
+        "accepted": [
+          "select"
+        ]
+      },
+      {
+        "blankId": "5-13",
+        "fileId": "f2",
+        "accepted": [
+          "resultType"
+        ]
+      },
+      {
+        "blankId": "5-14",
+        "fileId": "f2",
+        "accepted": [
+          "delete"
+        ]
+      },
+      {
+        "blankId": "5-15",
+        "fileId": "f2",
+        "accepted": [
+          "insert"
+        ]
+      },
+      {
+        "blankId": "5-16",
+        "fileId": "f2",
+        "accepted": [
+          "parameterType"
+        ]
+      },
+      {
+        "blankId": "5-17",
+        "fileId": "f2",
+        "accepted": [
+          "update"
+        ]
+      },
+      {
+        "blankId": "5-18",
+        "fileId": "f2",
+        "accepted": [
+          "#{id}"
+        ]
+      }
+    ],
+    "revision": "c06540768c2d"
+  }
+]

@@ -1,0 +1,37 @@
+[
+  {
+    "topicId": "javaweb:topic:jdbc",
+    "bankId": "javaweb",
+    "name": "jdbc"
+  },
+  {
+    "topicId": "javaweb:topic:jsp",
+    "bankId": "javaweb",
+    "name": "jsp"
+  },
+  {
+    "topicId": "javaweb:topic:mybatis",
+    "bankId": "javaweb",
+    "name": "mybatis"
+  },
+  {
+    "topicId": "javaweb:topic:servlet",
+    "bankId": "javaweb",
+    "name": "servlet"
+  },
+  {
+    "topicId": "javaweb:topic:spring",
+    "bankId": "javaweb",
+    "name": "spring"
+  },
+  {
+    "topicId": "javaweb:topic:springmvc",
+    "bankId": "javaweb",
+    "name": "springmvc"
+  },
+  {
+    "topicId": "javaweb:topic:web_base",
+    "bankId": "javaweb",
+    "name": "web_base"
+  }
+]

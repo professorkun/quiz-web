@@ -92,7 +92,10 @@ export const CodeFileSchema = z.object({
   fileId: IdStr,
   label: z.string().min(1),
   language: z.string().min(1),
+  /** 挖空后的代码：学习者在页面上看到的就是这一份 */
   code: z.string().min(1),
+  /** 完整代码（答案版），用于“查看答案”与自评对照；旧版 `code` 字段对应这一份 */
+  solutionCode: z.string().optional(),
 });
 export type CodeFile = z.infer<typeof CodeFileSchema>;
 

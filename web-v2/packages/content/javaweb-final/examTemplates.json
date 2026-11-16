@@ -1,0 +1,45 @@
+[
+  {
+    "templateId": "javaweb:exam:final",
+    "bankId": "javaweb",
+    "title": "JavaWeb 期末考试（模拟）",
+    "sections": [
+      {
+        "sectionId": "s1",
+        "title": "选择题",
+        "questionType": "single_choice",
+        "count": 15,
+        "scoreEach": 2
+      },
+      {
+        "sectionId": "s2",
+        "title": "判断题",
+        "questionType": "true_false",
+        "count": 10,
+        "scoreEach": 1
+      },
+      {
+        "sectionId": "s3",
+        "title": "填空题",
+        "questionType": "fill_blank",
+        "count": 5,
+        "scoreEach": 2
+      },
+      {
+        "sectionId": "s4",
+        "title": "简答题",
+        "questionType": "short_answer",
+        "count": 4,
+        "scoreEach": 5
+      },
+      {
+        "sectionId": "s5",
+        "title": "应用题",
+        "questionType": "code_blank",
+        "count": 4,
+        "scoreEach": 7.5
+      }
+    ],
+    "totalScore": 100
+  }
+]

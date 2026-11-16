@@ -19,3 +19,12 @@ export interface BankPackageFiles {
 }
 
 export const JAVAWeb_FINAL_BANK_ID = "javaweb" as const;
+
+export { migrateLegacyBank, LEGACY_TYPE_TO_NEW, TOPIC_SLUGS } from "./migrate.js";
+export type {
+  MigrationIssue,
+  MigrationOptions,
+  MigrationResult,
+  MigrationStats,
+} from "./migrate.js";
+export type { LegacyDataJson, LegacyQuestion } from "./legacy.js";
