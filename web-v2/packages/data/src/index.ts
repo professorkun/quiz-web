@@ -5,9 +5,12 @@
  * - `recomputeProgress`：全量事件重算，导入后与 S4 对账共用
  * - `dryRunLegacyRecords`：旧学习记录 → 新契约的模拟转换，只出报告不写库（T1-6）
  * - `snapshot`：学习记录与题库包的导入导出（T3-9）
+ * - `recompute`：进度重算与对账（S4 T4-8）
  */
 
 export { computeProgress, recomputeProgress } from "./progress.js";
+export { verifyBank, recomputeBank } from "./recompute.js";
+export type { ReconcileReport } from "./recompute.js";
 export { dryRunLegacyRecords } from "./legacy-records.js";
 export {
   LEARNING_FILE_KIND,

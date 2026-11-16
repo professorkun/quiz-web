@@ -130,6 +130,10 @@ export function makeProgress(
     firstCorrectAt: null,
     lastAttemptAt: null,
     mastered: false,
+    status: "new",
+    streak: 0,
+    nextReviewAt: null,
+    errorCause: null,
     ...over,
   };
 }

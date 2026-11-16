@@ -114,6 +114,9 @@ describe("五入口", () => {
     expect(await screen.findByText(/还没有任何记录/)).toBeTruthy();
 
     await go("review");
+    // S4 起默认视图是「到期复习」
+    expect(await screen.findByText(/现在没有到期的题/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: /错题（0）/ }));
     expect(await screen.findByText(/还没有错题/)).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: /收藏（0）/ }));
     expect(await screen.findByText(/还没有收藏/)).toBeTruthy();
@@ -150,6 +153,7 @@ describe("游客闭环", () => {
 
     await go("review");
     expect(await screen.findByRole("tab", { name: /错题（1）/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: /错题（1）/ }));
     expect(await screen.findByText(/错 1 次/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: /收藏（1）/ }));
@@ -234,6 +238,7 @@ describe("跨库隔离", () => {
       expect(screen.getByRole("button", { name: /对照题库（1）/ }).className).toContain("on"),
     );
     await go("review");
+    fireEvent.click(await screen.findByRole("tab", { name: /错题（0）/ }));
     expect(await screen.findByText(/还没有错题/)).toBeTruthy();
   });
 });
@@ -362,5 +367,67 @@ describe("S3 验收补测", () => {
     // 再叠加题干搜索：只剩"水的化学式"
     fireEvent.change(screen.getByLabelText("搜索题干"), { target: { value: "化学式" } });
     expect(await screen.findByText(/命中 1 题/)).toBeTruthy();
+  });
+});
+
+/** S4 · T4-4/4-6/4-8 的界面证据 */
+describe("S4 复习与对账", () => {
+  it("复习页四个视图都可达且空状态有引导", async () => {
+    await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("review");
+
+    for (const label of ["到期复习（0）", "错题（0）", "收藏（0）", "已掌握（0）"]) {
+      expect(screen.getByRole("tab", { name: label })).toBeTruthy();
+    }
+    expect(await screen.findByText(/现在没有到期的题/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "已掌握（0）" }));
+    expect(await screen.findByText(/还没有已掌握的题/)).toBeTruthy();
+  });
+
+  it("错因可标记，重新打开仍保留", async () => {
+    const { platform } = await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("practice");
+    fireEvent.click(await screen.findByRole("button", { name: "开始练习" }));
+    await screen.findByText(/下列物质中属于纯净物的是/);
+    fireEvent.click(screen.getByText("空气"));
+    fireEvent.click(screen.getByRole("button", { name: "提交答案" }));
+    await screen.findByText(/答错了/);
+
+    await go("review");
+    fireEvent.click(await screen.findByRole("tab", { name: /错题（1）/ }));
+    const select = await screen.findByLabelText("错因");
+    fireEvent.change(select, { target: { value: "knowledge_gap" } });
+    await waitFor(async () => {
+      const rows = await platform.progress.listByBank("chem");
+      expect(rows[0]?.errorCause).toBe("knowledge_gap");
+    });
+
+    cleanup();
+    globalThis.location.hash = "#/learn";
+    render(<App platform={platform} builtinBanks={[chemistryBank, otherBank()]} />);
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("review");
+    fireEvent.click(await screen.findByRole("tab", { name: /错题（1）/ }));
+    const reopened = (await screen.findByLabelText("错因")) as HTMLSelectElement;
+    expect(reopened.value).toBe("knowledge_gap");
+  });
+
+  it("可以由事件重算并对账，页面给出差异数字", async () => {
+    const { platform } = await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("practice");
+    fireEvent.click(await screen.findByRole("button", { name: "开始练习" }));
+    await screen.findByText(/下列物质中属于纯净物的是/);
+    fireEvent.click(screen.getByText("空气"));
+    fireEvent.click(screen.getByRole("button", { name: "提交答案" }));
+    await screen.findByText(/答错了/);
+
+    await go("me");
+    fireEvent.click(await screen.findByRole("button", { name: /由事件重算并对账/ }));
+    expect(await screen.findByText(/重算后 1 条全部一致/)).toBeTruthy();
+    expect((await platform.progress.listByBank("chem"))[0]?.status).toBe("learning");
   });
 });

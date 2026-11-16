@@ -144,6 +144,10 @@ describe("跨库隔离", () => {
       firstCorrectAt: null,
       lastAttemptAt: "2026-11-16T01:00:00.000Z",
       mastered: false,
+      status: "learning",
+      streak: 0,
+      nextReviewAt: "2026-11-17T01:00:00.000Z",
+      errorCause: "knowledge_gap",
     });
     expect(await platform.progress.listByBank("chem")).toHaveLength(0);
   });
@@ -193,6 +197,10 @@ describe("收藏与进度独立", () => {
       firstCorrectAt: "2026-11-16T02:00:00.000Z",
       lastAttemptAt: "2026-11-16T03:00:00.000Z",
       mastered: true,
+      status: "mastered",
+      streak: 3,
+      nextReviewAt: null,
+      errorCause: null,
     });
     // 模拟 S4 的"清空派生状态后重算"
     await platform.progress.clearByBank("javaweb");
