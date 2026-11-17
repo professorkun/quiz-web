@@ -322,12 +322,15 @@ function buildExamTemplate(bankId: string): ExamTemplate {
     templateId: `${bankId}:exam:final`,
     bankId,
     title: "JavaWeb 期末考试（模拟）",
+    /** 闭卷 120 分钟：旧版只计时不限时；S5 起模板可配时长（G5-1），超时自动交卷（T5-3） */
+    durationSec: 7200,
     sections: [
       { sectionId: "s1", title: "选择题", questionType: "single_choice", count: 15, scoreEach: 2 },
       { sectionId: "s2", title: "判断题", questionType: "true_false", count: 10, scoreEach: 1 },
       { sectionId: "s3", title: "填空题", questionType: "fill_blank", count: 5, scoreEach: 2 },
       { sectionId: "s4", title: "简答题", questionType: "short_answer", count: 4, scoreEach: 5 },
-      // 应用题按空数给分（1 空 1 分，共 30 空），模板里只能写均值；精确分配在 T1-7 建模
+      // 应用题共 30 分：旧版按空数动态分配（1 空 1 分），模板是静态结构，写均值 7.5，
+      // 判分按空位比例（D-4）；对账口径见 docs/reports/s5-feature-parity.md
       { sectionId: "s5", title: "应用题", questionType: "code_blank", count: 4, scoreEach: 7.5 },
     ],
     totalScore: 100,

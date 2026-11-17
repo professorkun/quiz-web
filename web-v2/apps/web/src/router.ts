@@ -1,18 +1,19 @@
 /**
- * hash 路由（S3 · T3-3）。
+ * hash 路由（S3 · T3-3，S5 增补模考入口）。
  *
- * 不上 react-router：五个固定入口、没有嵌套路由、没有 loader，
+ * 不上 react-router：固定入口、没有嵌套路由、没有 loader，
  * 一个 20 行的 hash 解析就够。`base: "./"` 的静态产物也能直接双击打开，
  * 换成 history 路由就得配服务器 fallback，反而给"断网可用"添麻烦。
  */
 
-export const ROUTES = ["learn", "banks", "practice", "review", "me"] as const;
+export const ROUTES = ["learn", "banks", "practice", "exam", "review", "me"] as const;
 export type Route = (typeof ROUTES)[number];
 
 export const ROUTE_LABEL: Record<Route, string> = {
   learn: "学习",
   banks: "题库",
   practice: "刷题",
+  exam: "模考",
   review: "复习",
   me: "我的",
 };

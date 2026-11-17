@@ -13,7 +13,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { SCHEMA_VERSION, type Attempt, type BankContent } from "@quiz/core";
+import { SCHEMA_VERSION, type Attempt, type BankContent, type ExamRecord } from "@quiz/core";
 import { StorageError, type Clock } from "@quiz/platform";
 
 import { MemoryKeyValueStore, type KeyValueStore } from "./kv.js";
@@ -313,5 +313,160 @@ describe("导出快照", () => {
 
     expect(await platform.attempts.listByBank("javaweb")).toHaveLength(0);
     expect(await platform.banks.listBankIds()).toContain("net");
+  });
+});
+
+/* ------------------------------------------------------ 模考成绩（S5） */
+
+function examRecordOf(
+  bankId: string,
+  recordId: string,
+  templateId: string,
+  submittedAt: string,
+): ExamRecord {
+  return {
+    recordId,
+    bankId,
+    templateId,
+    sessionId: `e-${recordId}`,
+    seed: 1,
+    startedAt: submittedAt,
+    submittedAt,
+    durationSec: 600,
+    timedOut: false,
+    objectiveScore: 2,
+    objectiveMax: 2,
+    selfScore: 0,
+    selfMax: 5,
+    totalScore: 2,
+    totalMax: 7,
+    items: [
+      {
+        questionId: qid(bankId),
+        questionRevision: "000000000001",
+        questionType: "single_choice",
+        sectionId: "s1",
+        answered: true,
+        answer: "a",
+        maxScore: 2,
+        score: 2,
+        correct: true,
+        selfRating: null,
+      },
+      {
+        questionId: `${bankId}:short_answer:001`,
+        questionRevision: "000000000001",
+        questionType: "short_answer",
+        sectionId: "s2",
+        answered: true,
+        answer: "我的作答",
+        maxScore: 5,
+        score: 0,
+        correct: null,
+        selfRating: null,
+      },
+    ],
+  };
+}
+
+describe("模考成绩（S5）", () => {
+  it("成绩只增不改：同 recordId 重复写入不覆盖", async () => {
+    const { platform } = platformWith();
+    const record = examRecordOf("javaweb", "r-1", "javaweb:exam:final", "2026-11-16T02:00:00.000Z");
+    await platform.exams.appendRecord(record);
+    await platform.exams.appendRecord({ ...record, objectiveScore: 99 });
+    const rows = await platform.exams.listRecords("javaweb");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.objectiveScore).toBe(2);
+  });
+
+  it("同一模板重复考试产生多条独立成绩（D-6 数据面）", async () => {
+    const { platform } = platformWith();
+    await platform.exams.appendRecord(
+      examRecordOf("javaweb", "r-1", "javaweb:exam:final", "2026-11-16T02:00:00.000Z"),
+    );
+    await platform.exams.appendRecord(
+      examRecordOf("javaweb", "r-2", "javaweb:exam:final", "2026-11-16T03:00:00.000Z"),
+    );
+    const rows = await platform.exams.listRecords("javaweb");
+    expect(rows.map((r) => r.recordId)).toEqual(["r-2", "r-1"]);
+    expect(rows.every((r) => r.templateId === "javaweb:exam:final")).toBe(true);
+  });
+
+  it("自评是唯一可更新字段：只动 selfRating 与自评合计（D-5）", async () => {
+    const { platform } = platformWith();
+    const record = examRecordOf("javaweb", "r-1", "t", "2026-11-16T02:00:00.000Z");
+    await platform.exams.appendRecord(record);
+
+    await platform.exams.updateSelfRating(
+      "javaweb",
+      "r-1",
+      "javaweb:short_answer:001",
+      "half",
+      "2026-11-16T02:10:00.000Z",
+    );
+
+    const saved = (await platform.exams.getRecord("javaweb", "r-1"))!;
+    const subjective = saved.items.find((i) => i.questionId === "javaweb:short_answer:001")!;
+    const objective = saved.items.find((i) => i.questionId === qid("javaweb"))!;
+    expect(subjective.selfRating).toMatchObject({ level: "half", score: 2.5 });
+    expect(saved.selfScore).toBe(2.5);
+    expect(saved.totalScore).toBe(4.5);
+    // 客观字段原样
+    expect(objective.score).toBe(2);
+    expect(objective.correct).toBe(true);
+    expect(subjective.answer).toBe("我的作答");
+    expect(subjective.correct).toBeNull();
+
+    // 清除自评
+    await platform.exams.updateSelfRating("javaweb", "r-1", "javaweb:short_answer:001", null, "t");
+    const cleared = (await platform.exams.getRecord("javaweb", "r-1"))!;
+    expect(cleared.items[1]!.selfRating).toBeNull();
+    expect(cleared.selfScore).toBe(0);
+  });
+
+  it("客观题的自评调用是空操作", async () => {
+    const { platform } = platformWith();
+    await platform.exams.appendRecord(
+      examRecordOf("javaweb", "r-1", "t", "2026-11-16T02:00:00.000Z"),
+    );
+    await platform.exams.updateSelfRating("javaweb", "r-1", qid("javaweb"), "full", "t");
+    const saved = (await platform.exams.getRecord("javaweb", "r-1"))!;
+    expect(saved.items[0]!.selfRating).toBeNull();
+  });
+
+  it("成绩按题库隔离：A 库成绩不进 B 库（D-6）", async () => {
+    const { platform } = platformWith();
+    await platform.exams.appendRecord(
+      examRecordOf("javaweb", "r-1", "javaweb:exam:final", "2026-11-16T02:00:00.000Z"),
+    );
+    await platform.exams.appendRecord(
+      examRecordOf("chem", "r-2", "chem:exam:quiz", "2026-11-16T03:00:00.000Z"),
+    );
+    const jw = await platform.exams.listRecords("javaweb");
+    const chem = await platform.exams.listRecords("chem");
+    expect(jw.map((r) => r.recordId)).toEqual(["r-1"]);
+    expect(chem.map((r) => r.recordId)).toEqual(["r-2"]);
+    expect(jw[0]!.templateId).toBe("javaweb:exam:final");
+    expect(chem[0]!.templateId).toBe("chem:exam:quiz");
+  });
+
+  it("模考会话快照与练习快照分开存", async () => {
+    const { platform } = platformWith();
+    await platform.sessionSnapshots.save("javaweb", "练习快照");
+    await platform.exams.saveSessionSnapshot("javaweb", "模考快照");
+    expect(await platform.sessionSnapshots.load("javaweb")).toBe("练习快照");
+    expect(await platform.exams.getSessionSnapshot("javaweb")).toBe("模考快照");
+  });
+
+  it("exportAll 含成绩；clearLearningData 连成绩一起清", async () => {
+    const { platform } = platformWith();
+    await platform.exams.appendRecord(
+      examRecordOf("javaweb", "r-1", "t", "2026-11-16T02:00:00.000Z"),
+    );
+    expect((await platform.exportAll()).examRecords).toHaveLength(1);
+    await platform.clearLearningData();
+    expect(await platform.exams.listRecords("javaweb")).toHaveLength(0);
+    expect((await platform.exportAll()).examRecords).toHaveLength(0);
   });
 });

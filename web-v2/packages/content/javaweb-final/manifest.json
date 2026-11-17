@@ -52,6 +52,7 @@
       "templateId": "javaweb:exam:final",
       "bankId": "javaweb",
       "title": "JavaWeb 期末考试（模拟）",
+      "durationSec": 7200,
       "sections": [
         {
           "sectionId": "s1",

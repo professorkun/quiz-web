@@ -12,6 +12,7 @@ import type { BankContent } from "@quiz/core";
 import type { Platform } from "@quiz/platform";
 
 import { BanksPage } from "./features/banks/BanksPage";
+import { ExamPage } from "./features/exam/ExamPage";
 import { LearnPage } from "./features/learn/LearnPage";
 import { MePage } from "./features/me/MePage";
 import { PracticePage } from "./features/practice/PracticePage";
@@ -26,6 +27,8 @@ function renderRoute(route: Route): React.ReactElement {
       return <BanksPage />;
     case "practice":
       return <PracticePage />;
+    case "exam":
+      return <ExamPage />;
     case "review":
       return <ReviewPage />;
     case "me":

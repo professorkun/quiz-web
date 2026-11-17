@@ -19,7 +19,14 @@ export {
   KnowledgeItemSchema,
   KnowledgeModuleSchema,
   ExamTemplateSectionSchema,
+  ExamTemplateShapeSchema,
   ExamTemplateSchema,
+  ExamFilterSchema,
+  DifficultySchema,
+  ExamSelfRatingSchema,
+  ExamItemDetailSchema,
+  ExamRecordItemSchema,
+  ExamRecordSchema,
   BankManifestSchema,
   AttemptModeSchema,
   AttemptSchema,
@@ -34,6 +41,7 @@ export {
 
 export type {
   QuestionType,
+  Difficulty,
   Option,
   Blank,
   CodeFile,
@@ -43,11 +51,16 @@ export type {
   Topic,
   KnowledgeItem,
   KnowledgeModule,
+  ExamFilter,
   ExamTemplateSection,
   ExamTemplate,
   BankManifest,
   AttemptMode,
   Attempt,
+  ExamSelfRating,
+  ExamItemDetail,
+  ExamRecordItem,
+  ExamRecord,
   QuestionProgress,
   PracticeSession,
   FavoriteEntry,
@@ -177,3 +190,50 @@ export type {
 // 统计（S4 T4-7）：全部指标由 Attempt 现算，没有计数缓存
 export { computeStats } from "./stats/index.js";
 export type { Stats, StatsInput, Rate } from "./stats/index.js";
+
+// 模考模板校验与组卷（S5 T5-1 / T5-2）
+export { validateExamTemplate, sectionPool, shortageMessage } from "./exam/template.js";
+export type {
+  TemplateIssue,
+  TemplateIssueCode,
+  TemplateValidation,
+} from "./exam/template.js";
+export {
+  assemblePaper,
+  checkPaperMatchesTemplate,
+  PaperAssemblyError,
+} from "./exam/assemble.js";
+export type { ExamPaper, ExamPaperItem, AssemblePaperInput } from "./exam/assemble.js";
+
+// 模考会话（S5 T5-3）：绝对截止时刻，刷新后剩余时间天然正确
+export {
+  EXAM_SESSION_VERSION,
+  createExamSession,
+  setExamAnswer,
+  moveExamTo,
+  examGoNext,
+  examGoPrev,
+  currentExamQuestionId,
+  remainingMs,
+  isExamExpired,
+  unansweredQuestionIds,
+  serializeExamSession,
+  restoreExamSession,
+  examSessionMatchesTemplate,
+} from "./exam/session.js";
+export type {
+  ExamSessionSnapshot,
+  CreateExamSessionInput,
+  ExamRestoreResult,
+} from "./exam/session.js";
+
+// 整卷判分与成绩记录（S5 T5-4 / T5-5）：自评单字段，永不覆盖客观分
+export { gradeExamPaper, scoreBySection } from "./exam/grading.js";
+export type { ExamGradeInput, ExamGradeSummary } from "./exam/grading.js";
+export {
+  buildExamRecord,
+  setExamSelfRating,
+  clearExamSelfRating,
+  itemDetailMap,
+} from "./exam/record.js";
+export type { BuildExamRecordInput } from "./exam/record.js";
