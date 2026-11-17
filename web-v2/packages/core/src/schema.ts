@@ -34,6 +34,10 @@ export const QuestionTypeSchema = z.enum([
 ]);
 export type QuestionType = z.infer<typeof QuestionTypeSchema>;
 
+/** 难度标签（S5 模板筛选维度之一）：内容没标就不参与筛选，绝不默认给一个难度 */
+export const DifficultySchema = z.enum(["easy", "medium", "hard"]);
+export type Difficulty = z.infer<typeof DifficultySchema>;
+
 /** 修订号：12 位小写十六进制，由 `computeRevision()` 从内容算出，不手写 */
 export const RevisionSchema = z.string().regex(/^[0-9a-f]{12}$/, "revision 必须是 12 位小写十六进制");
 
@@ -57,6 +61,12 @@ const questionBase = {
   bankId: IdStr,
   revision: RevisionSchema,
   topicIds: z.array(IdStr).min(1, "每题至少归属一个知识点"),
+  /**
+   * 标签与难度（S5 模板筛选维度）：**可选**，内容没标就缺省。
+   * 旧题库迁移时不伪造数据（S3 变更登记），筛选器只在字段存在时生效。
+   */
+  tags: z.array(IdStr).optional(),
+  difficulty: DifficultySchema.optional(),
   stem: z.string().min(1),
   explanation: z.string().optional(),
   /** 旧版 `q_key` 等历史键，只读；迁移后不再写 */
@@ -243,35 +253,50 @@ export const KnowledgeModuleSchema = z.object({
 });
 export type KnowledgeModule = z.infer<typeof KnowledgeModuleSchema>;
 
+/**
+ * 组卷筛选范围（G5-1 四项配置之一）：主题 / 标签 / 题库在模板上、难度在此。
+ * 缺省 = 不限；标签与难度只对「标了该字段的题」生效，没标的题不会被误筛掉，
+ * 也不会被误算进「有标签」的池子（见 `exam/template.ts` 的池子口径）。
+ */
+export const ExamFilterSchema = z.object({
+  topicIds: z.array(IdStr).optional(),
+  tags: z.array(IdStr).optional(),
+  difficulty: DifficultySchema.optional(),
+});
+export type ExamFilter = z.infer<typeof ExamFilterSchema>;
+
 export const ExamTemplateSectionSchema = z.object({
   sectionId: IdStr,
   title: z.string().min(1),
   questionType: QuestionTypeSchema,
   count: z.number().int().positive(),
   scoreEach: z.number().positive(),
+  filter: ExamFilterSchema.optional(),
 });
 export type ExamTemplateSection = z.infer<typeof ExamTemplateSectionSchema>;
 
+/** 模板形状（无跨字段校验）。校验器在 `exam/template.ts` 里分层给出可定位的语义错误 */
+export const ExamTemplateShapeSchema = z.object({
+  templateId: IdStr,
+  bankId: IdStr,
+  title: z.string().min(1),
+  /** 时长（秒）：缺省 = 不限时（旧版行为），设置后倒计时并超时自动交卷 */
+  durationSec: z.number().int().positive().optional(),
+  sections: z.array(ExamTemplateSectionSchema).min(1),
+  totalScore: z.number().positive(),
+});
+
 /** 卷面结构从代码里搬出来（旧版 `buildPaper()` 写死了 15/10/5/4/4） */
-export const ExamTemplateSchema = z
-  .object({
-    templateId: IdStr,
-    bankId: IdStr,
-    title: z.string().min(1),
-    durationSec: z.number().int().positive().optional(),
-    sections: z.array(ExamTemplateSectionSchema).min(1),
-    totalScore: z.number().positive(),
-  })
-  .superRefine((t, ctx) => {
-    const sum = t.sections.reduce((acc, s) => acc + s.count * s.scoreEach, 0);
-    if (Math.abs(sum - t.totalScore) > 1e-9) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `各题型分值合计 ${sum} 与 totalScore ${t.totalScore} 不一致`,
-        path: ["totalScore"],
-      });
-    }
-  });
+export const ExamTemplateSchema = ExamTemplateShapeSchema.superRefine((t, ctx) => {
+  const sum = t.sections.reduce((acc, s) => acc + s.count * s.scoreEach, 0);
+  if (Math.abs(sum - t.totalScore) > 1e-9) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `各题型分值合计 ${sum} 与 totalScore ${t.totalScore} 不一致`,
+      path: ["totalScore"],
+    });
+  }
+});
 export type ExamTemplate = z.infer<typeof ExamTemplateSchema>;
 
 export const BankManifestSchema = z.object({
@@ -321,6 +346,68 @@ export const AttemptSchema = z.object({
   importedFrom: z.string().min(1).optional(),
 });
 export type Attempt = z.infer<typeof AttemptSchema>;
+
+/**
+ * 模考成绩记录（S5 · T5-7 数据面）：一次交卷一条，**只增不改**（§9 回退方案）。
+ * 唯一可更新的是 `selfRating`（自评可改），且它单独存档，
+ * 绝不覆盖 `score / correct / answer`（T5-5 不变式，D-5）。
+ */
+export const ExamSelfRatingSchema = z.object({
+  level: z.enum(["full", "half", "none"]),
+  score: z.number().nonnegative(),
+  maxScore: z.number().nonnegative(),
+  ratedAt: z.string().min(1),
+});
+export type ExamSelfRating = z.infer<typeof ExamSelfRatingSchema>;
+
+export const ExamItemDetailSchema = z.object({
+  /** blankId / optionId：明细能定位到每一个空位 */
+  key: z.string(),
+  correct: z.boolean().nullable(),
+  given: z.string(),
+  accepted: z.array(z.string()).optional(),
+});
+export type ExamItemDetail = z.infer<typeof ExamItemDetailSchema>;
+
+export const ExamRecordItemSchema = z.object({
+  questionId: QuestionIdSchema,
+  questionRevision: RevisionSchema,
+  questionType: QuestionTypeSchema,
+  sectionId: IdStr,
+  /** 未作答也留档（记 0 分），但不写 Attempt——未答不是一次作答事件 */
+  answered: z.boolean(),
+  answer: z.unknown(),
+  maxScore: z.number().positive(),
+  score: z.number().nonnegative(),
+  /** 主观题为 null（自动判分不裁决）；未作答客观题为 false */
+  correct: z.boolean().nullable(),
+  details: z.array(ExamItemDetailSchema).optional(),
+  selfRating: ExamSelfRatingSchema.nullable().default(null),
+});
+export type ExamRecordItem = z.infer<typeof ExamRecordItemSchema>;
+
+export const ExamRecordSchema = z.object({
+  recordId: IdStr,
+  bankId: IdStr,
+  templateId: IdStr,
+  sessionId: IdStr,
+  seed: z.number().int().nonnegative(),
+  startedAt: z.string().min(1),
+  submittedAt: z.string().min(1),
+  durationSec: z.number().int().nonnegative(),
+  /** 超时自动交卷标记，与手动交卷区分展示 */
+  timedOut: z.boolean().default(false),
+  /** 客观题（自动判分）合计；自评永远不进这里 */
+  objectiveScore: z.number().nonnegative(),
+  objectiveMax: z.number().nonnegative(),
+  /** 主观题自评合计；未评的题不计入分子 */
+  selfScore: z.number().nonnegative(),
+  selfMax: z.number().nonnegative(),
+  totalScore: z.number().nonnegative(),
+  totalMax: z.number().positive(),
+  items: z.array(ExamRecordItemSchema).min(1),
+});
+export type ExamRecord = z.infer<typeof ExamRecordSchema>;
 
 /** 错因 key（文案在展示层的 `ERROR_CAUSE_LABEL`），与复习状态机共用同一份枚举 */
 export const ErrorCauseSchema = z.enum(ERROR_CAUSES);
@@ -413,6 +500,8 @@ export const LearningSnapshotSchema = z.object({
   favorites: z.array(FavoriteEntrySchema),
   sessions: z.array(PracticeSessionSchema),
   settings: AppSettingsSchema,
+  /** S5 起随快照导出：成绩只增不改，导入按 recordId 幂等合并 */
+  examRecords: z.array(ExamRecordSchema).default([]),
 });
 export type LearningSnapshot = z.infer<typeof LearningSnapshotSchema>;
 

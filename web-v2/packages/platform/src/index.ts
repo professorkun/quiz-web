@@ -17,6 +17,8 @@
 import type {
   Attempt,
   BankContent,
+  ExamRecord,
+  ExamSelfRating,
   KnowledgeModule,
   PracticeSession,
   Question,
@@ -26,6 +28,7 @@ import type {
   FavoriteEntry,
   LearningSnapshot,
   PracticeSettings,
+  SelfRatingLevel,
 } from "@quiz/core";
 
 export type { AppSettings, FavoriteEntry, LearningSnapshot, PracticeSettings };
@@ -120,6 +123,35 @@ export interface SessionSnapshotRepository {
 }
 
 /**
+ * 模考（S5）：会话快照与成绩记录分开两条线。
+ *
+ * 成绩记录**只增不改**（§9 回退方案）：`appendRecord` 幂等（同 recordId 跳过），
+ * 唯一允许的更新是主观题自评（`updateSelfRating`）——仓库只接受档位，
+ * 客观得分、作答原文、判分明细没有任何写入口。
+ */
+export interface ExamRepository {
+  /** 未交卷的模考会话快照（原始串）；按题库各一份，不与练习快照混存 */
+  getSessionSnapshot(bankId: string): Promise<string | null>;
+  saveSessionSnapshot(bankId: string, raw: string): Promise<void>;
+  clearSessionSnapshot(bankId: string): Promise<void>;
+  appendRecord(record: ExamRecord): Promise<void>;
+  listRecords(bankId: string): Promise<readonly ExamRecord[]>;
+  getRecord(bankId: string, recordId: string): Promise<ExamRecord | null>;
+  /**
+   * 自评档位（`level` 传 null 清除）。只动该题的 `selfRating` 与自评合计；
+   * 对客观题调用是空操作（与 core 的不变式一致）。
+   */
+  updateSelfRating(
+    bankId: string,
+    recordId: string,
+    questionId: string,
+    level: SelfRatingLevel | null,
+    ratedAt: string,
+  ): Promise<void>;
+  clearRecords(bankId: string): Promise<void>;
+}
+
+/**
  * 收藏**独立于错题**（S3 验收 C / S4 验收 C）：
  * 答对、掌握、移出错题都不许删除收藏，所以这里没有"按状态联动清理"的入口。
  */
@@ -172,6 +204,7 @@ export interface Platform {
   readonly progress: ProgressRepository;
   readonly sessions: SessionRepository;
   readonly sessionSnapshots: SessionSnapshotRepository;
+  readonly exams: ExamRepository;
   readonly favorites: FavoriteRepository;
   readonly settings: SettingsRepository;
   readonly auth: AuthAdapter;

@@ -13,14 +13,18 @@
 import {
   AppSettingsSchema,
   AttemptSchema,
+  ExamRecordSchema,
   FavoriteEntrySchema,
   PracticeSessionSchema,
   PracticeSettingsSchema,
   QuestionProgressSchema,
+  clearExamSelfRating,
+  setExamSelfRating,
   type AppSettings,
   type Attempt,
   type BankContent,
   type BankManifest,
+  type ExamRecord,
   type FavoriteEntry,
   type KnowledgeModule,
   type LearningSnapshot,
@@ -28,6 +32,7 @@ import {
   type Question,
   type QuestionProgress,
   type PracticeSession,
+  type SelfRatingLevel,
 } from "@quiz/core";
 import {
   DEFAULT_PRACTICE_SETTINGS,
@@ -35,6 +40,7 @@ import {
   type AttemptRepository,
   type BankRepository,
   type Clock,
+  type ExamRepository,
   type FavoriteRepository,
   type Platform,
   type ProgressRepository,
@@ -58,6 +64,9 @@ const K = {
   appSettings: "settings:app",
   practiceSettings: (bankId: string): string => `settings:practice:${bankId}`,
   sessionSnapshot: (bankId: string): string => `session-snapshot:${bankId}`,
+  examSessionSnapshot: (bankId: string): string => `exam-session:${bankId}`,
+  examRecords: (bankId: string): string => `exam-record:${bankId}:`,
+  examRecord: (bankId: string, recordId: string): string => `exam-record:${bankId}:${recordId}`,
   importedBanks: "bank:imported:",
   importedBank: (bankId: string): string => `bank:imported:${bankId}`,
   probe: "__probe__",
@@ -304,6 +313,81 @@ class SessionSnapshotRepositoryImpl implements SessionSnapshotRepository {
   }
 }
 
+/* ------------------------------------------------------------------ 模考 */
+
+class ExamRepositoryImpl implements ExamRepository {
+  constructor(private readonly kv: KeyValueStore) {}
+
+  async getSessionSnapshot(bankId: string): Promise<string | null> {
+    return this.kv.get(K.examSessionSnapshot(bankId));
+  }
+
+  async saveSessionSnapshot(bankId: string, raw: string): Promise<void> {
+    await this.kv.set(K.examSessionSnapshot(bankId), raw);
+  }
+
+  async clearSessionSnapshot(bankId: string): Promise<void> {
+    await this.kv.delete(K.examSessionSnapshot(bankId));
+  }
+
+  /** 幂等：同 recordId 重放是空操作（成绩只增不改） */
+  async appendRecord(record: ExamRecord): Promise<void> {
+    const key = K.examRecord(record.bankId, record.recordId);
+    if ((await this.kv.get(key)) !== null) return;
+    await this.kv.set(key, JSON.stringify(record));
+  }
+
+  async listRecords(bankId: string): Promise<readonly ExamRecord[]> {
+    const keys = await this.kv.keys(K.examRecords(bankId));
+    const out: ExamRecord[] = [];
+    for (const key of keys) {
+      const row = parseRow<ExamRecord>(await this.kv.get(key), ExamRecordSchema, "模考成绩");
+      if (row !== null) out.push(row);
+    }
+    // 新成绩在前；同一秒内按 recordId 稳定排序
+    return out.sort((a, b) =>
+      a.submittedAt === b.submittedAt
+        ? b.recordId.localeCompare(a.recordId)
+        : b.submittedAt.localeCompare(a.submittedAt),
+    );
+  }
+
+  async getRecord(bankId: string, recordId: string): Promise<ExamRecord | null> {
+    return parseRow<ExamRecord>(
+      await this.kv.get(K.examRecord(bankId, recordId)),
+      ExamRecordSchema,
+      "模考成绩",
+    );
+  }
+
+  /**
+   * 自评是唯一可更新字段。走 core 的纯函数变换，
+   * 客观得分/作答/明细在结构上就没有被写的路径。
+   */
+  async updateSelfRating(
+    bankId: string,
+    recordId: string,
+    questionId: string,
+    level: SelfRatingLevel | null,
+    ratedAt: string,
+  ): Promise<void> {
+    const record = await this.getRecord(bankId, recordId);
+    if (record === null) {
+      throw new StorageError("corrupt", `成绩记录 ${recordId} 不存在，无法写入自评`);
+    }
+    const next =
+      level === null
+        ? clearExamSelfRating(record, questionId)
+        : setExamSelfRating(record, questionId, level, ratedAt);
+    await this.kv.set(K.examRecord(bankId, recordId), JSON.stringify(next));
+  }
+
+  async clearRecords(bankId: string): Promise<void> {
+    for (const key of await this.kv.keys(K.examRecords(bankId))) await this.kv.delete(key);
+    await this.clearSessionSnapshot(bankId);
+  }
+}
+
 /* ------------------------------------------------------------------ 设置 */
 class SettingsRepositoryImpl implements SettingsRepository {
   constructor(
@@ -374,6 +458,7 @@ export function createPlatform(options: CreatePlatformOptions): Platform {
   const progress = new ProgressRepositoryImpl(kv);
   const sessions = new SessionRepositoryImpl(kv);
   const sessionSnapshots = new SessionSnapshotRepositoryImpl(kv);
+  const exams = new ExamRepositoryImpl(kv);
   const favorites = new FavoriteRepositoryImpl(kv);
   const settings = new SettingsRepositoryImpl(kv, clock);
 
@@ -400,10 +485,12 @@ export function createPlatform(options: CreatePlatformOptions): Platform {
     const allProgress: QuestionProgress[] = [];
     const allFavorites: FavoriteEntry[] = [];
     const allSessions: PracticeSession[] = [];
+    const allExamRecords: ExamRecord[] = [];
     for (const bankId of bankIds) {
       allAttempts.push(...(await attempts.listByBank(bankId)));
       allProgress.push(...(await progress.listByBank(bankId)));
       allFavorites.push(...(await favorites.listByBank(bankId)));
+      allExamRecords.push(...(await exams.listRecords(bankId)));
       const session = await sessions.getCurrent(bankId);
       if (session !== null) allSessions.push(session);
     }
@@ -415,6 +502,7 @@ export function createPlatform(options: CreatePlatformOptions): Platform {
       favorites: allFavorites,
       sessions: allSessions,
       settings: await settings.getApp(),
+      examRecords: allExamRecords,
     };
   };
 
@@ -427,6 +515,7 @@ export function createPlatform(options: CreatePlatformOptions): Platform {
       await attempts.clearByBank(bankId);
       await progress.clearByBank(bankId);
       await sessions.clear(bankId);
+      await exams.clearRecords(bankId);
       for (const key of await kv.keys(K.favorites(bankId))) await kv.delete(key);
       await kv.delete(K.practiceSettings(bankId));
       return;
@@ -444,6 +533,7 @@ export function createPlatform(options: CreatePlatformOptions): Platform {
     progress,
     sessions,
     sessionSnapshots,
+    exams,
     favorites,
     settings,
     auth: createAnonymousAuth(),

@@ -18,6 +18,7 @@ import {
   validateBankPackage,
   type Attempt,
   type BankContent,
+  type ExamRecord,
   type FavoriteEntry,
   type LearningSnapshot,
   type PracticeSession,
@@ -94,6 +95,40 @@ const SESSION_KEYS = [
   "finishedAt",
 ] as const;
 
+/** S5 模考成绩：只增不改；`selfRating` 是唯一可更新字段 */
+const EXAM_RECORD_KEYS = [
+  "recordId",
+  "bankId",
+  "templateId",
+  "sessionId",
+  "seed",
+  "startedAt",
+  "submittedAt",
+  "durationSec",
+  "timedOut",
+  "objectiveScore",
+  "objectiveMax",
+  "selfScore",
+  "selfMax",
+  "totalScore",
+  "totalMax",
+  "items",
+] as const;
+
+const EXAM_ITEM_KEYS = [
+  "questionId",
+  "questionRevision",
+  "questionType",
+  "sectionId",
+  "answered",
+  "answer",
+  "maxScore",
+  "score",
+  "correct",
+  "details",
+  "selfRating",
+] as const;
+
 const SNAPSHOT_KEYS = [
   "kind",
   "schemaVersion",
@@ -103,6 +138,8 @@ const SNAPSHOT_KEYS = [
   "favorites",
   "sessions",
   "settings",
+  // S5 追加：旧文件没有该键时由 Zod 默认 [] 补齐（与 S4 的进度字段同一先例）
+  "examRecords",
 ] as const;
 
 const BANK_KEYS = ["kind", "manifest", "questions", "knowledge"] as const;
@@ -125,6 +162,18 @@ function unknownKeyIssues(
         });
       }
     }
+  });
+  return issues;
+}
+
+/** 成绩明细是两层结构：记录级与题目级都要拦未知字段 */
+function examItemKeyIssues(records: unknown): ImportIssue[] {
+  if (!Array.isArray(records)) return [];
+  const issues: ImportIssue[] = [];
+  records.forEach((record, index) => {
+    if (record === null || typeof record !== "object") return;
+    const items = (record as Record<string, unknown>)["items"];
+    issues.push(...unknownKeyIssues(items, EXAM_ITEM_KEYS, `examRecords[${index}].items`));
   });
   return issues;
 }
@@ -199,6 +248,8 @@ export function parseLearningJson(
     ...unknownKeyIssues(record["progress"], PROGRESS_KEYS, "progress"),
     ...unknownKeyIssues(record["favorites"], FAVORITE_KEYS, "favorites"),
     ...unknownKeyIssues(record["sessions"], SESSION_KEYS, "sessions"),
+    ...unknownKeyIssues(record["examRecords"], EXAM_RECORD_KEYS, "examRecords"),
+    ...examItemKeyIssues(record["examRecords"]),
   );
 
   const parsed = LearningSnapshotSchema.safeParse(raw);
@@ -230,6 +281,18 @@ export function parseLearningJson(
       });
     }
     seen.add(attempt.attemptId);
+  });
+
+  // 成绩同理：recordId 重复 = 同一场考试写了两遍
+  const seenRecords = new Set<string>();
+  parsed.data.examRecords.forEach((record, index) => {
+    if (seenRecords.has(record.recordId)) {
+      issues.push({
+        path: `examRecords[${index}].recordId`,
+        message: `recordId 重复：${record.recordId}`,
+      });
+    }
+    seenRecords.add(record.recordId);
   });
 
   const warnings: string[] = [];
@@ -330,6 +393,7 @@ export interface MergeStats {
   readonly attemptsAdded: number;
   readonly attemptsKept: number;
   readonly favoritesAdded: number;
+  readonly examRecordsAdded: number;
   readonly conflicts: readonly string[];
 }
 
@@ -399,6 +463,20 @@ export function mergeLearning(base: LearningSnapshot, incoming: LearningSnapshot
     }
   }
 
+  // 成绩只增不改：同 recordId 以既有为准（导入文件没有资格改写本机成绩）
+  const examRecords = new Map<string, ExamRecord>();
+  for (const record of base.examRecords ?? []) examRecords.set(record.recordId, record);
+  let examRecordsAdded = 0;
+  for (const record of incoming.examRecords ?? []) {
+    const existing = examRecords.get(record.recordId);
+    if (existing === undefined) {
+      examRecords.set(record.recordId, record);
+      examRecordsAdded += 1;
+    } else if (JSON.stringify(existing) !== JSON.stringify(record)) {
+      conflicts.push(record.recordId);
+    }
+  }
+
   const snapshot: LearningSnapshot = {
     schemaVersion: SNAPSHOT_VERSION,
     exportedAt: incoming.exportedAt,
@@ -413,11 +491,12 @@ export function mergeLearning(base: LearningSnapshot, incoming: LearningSnapshot
       // 若用本地默认值覆盖，导出→导入就不再是恒等变换（对账会永远差一秒）
       updatedAt: incoming.settings.updatedAt,
     },
+    examRecords: [...examRecords.values()],
   };
 
   return {
     snapshot,
-    stats: { attemptsAdded, attemptsKept, favoritesAdded, conflicts },
+    stats: { attemptsAdded, attemptsKept, favoritesAdded, examRecordsAdded, conflicts },
   };
 }
 
@@ -438,6 +517,7 @@ export async function applyLearningSnapshot(
     await platform.favorites.add(favorite.bankId, favorite.questionId, favorite.addedAt);
   }
   for (const session of snapshot.sessions) await platform.sessions.save(session);
+  for (const record of snapshot.examRecords) await platform.exams.appendRecord(record);
   await platform.settings.saveApp(snapshot.settings);
 
   const after = await platform.exportAll();
@@ -449,6 +529,11 @@ export async function applyLearningSnapshot(
   if (after.favorites.length !== snapshot.favorites.length) {
     throw new Error(
       `导入对账失败：预期 ${snapshot.favorites.length} 条收藏，实际 ${after.favorites.length} 条`,
+    );
+  }
+  if ((after.examRecords?.length ?? 0) !== snapshot.examRecords.length) {
+    throw new Error(
+      `导入对账失败：预期 ${snapshot.examRecords.length} 条成绩，实际写入 ${after.examRecords?.length ?? 0} 条`,
     );
   }
   return stats;

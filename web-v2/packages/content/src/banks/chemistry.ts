@@ -9,7 +9,13 @@
  * 上限 20 题，够验证契约即可。
  */
 
-import { SCHEMA_VERSION, computeRevision, type BankContent, type Question } from "@quiz/core";
+import {
+  SCHEMA_VERSION,
+  computeRevision,
+  type BankContent,
+  type ExamTemplate,
+  type Question,
+} from "@quiz/core";
 
 const BANK_ID = "chem";
 
@@ -231,6 +237,32 @@ const KNOWLEDGE = [
   },
 ] as const;
 
+/**
+ * 小测模板（S5 · T5-9）：10 题 / 50 分 / 30 分钟。
+ * 与 JavaWeb 期末卷的题型数量、每题分值、筛选范围、时长四项全部不同——
+ * G5-1「新增第二个模板不改代码」的实证；填空题限定两个主题，验证筛选范围生效。
+ */
+const EXAM_TEMPLATE: ExamTemplate = {
+  templateId: "chem:exam:quiz",
+  bankId: BANK_ID,
+  title: "化学小测（10 题）",
+  durationSec: 1800,
+  sections: [
+    { sectionId: "q1", title: "单选题", questionType: "single_choice", count: 3, scoreEach: 5 },
+    { sectionId: "q2", title: "多选题", questionType: "multiple_choice", count: 2, scoreEach: 5 },
+    { sectionId: "q3", title: "判断题", questionType: "true_false", count: 2, scoreEach: 5 },
+    {
+      sectionId: "q4",
+      title: "填空题（物质与溶液）",
+      questionType: "fill_blank",
+      count: 3,
+      scoreEach: 5,
+      filter: { topicIds: ["chem:topic:matter", "chem:topic:solution"] },
+    },
+  ],
+  totalScore: 50,
+};
+
 export const chemistryBank: BankContent = {
   manifest: {
     schemaVersion: SCHEMA_VERSION,
@@ -239,7 +271,7 @@ export const chemistryBank: BankContent = {
     subject: "化学",
     questionCount: QUESTIONS.length,
     topics: TOPICS.map((t) => ({ ...t })),
-    examTemplates: [],
+    examTemplates: [EXAM_TEMPLATE],
     createdAt: "2026-11-16T00:00:00.000Z",
   },
   questions: QUESTIONS,
