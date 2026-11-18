@@ -6,8 +6,8 @@
  * 只把 IndexedDB 换成内存——因为 jsdom 没有 IndexedDB，而换掉实现层
  * 就测不到"页面 → 仓储 → 键值"这条链。
  *
- * 覆盖：五入口可达、空状态有引导、游客闭环（作答→错题→收藏）、筛选与搜索、
- * 记录不串库。
+ * 覆盖：六入口可达、空状态有引导、游客闭环（作答→错题→收藏）、筛选与搜索、
+ * 记录不串库，以及「只刷未掌握」真实接 S4 状态机。
  */
 
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -89,7 +89,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe("五入口", () => {
+describe("六入口", () => {
   it("每个入口都能进入并有实质内容", async () => {
     await setup();
     await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
@@ -107,6 +107,11 @@ describe("五入口", () => {
     await go("me");
     expect(await screen.findByRole("heading", { name: "我的", level: 1 })).toBeTruthy();
     expect(screen.getByText("数据导入导出")).toBeTruthy();
+
+    await go("exam");
+    expect(await screen.findByRole("heading", { name: /模考/ })).toBeTruthy();
+    // 实质内容：模板卡片得真的渲染出来（W4-4），只到空壳页不算可达
+    expect(await screen.findByText(/化学小测/)).toBeTruthy();
   });
 
   it("新用户看到的是引导而不是白屏", async () => {
@@ -344,7 +349,9 @@ describe("S3 验收补测", () => {
     await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
     await go("banks");
 
-    expect(await screen.findByText("物质的分类")).toBeTruthy();
+    // W3 精读 UI 把讲义标题渲染在导航 span 与正文 h2 两处，findByText 期望单元素会报错；
+    // 这里只关心"化学库有这篇讲义"，用 findAllByText 并断言至少命中一处即可。
+    expect((await screen.findAllByText("物质的分类")).length).toBeGreaterThan(0);
 
     fireEvent.click(await screen.findByRole("button", { name: /对照题库（1）/ }));
     expect(await screen.findByText(/这份题库还没配知识讲义/)).toBeTruthy();
@@ -429,5 +436,38 @@ describe("S4 复习与对账", () => {
     fireEvent.click(await screen.findByRole("button", { name: /由事件重算并对账/ }));
     expect(await screen.findByText(/重算后 1 条全部一致/)).toBeTruthy();
     expect((await platform.progress.listByBank("chem"))[0]?.status).toBe("learning");
+  });
+});
+
+/** W4 · 既有页面一致性：占位置换成真实能力后的回归 */
+describe("W4 一致性", () => {
+  it("「只刷未掌握」接 S4 状态机：已掌握题被筛掉，未掌握题仍可刷", async () => {
+    const { platform } = await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+
+    // 把第一题标记为已掌握（S4 状态机投影），其余题保持未掌握
+    await platform.progress.save({
+      bankId: "chem",
+      questionId: "chem:single_choice:001",
+      attemptsCount: 3,
+      wrongCount: 0,
+      firstCorrectAt: "2026-11-16T09:00:00.000Z",
+      lastAttemptAt: "2026-11-16T09:00:00.000Z",
+      mastered: true,
+      status: "mastered",
+      streak: 3,
+      nextReviewAt: null,
+      errorCause: null,
+    });
+
+    await go("practice");
+    const onlyUnmastered = await screen.findByRole("button", { name: /只刷未掌握/ });
+    fireEvent.click(onlyUnmastered);
+    await waitFor(() => expect(onlyUnmastered.className).toContain("on"));
+
+    fireEvent.click(screen.getByRole("button", { name: "开始练习" }));
+    await screen.findByText(/第 1 \/ 1 题/);
+    // 第一题已掌握 → 不在会话里；会话里是下一道未掌握的题
+    expect(screen.queryByText(/下列物质中属于纯净物的是/)).toBeNull();
   });
 });

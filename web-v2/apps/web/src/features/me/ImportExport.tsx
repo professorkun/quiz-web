@@ -31,6 +31,20 @@ interface Preview {
   readonly bank?: BankContent;
 }
 
+/**
+ * 讲义节数合计（W4 · 步骤③）：与 W2 产物对齐的展示口径。
+ * W2 生成的 knowledge.json 每篇讲义按 `##` 切节（契约 §4.2）；旧数据没有
+ * `sections` 字段时按 0 计——这里只做展示换算，不动解析（那是 W1 的范围）。
+ */
+function sectionTotal(bank: BankContent): number {
+  let total = 0;
+  for (const module of bank.knowledge) {
+    const sections = (module as { sections?: readonly unknown[] }).sections;
+    if (Array.isArray(sections)) total += sections.length;
+  }
+  return total;
+}
+
 export function ImportExport(): React.ReactElement {
   const { platform, activeBank, banks, reloadBanks, selectBank, bump, showToast } = usePlatform();
   const [issues, setIssues] = useState<readonly ImportIssue[]>([]);
@@ -75,11 +89,14 @@ export function ImportExport(): React.ReactElement {
       if (bankResult.ok && bankResult.value !== null) {
         const bank = bankResult.value;
         const overwrite = banks.some((b) => b.manifest.bankId === bank.manifest.bankId);
+        const sections = sectionTotal(bank);
         setPreview({
           kind: "bank",
           label: `题库包：${bank.manifest.title}`,
           lines: [
-            `${bank.questions.length} 道题 · ${bank.manifest.topics.length} 个知识点 · ${bank.knowledge.length} 篇讲义`,
+            `${bank.questions.length} 道题 · ${bank.manifest.topics.length} 个知识点 · ${bank.knowledge.length} 篇讲义${
+              sections > 0 ? ` · ${sections} 节` : ""
+            }`,
             `bankId：${bank.manifest.bankId}`,
             overwrite
               ? "⚠ 已存在同名题库，确认导入会覆盖它在本机的版本"

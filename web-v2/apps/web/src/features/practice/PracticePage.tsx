@@ -193,6 +193,7 @@ export function PracticePage(): React.ReactElement {
       ...(settings.types.length === 0 ? {} : { types: settings.types }),
       ...(settings.limit === 0 ? {} : { limit: settings.limit }),
       ...(settings.onlyUnseen ? { onlyUnseen: true } : {}),
+      ...(settings.onlyUnmastered ? { onlyUnmastered: true } : {}),
     };
     try {
       beginSession(activeBank.questions, config, "practice");
@@ -299,6 +300,15 @@ export function PracticePage(): React.ReactElement {
     }
     return base;
   }, [session]);
+
+  // 未掌握 = 还没有被 S4 状态机判定为 mastered 的题（与新题、错题划等号，正好是可刷范围）
+  const unmasteredCount = useMemo(
+    () =>
+      activeBank.questions.filter(
+        (q) => progress.find((p) => p.questionId === q.questionId)?.mastered !== true,
+      ).length,
+    [activeBank.questions, progress],
+  );
 
   if (!ready || settings === null) {
     return (
@@ -432,20 +442,26 @@ export function PracticePage(): React.ReactElement {
           <div className="chips">
             <button
               type="button"
-              className={chip(!settings.onlyUnseen)}
-              onClick={() => void saveSettings({ ...settings, onlyUnseen: false })}
+              className={chip(!settings.onlyUnseen && !settings.onlyUnmastered)}
+              onClick={() => void saveSettings({ ...settings, onlyUnseen: false, onlyUnmastered: false })}
             >
               全部题目
             </button>
             <button
               type="button"
               className={chip(settings.onlyUnseen)}
-              onClick={() => void saveSettings({ ...settings, onlyUnseen: true })}
+              onClick={() => void saveSettings({ ...settings, onlyUnseen: true, onlyUnmastered: false })}
             >
               只刷未做（{Math.max(0, activeBank.questions.length - progress.length)}）
             </button>
-            <button type="button" className="chip" disabled title="S4 引入状态机后开放">
-              只刷未掌握（待 S4）
+            <button
+              type="button"
+              className={chip(settings.onlyUnmastered)}
+              disabled={unmasteredCount === 0}
+              title={unmasteredCount === 0 ? "当前题库没有未掌握的题" : undefined}
+              onClick={() => void saveSettings({ ...settings, onlyUnseen: false, onlyUnmastered: true })}
+            >
+              只刷未掌握（{unmasteredCount}）
             </button>
           </div>
 
@@ -457,8 +473,8 @@ export function PracticePage(): React.ReactElement {
             <button type="button" className="chip" disabled title="从「复习」页进入">
               复习（从复习页进入）
             </button>
-            <button type="button" className="chip" disabled title="S5 接入模考">
-              模考（待 S5）
+            <button type="button" className="chip" onClick={() => navigate("exam")}>
+              模考（去模考页）
             </button>
           </div>
 
