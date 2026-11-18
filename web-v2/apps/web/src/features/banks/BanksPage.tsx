@@ -6,7 +6,7 @@
  * 这样 Web/小程序/云端的筛选语义只有一份，不会各写一套。
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   getQuestionType,
@@ -17,7 +17,10 @@ import {
 } from "@quiz/core";
 
 import { RichText } from "../../components/RichText";
+import { KnowledgePanel } from "../knowledge/KnowledgePanel";
+import { applyTopicPractice } from "../knowledge/practiceLink";
 import { usePlatform } from "../../platform/PlatformProvider";
+import { navigate } from "../../router";
 import { getRenderer } from "../../renderers";
 
 type StatusFilter = "all" | "unseen" | "wrong" | "correct";
@@ -115,6 +118,24 @@ export function BanksPage(): React.ReactElement {
       showToast(cause instanceof Error ? cause.message : "收藏操作失败");
     }
   };
+
+  /**
+   * 从讲义跳去练习（S7-E8）：把当前知识点写进练习设置，其余设置不动。
+   * 这样"学完一节就练这一节"不需要新入口，复用既有刷题页即可。
+   */
+  const startTopicPractice = useCallback(
+    async (topicId: string): Promise<void> => {
+      try {
+        const current = await platform.settings.getPractice(bankId);
+        // 只改 topicIds 与 onlyUnseen，其余偏好原样保留（不变式见 practiceLink.ts）
+        await platform.settings.savePractice(bankId, applyTopicPractice(current, topicId));
+        navigate("practice");
+      } catch (cause) {
+        showToast(cause instanceof Error ? cause.message : "无法进入练习");
+      }
+    },
+    [platform, bankId, showToast],
+  );
 
   const typeCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -304,36 +325,15 @@ export function BanksPage(): React.ReactElement {
 
       <section className="card">
         <h2>知识讲义</h2>
-        {activeBank.knowledge.length === 0 ? (
-          <p className="muted">这份题库还没配知识讲义。</p>
-        ) : (
-          <div className="knowledge">
-            {activeBank.knowledge.map((module) => (
-              <details key={module.moduleId} className="kmodule">
-                <summary>
-                  {module.title}
-                  <span className="muted"> · {topicName.get(module.topicId) ?? module.topicId}</span>
-                </summary>
-                <p className="muted">{module.summary}</p>
-                <ul>
-                  {module.items.map((item) => (
-                    <li key={item.title}>
-                      <strong>{item.title}</strong>：{item.detail}
-                    </li>
-                  ))}
-                </ul>
-                {module.pitfalls.length === 0 ? null : (
-                  <div className="notice small">
-                    易错点：
-                    {module.pitfalls.map((pitfall) => (
-                      <div key={pitfall}>· {pitfall}</div>
-                    ))}
-                  </div>
-                )}
-              </details>
-            ))}
-          </div>
-        )}
+        <p className="muted">
+          左边选一节精读，右边是正文、配套视频与易错点；读完可以直接去练这一节。
+        </p>
+        <KnowledgePanel
+          modules={activeBank.knowledge}
+          topics={activeBank.manifest.topics}
+          storageKey={bankId}
+          onPractice={(topicId) => void startTopicPractice(topicId)}
+        />
       </section>
     </div>
   );
