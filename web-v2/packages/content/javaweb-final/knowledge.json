@@ -3,283 +3,621 @@
     "moduleId": "javaweb:kb:web_base",
     "topicId": "javaweb:topic:web_base",
     "title": "Web 基础",
-    "summary": "浏览器/服务器怎么协作、页面怎么被请求出来。",
-    "items": [
+    "summary": "从地址栏回车到页面出现，中间到底发生了什么——把后面六章要用到的名词先立住。",
+    "items": [],
+    "pitfalls": [
+      "表单 method 不写默认是 GET，中文参数容易乱码，且会被浏览器历史记录",
+      "重定向（302）访问不到 WEB-INF 下的页面，只有服务器内部转发可以",
+      "8080 是 Tomcat 默认端口，不是 HTTP 的默认端口（HTTP 是 80）",
+      "状态码 302 是\"临时跳转\"，301 是\"永久跳转\"，考试常拿来设陷阱"
+    ],
+    "goals": [
+      "能完整复述一次 HTTP 请求从浏览器到 Tomcat 再到响应的七步，并指出每步由谁负责",
+      "能说清 GET 与 POST 在参数位置、长度、缓存、幂等性上的差别，而不是只背\"一个在 URL 一个在 body\"",
+      "能解释为什么 WEB-INF 下的页面浏览器直接访问不到，而转发可以",
+      "能用 MVC 给一个登录功能划出三层各自该写什么"
+    ],
+    "sections": [
+      {
+        "title": "这一节解决什么问题",
+        "body": "后面六章（JSP、Servlet、JDBC、Spring、SpringMVC、MyBatis）看起来是六个互不相干的框架，其实都在回答同一个问题：**一个 HTTP 请求进来，谁接住它、谁处理它、谁把结果写回去**。\n\n这一节不写代码，只做一件事：把这条链路上的名词全部立住。名词不清楚，后面每学一个框架都会卡在\"这东西站在链路的哪一段\"。"
+      },
+      {
+        "title": "一分钟速览",
+        "body": "| 概念 | 一句话 | 后面哪一章会用到 |\n| --- | --- | --- |\n| B/S 架构 | 客户端只要浏览器，升级只改服务器 | 全部章节的前提 |\n| 静态资源 | 文件里写死什么就返回什么 | Tomcat 直接返回，不经过 Java 代码 |\n| 动态资源 | 由程序现场生成，可以查库、可以随参数变化 | Servlet / JSP / Controller |\n| 请求（Request） | 浏览器发出去的一包数据：方法、地址、头、体 | `HttpServletRequest` |\n| 响应（Response） | 服务器回过来的一包数据：状态码、头、体 | `HttpServletResponse` |\n| 容器（Container） | 管 Servlet 生老病死、管请求分发的那个程序 | Tomcat，Servlet 章的主角 |\n| 上下文路径 | 应用在容器里的前缀，如 `/shop` | 所有路径拼接 |\n| MVC | 模型管数据、视图管展示、控制器管调度 | SpringMVC 章的主线 |"
+      },
+      {
+        "title": "从地址栏回车到页面出现",
+        "body": "把浏览器地址栏输入 `http://localhost:8080/shop/user/list` 之后发生的事拆成七步。**这七步是本章唯一必须按顺序背下来的东西**，因为每一章都是在这条链上插一个环节。\n\n1. **域名解析**：`localhost` 直接被系统解析成 `127.0.0.1`，不查 DNS。\n2. **建立 TCP 连接**：浏览器向 `127.0.0.1:8080` 发起三次握手（HTTPS 还要多一步 TLS 握手）。\n3. **拼 HTTP 请求报文**：浏览器按 HTTP 协议把\"我要什么\"写成文本，第一行是请求行。\n4. **Tomcat 接住请求**：`Connector` 负责监听端口、解析报文，把字节流转成 `HttpServletRequest` 对象。\n5. **找到该谁处理**：Tomcat 按\"上下文路径 + 路径\"找到对应的 Web 应用，再按 `url-pattern` 找到 Servlet（或交给 JSP、交给 SpringMVC 的 `DispatcherServlet`）。\n6. **业务处理**：Java 代码执行——可能查数据库、可能调用别的服务，最终把数据放进 `request` / `Model` 里。\n7. **写响应**：容器把 `HttpServletResponse` 里的状态码、响应头、响应体序列化成字节流发回去，浏览器解析并渲染。\n\n一句话记法：**解析地址 → 连端口 → 发报文 → 容器拆包 → 找 Servlet → 跑业务 → 回响应**。"
+      },
       {
         "title": "B/S 与 C/S",
-        "detail": "B/S 是浏览器/服务器，客户端只要有浏览器，升级只改服务器；C/S 需要装客户端，升级要重新分发。"
+        "body": "| 对比项 | B/S（Browser/Server） | C/S（Client/Server） |\n| --- | --- | --- |\n| 客户端 | 浏览器，装好即用 | 需要安装专门的客户端程序 |\n| 升级维护 | 只改服务器，用户刷新即生效 | 每台机器都要重新分发安装 |\n| 跨平台 | 天然跨平台，有浏览器就能跑 | 要分别做 Windows / macOS / 移动端 |\n| 交互体验 | 受浏览器能力限制 | 可以调用本地硬件、体验更接近原生 |\n| 典型例子 | 教务系统、电商网站 | 微信客户端、大型网游 |\n\nJavaWeb 这门课默认是 B/S：服务端用 Java 写，客户端只交一个浏览器。"
       },
       {
-        "title": "静态页与动态页",
-        "detail": "静态页内容写死，改一个字都要改文件；动态页由程序生成，能读数据库、随请求参数变化。"
+        "title": "URL 的每一段都有名字",
+        "body": "```\nhttp://localhost:8080/shop/user/list?id=3#top\n└┬─┘   └───┬───┘ └┬─┘ └─┬─┘ └────┬────┘ └──┬──┘ └┬┘\n协议     主机     端口  上下文路径   资源路径    查询串  片段\n```\n\n- **协议**：`http` 默认端口 80，`https` 默认端口 443。写 `:8080` 是因为 Tomcat 默认不用 80。\n- **上下文路径（Context Path）**：应用名。部署到 `webapps/shop` 就自动是 `/shop`；部署成 `ROOT` 时为空串。\n- **资源路径**：容器拿它去匹配 `url-pattern`，这一段的匹配规则是 Servlet 章的重点。\n- **查询串**：`?` 之后，`key=value` 用 `&` 连接。这就是 GET 传参的位置。\n- **片段**：`#` 之后，**根本不会发给服务器**，只在浏览器内部用于锚点跳转。\n\n在 JSP/Servlet 里拿这些值：\n\n```java\nrequest.getContextPath();      // /shop\nrequest.getRequestURI();       // /shop/user/list\nrequest.getRequestURL();       // http://localhost:8080/shop/user/list\nrequest.getQueryString();      // id=3\nrequest.getParameter(\"id\");    // 3（GET 查查询串，POST 查请求体）\n```"
       },
       {
-        "title": "Tomcat 的作用",
-        "detail": "接收 HTTP 请求，按 url 找到对应的 Servlet 或 JSP 处理，再把结果写回浏览器。"
+        "title": "HTTP 请求报文长什么样",
+        "body": "```\nPOST /shop/user/login HTTP/1.1          ← 请求行：方法 路径 协议版本\nHost: localhost:8080                     ← 请求头：一行一个键值对\nContent-Type: application/x-www-form-urlencoded\nContent-Length: 27\nCookie: JSESSIONID=8A3F...               ← 会话靠它带上来\n                                         ← 空行：头和体的分界，必须有\nusername=admin&password=123              ← 请求体\n```\n\n### GET 与 POST 的真实差别\n\n| 对比项 | GET | POST |\n| --- | --- | --- |\n| 参数位置 | URL 查询串 | 请求体 |\n| 长度限制 | 受 URL 长度限制（浏览器与服务器各有上限） | 基本不受限，适合上传 |\n| 书签/历史 | 会被记录，能被收藏 | 不会 |\n| 缓存 | 可被浏览器与代理缓存 | 默认不缓存 |\n| 幂等性 | 幂等（查一百次结果一样） | 非幂等（提交一百次可能建一百条） |\n| 表单默认值 | `method` 不写时**就是 GET** | 要显式写 `method=\"post\"` |\n| 典型用途 | 查询、翻页、搜索 | 登录、下单、上传文件 |\n\n考试常见问法：\"GET 能传多少数据？\"——标准答案是\"受 URL 长度限制，不同浏览器与服务器上限不同，规范本身没有规定上限\"。**不要答\"1024 字节\"**，那是以讹传讹。\n\n另一个高频陷阱：**\"POST 比 GET 安全\"这句话不全对**。POST 只是不把参数暴露在地址栏和日志里；明文 HTTP 下抓包一样能看见，真正的安全靠 HTTPS。"
       },
       {
-        "title": "GET 与 POST",
-        "detail": "GET 参数拼在 URL 上、长度有限、会被记录；POST 放在请求体里、可传大量数据，上传表单一般用 POST。"
+        "title": "HTTP 响应报文与状态码",
+        "body": "```\nHTTP/1.1 302 Found                      ← 状态行：协议版本 状态码 原因短语\nLocation: /shop/user/list                ← 响应头\nContent-Type: text/html;charset=UTF-8\nContent-Length: 0\n                                         ← 空行\n                                         ← 响应体（302 通常为空）\n```\n\n| 状态码 | 含义 | 什么时候会见到 |\n| --- | --- | --- |\n| 200 | 成功 | 正常返回页面或 JSON |\n| 302 | 临时重定向 | 登录成功后 `sendRedirect` 跳首页 |\n| 304 | 资源未修改 | 浏览器带了 `If-Modified-Since`，服务器让它用缓存 |\n| 400 | 请求有语法错误 | 参数格式不对 |\n| 403 | 禁止访问 | 权限不足 |\n| 404 | 资源不存在 | 路径写错、Servlet 没映射上 |\n| 405 | 方法不允许 | 只写了 `doPost`，却用 GET 访问 |\n| 500 | 服务器内部错误 | Java 代码抛了没接住的异常 |\n\n**405 是排错时的关键线索**：看到 405，直接去看是不是只实现了 `doPost` 而访问方式是 GET。"
       },
       {
-        "title": "WEB-INF 目录",
-        "detail": "里面的文件浏览器不能直接访问，只能由服务器内部转发过去，所以放在这里的 JSP 更安全。"
+        "title": "静态资源与动态资源",
+        "body": "| 类型 | 谁生成 | 例子 | 处理者 |\n| --- | --- | --- | --- |\n| 静态资源 | 本来就存在磁盘上 | `.html`、`.css`、`.js`、`.jpg` | Tomcat 内置的 DefaultServlet 直接读文件返回 |\n| 动态资源 | 请求来了才现场生成 | `.jsp`、Servlet 映射的路径 | JSP 引擎或你的 Servlet |\n\n判断依据是**有没有交给程序处理**，不是看扩展名。`index.html` 也可能被映射给某个 Servlet，那时它就是动态的。"
       },
       {
-        "title": "MVC 三层",
-        "detail": "模型负责数据与业务、视图负责展示（JSP）、控制器负责接收请求并调度（Servlet / Controller）。"
+        "title": "Tomcat 的目录结构与部署",
+        "body": "```\ntomcat/\n├── bin/           启动脚本（startup.bat / shutdown.sh）\n├── conf/          server.xml（端口）、web.xml（全局配置）\n├── lib/           容器自己的 jar，所有应用共享\n├── logs/          日志\n├── temp/          临时文件\n└── webapps/       ← 应用放这里，目录名就是上下文路径\n    └── shop/\n        ├── index.jsp          浏览器可直接访问\n        ├── css/ js/ img/      静态资源\n        └── WEB-INF/           ← 受保护目录\n            ├── web.xml        部署描述符\n            ├── classes/       编译后的 .class\n            └── lib/           本应用私有 jar\n```\n\n三个必须记住的点：\n\n1. **`webapps/` 下的目录名 = 上下文路径**。把 `shop.war` 丢进去，Tomcat 自动解压成 `shop/`。\n2. **`WEB-INF/classes` 与 `WEB-INF/lib` 是类路径**，你的 `.class` 和第三方 jar 放这儿。\n3. **`WEB-INF` 下的任何文件，浏览器都访问不到**，只能由服务器内部转发过去。\n\n### 为什么 WEB-INF 访问不到\n\n这不是权限设置，是 **Servlet 规范写死的**：容器收到请求后，如果解析出的路径落在 `WEB-INF` 或 `META-INF` 下，必须直接返回 404，不交给任何资源处理。\n\n所以正确的用法是：\n\n```java\n// ✔ 转发：服务器内部跳，能进 WEB-INF\nrequest.getRequestDispatcher(\"/WEB-INF/jsp/list.jsp\").forward(request, response);\n\n// ✘ 重定向：让浏览器重新发一次请求，那个请求会被 404 拦掉\nresponse.sendRedirect(request.getContextPath() + \"/WEB-INF/jsp/list.jsp\");\n```\n\n这么设计的价值：把 JSP 藏进 `WEB-INF` 后，用户**必须先经过 Servlet**才能看到页面，Controller 里的登录校验、参数校验就绕不过去。这是\"页面不能被直接访问\"的安全实践。"
+      },
+      {
+        "title": "MVC 三层，各写什么",
+        "body": "| 层 | 职责 | 这一章对应实现 | 不该出现的东西 |\n| --- | --- | --- | --- |\n| Model（模型） | 数据结构 + 业务规则 + 数据访问 | JavaBean、Service、DAO | 不写 `request`、不拼 HTML |\n| View（视图） | 只负责展示 | JSP、Thymeleaf | 不写 SQL、不写业务判断 |\n| Controller（控制器） | 接请求、调业务、选视图 | Servlet、SpringMVC 的 Controller | 不写 SQL、不写大段 HTML |\n\n拿\"登录\"举例，一次完整的调用链是：\n\n```\n浏览器 POST /login\n   → LoginServlet（Controller）：取 username/password\n   → UserService（Model）：校验账号密码、判断是否锁定\n   → UserDao（Model）：select * from user where username=?\n   → 成功：request.setAttribute(\"user\", user); forward 到 /WEB-INF/jsp/main.jsp\n   → 失败：request.setAttribute(\"msg\", \"账号或密码错误\"); forward 回 login.jsp\n```\n\n**为什么视图要 forward 而不是 redirect**：`request` 作用域只在一次请求内有效，重定向是两次请求，放进去的 `msg` 会丢。这条规则在 Servlet 章还会再强调一次。"
+      },
+      {
+        "title": "中文乱码：三个位置，三种解法",
+        "body": "乱码的本质是**编码与解码用的字符集不一致**。Web 里有三个独立的环节：\n\n| 环节 | 什么时候出错 | 解法 |\n| --- | --- | --- |\n| 请求体 | POST 表单里的中文变问号 | `request.setCharacterEncoding(\"UTF-8\")`，必须在第一次 `getParameter` **之前** |\n| 响应体 | 页面上的中文变问号 | `response.setContentType(\"text/html;charset=UTF-8\")` |\n| URL 查询串 | GET 传中文变乱码 | Tomcat 8 起默认 UTF-8，老版本要改 `server.xml` 的 `URIEncoding` |\n\n一条容易踩的坑：`setCharacterEncoding` 只对**请求体**生效，对 URL 查询串无效；而且它**必须在读取参数之前调用**，因为参数一旦被解析就定型了。"
+      },
+      {
+        "title": "考试怎么考",
+        "body": "| 题型 | 常见问法 | 答题要点 |\n| --- | --- | --- |\n| 选择 | \"以下哪个状态码表示重定向\" | 302；301 是永久 |\n| 选择 | \"GET 与 POST 的区别\" | 参数位置 + 长度限制 + 幂等性，三点都要有 |\n| 判断 | \"WEB-INF 下的 JSP 可以直接访问\" | 错 |\n| 填空 | \"Tomcat 的默认端口是 ____\" | 8080 |\n| 简答 | \"描述一次 HTTP 请求的完整流程\" | 按七步写，每步点出责任方 |\n| 简答 | \"什么是 MVC，各层职责\" | 三层 + 一条\"不许跨层写\"的约束 |"
+      },
+      {
+        "title": "自测清单",
+        "body": "不看资料，能全部答上来才算过：\n\n1. 浏览器输入 `http://localhost:8080/shop/a/b?x=1` ，`getContextPath()`、`getRequestURI()`、`getParameter(\"x\")` 各返回什么？\n2. 只实现了 `doPost` 的 Servlet 被 GET 访问，返回哪个状态码？为什么？\n3. 为什么 `sendRedirect` 到 `WEB-INF` 下的 JSP 会 404，而 `forward` 不会？\n4. 表单不写 `method` 属性时用的是什么方法？会带来哪两个具体麻烦？\n5. 一次登录请求里，`request.setAttribute` 放的数据，在重定向后的页面还能拿到吗？"
       }
     ],
-    "pitfalls": [
-      "重定向访问不到 WEB-INF 下的页面，只有 request 内部转发可以。",
-      "表单 method 不写默认是 GET，传中文容易乱码。"
-    ]
+    "videos": [
+      {
+        "title": "尚硅谷 JavaWeb 全套教程（合集）",
+        "url": "https://www.bilibili.com/video/BV1Y7411K7zz",
+        "note": "从 HTML/HTTP 讲到 Servlet/JSP，本节的 HTTP 与 Tomcat 部分在前 20 集"
+      }
+    ],
+    "resources": [
+      {
+        "title": "MDN · HTTP 概述",
+        "url": "https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Overview",
+        "note": "报文结构、方法、状态码的权威速查"
+      },
+      {
+        "title": "RFC 9110 · HTTP 语义",
+        "url": "https://www.rfc-editor.org/rfc/rfc9110.html",
+        "note": "想知道\"规范原文怎么写的\"时查这里"
+      }
+    ],
+    "estimatedMinutes": 20,
+    "examFocus": "选择题常考 GET/POST 差异、常见状态码、WEB-INF 可见性；简答常问\"一次请求的完整流程\"。"
   },
   {
     "moduleId": "javaweb:kb:jsp",
     "topicId": "javaweb:topic:jsp",
     "title": "JSP",
-    "summary": "内置对象、指令、动作标签，是填空和选择的高频区。",
-    "items": [
+    "summary": "JSP 不是\"另一种语言\"，它是 Servlet 的另一种写法——把九个内置对象、三个指令、七个动作一次说透。",
+    "items": [],
+    "pitfalls": [
+      "getProperty 只有 name 和 property 两个属性，没有 value，也没有结束标签",
+      "property=\"*\" 要求表单 name 与 Bean 属性名完全一致，否则那个属性拿不到值",
+      "exception 对象只在 isErrorPage=\"true\" 的页面里能用",
+      "<%@ include %> 是编译期合并成一个文件；<jsp:include> 是运行期分别执行再拼结果",
+      "<%! %> 里声明的是成员变量（所有请求共享），不是局部变量，常被误用成计数器"
+    ],
+    "goals": [
+      "能说清 JSP 从 .jsp 到 .class 的翻译过程，以及为什么第一次访问比后面慢",
+      "能默写九大内置对象与四大作用域，并说出查找顺序",
+      "能区分 page/include/taglib 三个指令的属性与用途",
+      "能写出 useBean + setProperty 的三种赋值写法，并说出 property=\"*\" 的前提",
+      "能用 EL 从一个作用域里取值，并解释找不到时为什么不报错"
+    ],
+    "sections": [
       {
-        "title": "四个作用域",
-        "detail": "page 当前页面 → request 一次请求 → session 一次会话 → application 整个应用，范围由小到大。"
+        "title": "这一节解决什么问题",
+        "body": "用 Servlet 写页面长这样：\n\n```java\nout.println(\"<html><body>\");\nout.println(\"<h1>\" + user.getName() + \"</h1>\");\nout.println(\"</body></html>\");\n```\n\nHTML 是字符串，改一次页面要重新编译 Java。JSP 反过来：**你写 HTML，需要动态的地方插一段 Java**。所以 JSP 的定位是\"以页面为主、代码为辅\"的模板技术。\n\n考试考得很细，但真正难的不是背，而是理解一件事：**JSP 最终会被翻译成一个 Servlet**。理解了这句，九大内置对象为什么不用 `new`、`out` 从哪来、`page` 是什么，全部有了答案。"
+      },
+      {
+        "title": "一分钟速览",
+        "body": "| 主题 | 必须记住的内容 |\n| --- | --- |\n| 本质 | JSP = 翻译后的 Servlet，最终跑的还是 `_jspService` |\n| 脚本元素 | `<%! %>` 声明、`<% %>` 脚本片段、`<%= %>` 表达式 |\n| 注释 | `<%-- --%>` 不发给浏览器；`<!-- -->` 会发给浏览器 |\n| 内置对象 | 9 个：request、response、session、application、out、pageContext、config、page、exception |\n| 作用域 | 4 个，由小到大：page → request → session → application |\n| 指令 | 3 个：page、include、taglib |\n| 动作 | 7 个：include、forward、useBean、setProperty、getProperty、param、plugin |\n| EL | `${}`，找不到属性输出空串，不抛异常 |"
+      },
+      {
+        "title": "JSP 是怎么跑起来的",
+        "body": "第一次访问 `list.jsp` 时，Tomcat 要做四件事：\n\n1. **翻译**：把 `list.jsp` 转成一个 Java 类 `list_jsp.java`，类里只有一个方法 `_jspService(HttpServletRequest, HttpServletResponse)`。\n2. **编译**：用 JDK 把 `.java` 编译成 `list_jsp.class`。\n3. **加载实例化**：由容器 `new` 出实例，调用 `jspInit()`。\n4. **服务**：每次请求调用 `_jspService()`，请求结束不销毁。\n\n之后再来请求，前两步不再执行，直接用现成的实例——**这就是\"第一次访问慢\"的原因**。改了 JSP 文件后容器会重新翻译编译，所以开发时改完刷新就能看到效果。\n\n对照 Servlet 的生命周期，你会发现完全一样：`init` → `service` → `destroy`，只是 JSP 把 `service` 换成了 `_jspService`，并且 `init`/`destroy` 叫 `jspInit`/`jspDestroy`。\n\n### 三种脚本元素\n\n| 写法 | 名称 | 翻译后落在哪 | 典型用途 |\n| --- | --- | --- | --- |\n| `<%! int count = 0; %>` | 声明 | 类的**成员变量/方法** | 定义成员变量或辅助方法（很少用） |\n| `<% int i = 0; %>` | 脚本片段 | `_jspService` **方法体内**的局部变量 | 写循环、判断等逻辑 |\n| `<%= user.getName() %>` | 表达式 | `out.print(...)` 的参数 | 输出一个值，**结尾不能加分号** |\n\n三个坑：\n\n- `<%= %>` 里的值会被 `out.print` 输出；写 `<%= name; %>` 编译报错（多了分号）。\n- `<%! %>` 的变量是**所有请求共享**的成员变量，用它做计数器会遇到并发问题。\n- 脚本片段里可以写 `if/for`，但**不能在里面再嵌套 HTML 以外的 JSP 指令**（语法层面不允许）。\n\n### 注释的三种写法\n\n```jsp\n<%-- JSP 注释：翻译时被丢掉，浏览器源码里看不到 --%>\n<!-- HTML 注释：会原样发给浏览器，用户右键就能看到 -->\n<% // Java 注释：写在脚本片段里，同样不会输出 %>\n```\n\n安全提示：**调试信息、内部路径不要写在 HTML 注释里**，它会随响应体发到客户端。"
       },
       {
         "title": "九大内置对象",
-        "detail": "request、response、session、application、out、pageContext、config、page、exception，不用 new 直接用。"
+        "body": "\"内置\"的意思是：不用 `new`、不用声明，直接写名字就能用。原因是容器在 `_jspService` 里已经把它们声明成了局部变量，你的代码被原样塞进这个方法体内。\n\n| 对象 | 类型 | 作用 |\n| --- | --- | --- |\n| `request` | `HttpServletRequest` | 一次请求：取参数、存属性、转发 |\n| `response` | `HttpServletResponse` | 一次响应：写内容、设头、重定向 |\n| `session` | `HttpSession` | 一次会话：存登录状态 |\n| `application` | `ServletContext` | 整个应用：全局配置、全局计数 |\n| `out` | `JspWriter` | 输出到响应（带缓冲） |\n| `pageContext` | `PageContext` | 页面上下文：取其它八个对象、操作四个作用域 |\n| `config` | `ServletConfig` | 读当前 JSP 的初始化参数 |\n| `page` | `Object` | 当前页面实例，等价于 `this` |\n| `exception` | `Throwable` | 只有 `isErrorPage=\"true\"` 的页面才有 |\n\n记忆口诀按顺序背：**req resp sess app out pageContext config page exception**——从\"请求响应\"到\"会话应用\"，再到\"输出、上下文、配置\"，最后两个是\"页面本身\"和\"异常\"。\n\n`pageContext` 是最特殊的一个：它能拿到其它八个。\n\n```jsp\n<%= pageContext.getRequest() %>\n<%= pageContext.getSession() %>\n<%= pageContext.getServletContext() %>\n<% pageContext.setAttribute(\"msg\", \"ok\", PageContext.SESSION_SCOPE); %>\n```"
+      },
+      {
+        "title": "四大作用域",
+        "body": "| 作用域 | 对应对象 | 存活范围 | 典型用途 |\n| --- | --- | --- | --- |\n| page | `pageContext` | 当前 JSP 页面（当前请求内） | 页面内部临时变量 |\n| request | `request` | 一次请求，转发后仍在 | 控制器传给视图的数据 |\n| session | `session` | 一次会话（默认 30 分钟不活动失效） | 登录用户信息、购物车 |\n| application | `application` | 整个应用从启动到关闭 | 全局配置、在线人数 |\n\n**范围由小到大，查找顺序也是由小到大**：`page → request → session → application`。EL 表达式找属性就是这个顺序，找到就停。\n\n一条必须记住的因果关系：\n\n- `forward` 是**一次请求**，`request` 作用域的数据能带到目标页面 → 所以控制器给视图传数据用 `request`。\n- `redirect` 是**两次请求**，第一次的 `request` 已经销毁 → 所以重定向后拿不到 `request` 里的数据，要改用 `session` 或查询串。\n\n```jsp\n<% request.setAttribute(\"msg\", \"登录成功\"); %>\n<jsp:forward page=\"/WEB-INF/jsp/main.jsp\"/>   <%-- main.jsp 里能取到 msg --%>\n```"
       },
       {
         "title": "三个指令",
-        "detail": "page（导包、编码、会话开关）、include（静态包含）、taglib（引入标签库）。"
-      },
-      {
-        "title": "page 指令常用属性",
-        "detail": "language、contentType、import、session=\"false\"、errorPage、isErrorPage。"
+        "body": "指令的语法是 `<%@ 指令名 属性=\"值\" %>`，在**翻译期**生效。\n\n### page 指令\n\n```jsp\n<%@ page language=\"java\" contentType=\"text/html;charset=UTF-8\"\n         pageEncoding=\"UTF-8\" import=\"java.util.*,com.shop.model.User\"\n         session=\"true\" errorPage=\"/error.jsp\" isErrorPage=\"false\" %>\n```\n\n| 属性 | 作用 | 常见考点 |\n| --- | --- | --- |\n| `language` | 脚本语言，固定 `java` | 只有一个合法值 |\n| `contentType` | 响应类型与编码 | 决定浏览器怎么解析 |\n| `pageEncoding` | 源文件本身的编码 | 与 `contentType` 的 charset 一致最稳 |\n| `import` | 导包 | **唯一可以在同一页面出现多次的 page 属性** |\n| `session` | 是否自动创建 session | 设 `false` 后不能用 `session` 对象，省资源 |\n| `errorPage` | 出错时跳到哪个页面 | 值要写应用内路径 |\n| `isErrorPage` | 本页是否为错误处理页 | 为 `true` 才能用 `exception` |\n\n### include 指令（静态包含）\n\n```jsp\n<%@ include file=\"header.jsp\" %>\n```\n\n**翻译期**把被包含文件的内容**原样拼进当前文件**，最终只生成一个 `.java`。所以两个文件共享同一个 `request`、同一个变量作用域，被包含文件里不能重复声明同名变量。\n\n### taglib 指令\n\n```jsp\n<%@ taglib prefix=\"c\" uri=\"http://java.sun.com/jsp/jstl/core\" %>\n<c:forEach var=\"u\" items=\"${users}\">...</c:forEach>\n```\n\n引入标签库，`uri` 指向库的标识，`prefix` 是你给它的短名字。JSTL 是\"用标签代替脚本片段\"的标准做法。\n\n### 静态包含 vs 动态包含\n\n这是简答题的常客，必须能列成表格：\n\n| 对比项 | `<%@ include %>`（静态） | `<jsp:include>`（动态） |\n| --- | --- | --- |\n| 发生时机 | 翻译期 | 请求运行期 |\n| 生成几个文件 | 合并成一个 `.java` | 各自独立编译，运行时再合结果 |\n| 能否传参 | 不能单独传参 | 可用 `<jsp:param>` 传参 |\n| 变量共享 | 共享，注意重名 | 不共享（各自独立的 `_jspService`） |\n| 适用场景 | 页头页脚这类纯静态片段 | 内容会变化、或需要独立传参的片段 |"
       },
       {
         "title": "七个动作标签",
-        "detail": "include、forward、useBean、setProperty、getProperty、param、plugin。"
+        "body": "动作标签是 `<jsp:xxx>`，在**运行期**执行。\n\n| 标签 | 作用 | 关键属性 |\n| --- | --- | --- |\n| `<jsp:include>` | 动态包含 | `page` |\n| `<jsp:forward>` | 请求转发 | `page` |\n| `<jsp:useBean>` | 查找或创建 Bean | `id`、`class`、`scope` |\n| `<jsp:setProperty>` | 给 Bean 赋值 | `name`、`property`、`value`/`param` |\n| `<jsp:getProperty>` | 取 Bean 属性并输出 | `name`、`property` |\n| `<jsp:param>` | 给包含/转发传参 | `name`、`value` |\n| `<jsp:plugin>` | 下载插件执行 Applet | 已过时，知道名字即可 |\n\n### JavaBean 规范与 useBean\n\n能被容器当作 Bean 的类必须满足：**public 类 + 有无参构造 + 属性私有 + 提供 get/set**。容器是靠反射创建实例、靠 setter 注入值的，少一条都不行。\n\n```jsp\n<jsp:useBean id=\"user\" class=\"com.shop.model.User\" scope=\"request\" />\n```\n\n三个属性的含义：\n\n- `id`：在**当前页面**里使用的变量名，同时也是存进作用域的属性名。\n- `class`：全限定类名。**没有 `type` 之外的第四种写法**，也不存在 `value` 属性。\n- `scope`：`page`（默认）/ `request` / `session` / `application`。\n\n`useBean` 的语义是\"**有就取，没有就建**\"：先去 `scope` 指定的作用域按 `id` 找，找到就直接用，找不到才 `new` 一个并存进去。\n\n### setProperty 的三种写法\n\n```jsp\n<%-- 1. 按请求参数自动赋值：表单字段名与属性名一致时最省事 --%>\n<jsp:setProperty name=\"user\" property=\"*\" />\n\n<%-- 2. 指定某个属性取哪个请求参数 --%>\n<jsp:setProperty name=\"user\" property=\"userName\" param=\"username\" />\n\n<%-- 3. 直接给固定值 --%>\n<jsp:setProperty name=\"user\" property=\"age\" value=\"18\" />\n```\n\n`property=\"*\"` 的两个前提，考判断题时几乎必考：\n\n1. 表单里的 `name` 必须与 Bean 的属性名**完全一致**（大小写也算），不一致的属性会保持默认值，而且**不报错**。\n2. 请求参数的类型要能转成属性类型。字符串转 `int` 失败会抛 500。\n\n### getProperty 没有 value\n\n```jsp\n<jsp:getProperty name=\"user\" property=\"userName\" />\n```\n\n它只做一件事：调用 `getUserName()` 并把返回值输出。所以：\n\n- 属性只有 `name` 与 `property`，**没有 `value`**；\n- **没有结束标签**，不能写成 `</jsp:getProperty>`；\n- 输出内容不会被转义，属性里带 HTML 会原样生效（XSS 风险点）。"
       },
       {
-        "title": "JavaBean 规范",
-        "detail": "public 类、有无参构造、属性私有并配 get/set，容器才能用反射创建它。"
+        "title": "EL 表达式",
+        "body": "EL 的作用是把\"从作用域取值\"这件事从 Java 代码变成一句表达式。\n\n```jsp\n${user.userName}          <%-- 等价于 pageContext.findAttribute(\"user\").getUserName() --%>\n${sessionScope.user}      <%-- 只在 session 里找 --%>\n${param.id}               <%-- 等价于 request.getParameter(\"id\") --%>\n${empty list}             <%-- 空判断：null、空串、空集合都为 true --%>\n${user.age + 1}           <%-- 可以直接做算术，字符串会自动转数字 --%>\n```\n\n### 查找顺序与\"找不到\"\n\n`${user}` 会依次在 `page → request → session → application` 找 `user`，找到就返回，都找不到**输出空串，不抛异常**。这一点与脚本片段里的 `request.getAttribute(\"user\").getName()` 形成鲜明对比——后者会抛 `NullPointerException`。\n\n所以视图里用 EL 比用脚本片段稳，这是\"JSP 里少写 Java 代码\"的实际理由，不只是风格问题。\n\nEL 的 11 个隐式对象（了解即可，前六个要熟）：\n\n| 对象 | 作用 |\n| --- | --- |\n| `pageScope` / `requestScope` / `sessionScope` / `applicationScope` | 限定在某一个作用域查找 |\n| `param` / `paramValues` | 请求参数（后者取数组） |\n| `header` / `headerValues` | 请求头 |\n| `cookie` | Cookie |\n| `initParam` | 全局初始化参数（`context-param`） |\n| `pageContext` | 页面上下文，可拿 `request`、`session` 等 |\n\n### EL 的两个常见坑\n\n1. **`${}` 不能嵌套**。要动态拼属性名，得用 `<c:set>` 中转。\n2. **EL 里的 `+` 只有算术含义**，没有字符串拼接。`${\"a\" + \"b\"}` 会尝试把 `a` 转成数字而报错；拼字符串用 JSTL 的 `<c:out>` 或多个 `${}` 并列写。"
       },
       {
-        "title": "useBean 的三个属性",
-        "detail": "id 是变量名、class 是全限定类名、scope 指定存哪个作用域；没有 value 属性。"
+        "title": "一次完整的 JSP 页面",
+        "body": "把上面的东西串起来，一个\"用户列表\"页面大致长这样：\n\n```jsp\n<%@ page contentType=\"text/html;charset=UTF-8\" pageEncoding=\"UTF-8\" %>\n<%@ taglib prefix=\"c\" uri=\"http://java.sun.com/jsp/jstl/core\" %>\n<!DOCTYPE html>\n<html>\n<head><title>用户列表</title></head>\n<body>\n  <c:if test=\"${empty users}\">\n    <p>暂无数据</p>\n  </c:if>\n\n  <table>\n    <c:forEach var=\"u\" items=\"${users}\" varStatus=\"st\">\n      <tr>\n        <td>${st.index + 1}</td>\n        <td><c:out value=\"${u.userName}\" /></td>\n        <td>${u.age}</td>\n      </tr>\n    </c:forEach>\n  </table>\n</body>\n</html>\n```\n\n三个值得注意的选择：\n\n- 用 `${}` 而不是 `<%= %>`：不写 Java，找不到也不崩。\n- 用 `<c:out>` 而不是直接 `${}`：它会做 HTML 转义，防 XSS。\n- 用 `<c:forEach>` 而不是 `<% for %>`：没有脚本片段，页面能被不懂 Java 的人改。"
       },
       {
-        "title": "setProperty 两种写法",
-        "detail": "property=\"*\" 把所有同名请求参数一次灌进 Bean；property=\"name\" 只赋一个属性。"
+        "title": "考试怎么考",
+        "body": "| 题型 | 常见问法 | 答题要点 |\n| --- | --- | --- |\n| 填空 | \"JSP 的九大内置对象是 ____\" | 按顺序写完九个，别漏 `config` 和 `page` |\n| 填空 | \"四个作用域由小到大是 ____\" | page → request → session → application |\n| 选择 | \"哪个指令用于引入标签库\" | taglib |\n| 选择 | \"`<jsp:getProperty>` 有哪些属性\" | 只有 name、property |\n| 判断 | \"`<%@ include %>` 是运行期包含\" | 错，是翻译期 |\n| 简答 | \"静态包含与动态包含的区别\" | 时机、生成文件数、能否传参、变量是否共享 |\n| 简答 | \"JSP 的执行过程\" | 翻译 → 编译 → 实例化 → `_jspService` |\n| 应用 | 给一段 JSP 找错 | 常见错：`<%=` 多了分号、`getProperty` 写了 value、`exception` 用在非错误页 |"
       },
       {
-        "title": "EL 表达式 ${}",
-        "detail": "按 page→request→session→application 顺序找属性，找不到输出空串，不报错。"
+        "title": "自测清单",
+        "body": "1. 为什么 JSP 里可以直接用 `out`，而普通 Java 类里不行？\n2. `<%! int n = 0; n++; %>` 在并发访问下会发生什么？为什么？\n3. `request.setAttribute(\"msg\", \"x\")` 之后 `sendRedirect` 到另一个页面，`${msg}` 能取到吗？\n4. `property=\"*\"` 时表单字段名写成 `user_name`、Bean 属性名是 `userName`，会发生什么？\n5. `<jsp:include page=\"a.jsp\"><jsp:param name=\"id\" value=\"1\"/></jsp:include>`，`a.jsp` 里怎么取这个 `id`？"
       }
     ],
-    "pitfalls": [
-      "getProperty 只有 name 和 property 两个属性，没有 value，也没有结束标签。",
-      "property=\"*\" 要求表单 name 与 Bean 属性名完全一致，否则那个属性拿不到值。",
-      "exception 对象只在 isErrorPage=\"true\" 的页面里能用。",
-      "<%@ include %> 是编译期合并成一个文件；<jsp:include> 是运行期分别执行再拼结果。"
-    ]
+    "videos": [
+      {
+        "title": "尚硅谷 JavaWeb 全套教程 · JSP 部分",
+        "url": "https://www.bilibili.com/video/BV1Y7411K7zz",
+        "note": "内置对象与 EL 表达式讲得最细，跳着看对应集即可"
+      }
+    ],
+    "resources": [
+      {
+        "title": "Jakarta Server Pages 规范",
+        "url": "https://jakarta.ee/specifications/pages/",
+        "note": "想知道\"九大内置对象是规范规定的吗\"就查这里"
+      }
+    ],
+    "estimatedMinutes": 30,
+    "examFocus": "填空与选择的绝对高频区：四大作用域顺序、九大内置对象、三个指令、七个动作标签、静态包含与动态包含的区别。"
   },
   {
     "moduleId": "javaweb:kb:servlet",
     "topicId": "javaweb:topic:servlet",
     "title": "Servlet",
-    "summary": "生命周期、单实例多线程、转发重定向，几乎是必考点。",
-    "items": [
+    "summary": "容器的\"打工人\"：生命周期、单实例多线程、转发与重定向、会话管理，这四件事几乎每次都考。",
+    "items": [],
+    "pitfalls": [
+      "doPost 里复用 doGet 要写 doGet(request, response)，两个参数别漏",
+      "destroy 不要拼成 destory",
+      "Filter 放行必须写 chain.doFilter(request, response)，漏了请求就断了",
+      "init 只执行一次，别把\"每次请求都要做的事\"写进去",
+      "重定向后 request 作用域失效，之前 setAttribute 的数据取不到"
+    ],
+    "goals": [
+      "能默写 Servlet 生命周期的四个阶段，并说清每个阶段执行几次、由谁调用",
+      "能解释\"单实例多线程\"为什么会引发线程安全问题，并给出三种可行的处理方式",
+      "能写出 web.xml 与注解两种注册方式，并说出 url-pattern 四种写法的匹配优先级",
+      "能从请求行、请求头、请求体三个角度区分 forward 与 redirect，并说清什么时候必须用哪个",
+      "能说清 Cookie 与 Session 的区别，以及 JSESSIONID 是怎么在两次请求间传递的"
+    ],
+    "sections": [
       {
-        "title": "生命周期四步",
-        "detail": "构造 → init → service（分派到 doGet/doPost）→ destroy。"
+        "title": "这一节解决什么问题",
+        "body": "Web 基础那章说\"容器按 url-pattern 找到 Servlet\"，这一章就回答：**Servlet 是什么、容器怎么管它、它怎么读写请求与响应**。\n\nServlet 是全课程的地基。SpringMVC 的 `DispatcherServlet`、Spring 的 `ContextLoaderListener`、Filter 链，全部是 Servlet 规范的产物。这一章糊涂，后面框架只能靠背。"
       },
       {
-        "title": "单实例多线程",
-        "detail": "容器只创建一个 Servlet 实例，多个请求由多个线程并发处理，所以成员变量要小心共享。"
+        "title": "一分钟速览",
+        "body": "| 主题 | 必须记住的内容 |\n| --- | --- |\n| 继承关系 | `Servlet` 接口 → `GenericServlet` 抽象类 → `HttpServlet` 抽象类 |\n| 生命周期 | 构造 → `init` → `service` → `destroy`；前两步各一次，`service` 每次请求 |\n| 实例数 | 一个 Servlet 在容器里**只有一个实例**，多线程并发处理请求 |\n| 注册 | `@WebServlet` 注解 或 `web.xml` 的 `servlet` + `servlet-mapping` |\n| 匹配优先级 | 精确 > 最长路径 > 扩展名 > 默认 `/` |\n| 转发 | 一次请求，地址栏不变，能带 `request` 属性，可进 WEB-INF |\n| 重定向 | 两次请求，地址栏变，不能带 `request` 属性，不能进 WEB-INF |\n| 会话 | Cookie 存 JSESSIONID，Session 存服务端 |"
       },
       {
-        "title": "init 与 destroy 只执行一次",
-        "detail": "分别在实例创建后、销毁前各执行一次；service 每次都执行。"
+        "title": "接口体系：为什么平时只继承 HttpServlet",
+        "body": "```\nServlet（接口：init / service / destroy / getServletConfig / getServletInfo）\n   ↑\nGenericServlet（抽象类：把 init、destroy、config 都实现好了，只留 service 抽象）\n   ↑\nHttpServlet（抽象类：按请求方法把 service 拆成 doGet / doPost / doPut / doDelete ...）\n```\n\n- 直接实现 `Servlet` 接口：五个方法都要自己写，其中 `init` 还必须把 `ServletConfig` 存起来，否则拿不到初始化参数。\n- 继承 `GenericServlet`：只需实现 `service`，与协议无关。\n- 继承 `HttpServlet`：只需重写需要的 `doXxx`，`service` 已经按 `request.getMethod()` 分派好了。**这是实际做法**。\n\n`HttpServlet.service()` 的分派逻辑大致是：\n\n```java\nprotected void service(HttpServletRequest req, HttpServletResponse resp) {\n    String method = req.getMethod();\n    if (\"GET\".equals(method))       doGet(req, resp);\n    else if (\"POST\".equals(method)) doPost(req, resp);\n    // ... PUT / DELETE / HEAD / OPTIONS / TRACE\n    else resp.sendError(405);       // 没有对应 doXxx 就 405\n}\n```\n\n看到 405 就回来读这段：**不是路径错了，是方法没实现**。"
       },
       {
-        "title": "三种注册方式",
-        "detail": "@WebServlet 注解、web.xml 里配 servlet + servlet-mapping、直接实现 Servlet 接口。"
+        "title": "生命周期：四个阶段，两种次数",
+        "body": "| 阶段 | 谁调用 | 执行次数 | 你的代码一般写什么 |\n| --- | --- | --- | --- |\n| 构造（`new`） | 容器 | 1 次 | 什么都不写（不要在这里碰 `ServletConfig`） |\n| `init(ServletConfig)` | 容器 | 1 次 | 读初始化参数、建连接池 |\n| `service(req, resp)` | 容器（每次请求） | N 次 | 业务处理（实际写 `doGet`/`doPost`） |\n| `destroy()` | 容器（应用卸载/关闭时） | 1 次 | 关资源、刷缓冲 |\n\n三条推论，考试就考这些：\n\n1. **`init` 只执行一次**，所以适合做\"全局只做一遍\"的事：读配置、初始化连接池。\n2. **`service` 每次都执行**，所以别在 `service` 里读配置文件。\n3. **`destroy` 不一定被调用**——进程被强杀、断电都不会调。所以关键数据要\"写一次落一次\"，不能指望在 `destroy` 里补写。\n\n```java\npublic class HelloServlet extends HttpServlet {\n    private String appName;\n\n    @Override\n    public void init() {                       // 无参版本，内部会调用带参版本\n        appName = getServletConfig().getInitParameter(\"appName\");   // 只读一次\n    }\n\n    @Override\n    protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n            throws ServletException, IOException {\n        resp.setContentType(\"text/html;charset=UTF-8\");\n        resp.getWriter().print(\"应用名：\" + appName);\n    }\n\n    @Override\n    protected void doPost(HttpServletRequest req, HttpServletResponse resp)\n            throws ServletException, IOException {\n        doGet(req, resp);      // 复用：两个参数都要传\n    }\n\n    @Override\n    public void destroy() {\n        // 关连接池等\n    }\n}\n```"
       },
       {
-        "title": "url-pattern 四种写法",
-        "detail": "精确匹配 /hello、路径匹配 /user/*、扩展名匹配 *.do、默认匹配 /。"
+        "title": "单实例多线程：这是 Servlet 最重要的一个设计",
+        "body": "容器对每个 Servlet **只创建一个实例**，所有请求由不同线程并发调用同一个实例的 `service`。好处是省内存、不用反复创建；代价是**成员变量会被并发读写**。\n\n```java\npublic class BadServlet extends HttpServlet {\n    private int count = 0;          // ✘ 所有请求共享\n\n    @Override\n    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n        count++;                    // 两个线程同时读到同一个值 → 结果少算\n        resp.getWriter().print(count);\n    }\n}\n```\n\n四种处理方式，按推荐程度排序：\n\n| 做法 | 是否推荐 | 说明 |\n| --- | --- | --- |\n| 只用方法内局部变量 | ★ 首选 | 局部变量在栈上，每个线程一份，天然安全 |\n| 用 `request`/`session` 存状态 | ★ 首选 | 状态跟着作用域走，而不是跟着实例走 |\n| 用 `AtomicInteger` / 加锁 | 视情况 | 计数器确实要全局时用，注意锁粒度 |\n| 用 `ThreadLocal` | 谨慎 | 能解决但容易内存泄漏，用完必须 `remove()` |\n\n一条经验：**Servlet 的成员变量只放\"初始化后不再变\"的东西**（如读好的配置），会变的状态一律放作用域里。"
       },
       {
-        "title": "load-on-startup",
-        "detail": "配正整数，服务器启动时就创建实例；不配则第一次请求才创建。"
+        "title": "两种注册方式",
+        "body": "### 方式一：注解（Servlet 3.0+）\n\n```java\n@WebServlet(\n    urlPatterns = {\"/hello\", \"/hi/*\"},\n    initParams = {@WebInitParam(name = \"appName\", value = \"shop\")},\n    loadOnStartup = 1\n)\npublic class HelloServlet extends HttpServlet { ... }\n```\n\n### 方式二：web.xml\n\n```xml\n<servlet>\n  <servlet-name>hello</servlet-name>\n  <servlet-class>com.shop.web.HelloServlet</servlet-class>\n  <init-param>\n    <param-name>appName</param-name>\n    <param-value>shop</param-value>\n  </init-param>\n  <load-on-startup>1</load-on-startup>\n</servlet>\n\n<servlet-mapping>\n  <servlet-name>hello</servlet-name>\n  <url-pattern>/hello</url-pattern>\n</servlet-mapping>\n```\n\n对比：\n\n| 对比项 | 注解 | web.xml |\n| --- | --- | --- |\n| 写法 | 与类写在一起，短 | 集中在配置文件 |\n| 改映射 | 要改代码、重新编译 | 只改配置 |\n| 适用 | 开发期、映射固定的场景 | 需要运维期调整、或第三方 Servlet |\n\n**两者同时存在时**：`web.xml` 的 `metadata-complete=\"true\"` 会让注解失效；同名 Servlet 以 `web.xml` 为准。考试若问\"注解和 web.xml 冲突听谁的\"，答\"web.xml 优先\"。\n\n### url-pattern 四种写法与优先级\n\n| 写法 | 名称 | 匹配的例子 |\n| --- | --- | --- |\n| `/hello` | 精确匹配 | 只有 `/hello` |\n| `/user/*` | 路径匹配 | `/user/list`、`/user/a/b` |\n| `*.do` | 扩展名匹配 | `/a/b/x.do`（**不能写成 `/*.do`**） |\n| `/` | 默认匹配 | 所有没被更具体的规则匹配到的请求 |\n\n优先级从高到低：**精确 > 最长路径 > 扩展名 > 默认**。同一优先级有多个匹配时，路径匹配取最长的那条。\n\n两个容易错的点：\n\n- `/*` 和 `/` 不是一回事：`/*` 会拦住包括 JSP 在内的**所有**请求，`/` 只兜底。\n- 扩展名匹配不能带路径前缀，`/user/*.do` 是非法写法。\n\n### load-on-startup\n\n```xml\n<load-on-startup>1</load-on-startup>\n```\n\n- 配正整数：容器**启动时**就创建实例并调 `init`，数字越小越先加载。\n- 不配或配负数：**第一次请求**才创建。\n\n什么时候需要配？初始化很耗时（如加载大字典），希望启动时就做完，避免用户第一次访问卡住。"
       },
       {
-        "title": "转发与重定向",
-        "detail": "forward 一次请求、地址栏不变、能带 request 属性、可访问 WEB-INF；sendRedirect 两次请求、地址栏变、不能带 request 属性。"
+        "title": "请求与响应：常用 API 一张表",
+        "body": "| 想做的事 | 写法 |\n| --- | --- |\n| 取单个参数 | `request.getParameter(\"id\")` |\n| 取多值参数（复选框） | `request.getParameterValues(\"hobby\")` |\n| 存/取请求属性 | `request.setAttribute(k, v)` / `getAttribute(k)` |\n| 取请求头 | `request.getHeader(\"User-Agent\")` |\n| 取客户端 IP | `request.getRemoteAddr()` |\n| 取会话 | `request.getSession()` / `getSession(false)` |\n| 转发 | `request.getRequestDispatcher(\"/a.jsp\").forward(request, response)` |\n| 设响应类型 | `response.setContentType(\"text/html;charset=UTF-8\")` |\n| 输出 | `response.getWriter().print(...)` |\n| 重定向 | `response.sendRedirect(request.getContextPath() + \"/list\")` |\n| 设状态码 | `response.setStatus(404)` |\n\n`getSession()` 与 `getSession(false)` 的区别常考：前者**没有就创建**，后者**没有返回 `null`**。判断\"是否已登录\"时用 `getSession(false)`，避免给每个游客都建一个空会话。"
       },
       {
-        "title": "Config 与 Context",
-        "detail": "getServletConfig().getInitParameter() 取当前 Servlet 的 init-param；getServletContext().getInitParameter() 取全局 context-param。"
+        "title": "转发与重定向：必须能背出表格",
+        "body": "| 对比项 | forward（转发） | redirect（重定向） |\n| --- | --- | --- |\n| 请求次数 | 1 次 | 2 次 |\n| 谁在跳 | 服务器内部 | 浏览器（收到 302 后再发一次） |\n| 地址栏 | 不变 | 变成新地址 |\n| `request` 作用域 | 保留 | 丢失 |\n| 能否访问 WEB-INF | 能 | 不能 |\n| 能否跨应用/跨站 | 不能 | 能 |\n| API | `request.getRequestDispatcher(path).forward(req, resp)` | `response.sendRedirect(path)` |\n| 典型场景 | 控制器 → 视图；表单校验失败回显 | 登录成功跳首页；提交后防重复提交（PRG） |\n\n两个实践结论：\n\n1. **控制器给页面传数据只能用 forward**（或在 session 里存）。这是\"为什么登录失败要转发回登录页\"的原因——错误提示存在 `request` 里。\n2. **提交成功后要 redirect**（Post-Redirect-Get 模式）。否则用户按 F5 会重复提交一次订单。\n\n```java\n// 失败：转发，保留 msg\nrequest.setAttribute(\"msg\", \"账号或密码错误\");\nrequest.getRequestDispatcher(\"/login.jsp\").forward(request, response);\n\n// 成功：重定向，避免刷新重复提交\nresponse.sendRedirect(request.getContextPath() + \"/user/list\");\n```"
       },
       {
-        "title": "中文乱码",
-        "detail": "request.setCharacterEncoding(\"utf-8\") 必须在第一次 getParameter 之前；响应端用 setContentType(\"text/html;charset=utf-8\")。"
+        "title": "ServletConfig 与 ServletContext",
+        "body": "| 对比项 | ServletConfig | ServletContext |\n| --- | --- | --- |\n| 作用范围 | 一个 Servlet | 整个应用 |\n| 怎么拿 | `getServletConfig()`（`GenericServlet` 里可直接调 `getInitParameter`） | `getServletContext()` 或 `request.getServletContext()` |\n| 配置位置 | `<servlet>` 里的 `<init-param>` | `<context-param>`（在 `web.xml` 根下） |\n| 典型内容 | 本 Servlet 的参数 | 数据库地址、全局开关、应用根路径 |\n\n```xml\n<context-param>\n  <param-name>uploadPath</param-name>\n  <param-value>/data/upload</param-value>\n</context-param>\n```\n\n```java\nString path = getServletContext().getInitParameter(\"uploadPath\");\nString realPath = getServletContext().getRealPath(\"/upload\");   // 磁盘绝对路径\n```\n\n**最容易混的一道题**：`getInitParameter` 在 `ServletConfig` 上取的是 `init-param`，在 `ServletContext` 上取的是 `context-param`。同名不同源，别看错对象。"
+      },
+      {
+        "title": "会话管理：Cookie 与 Session",
+        "body": "HTTP 是**无状态**的：服务器不会记得上一次请求是谁发的。登录状态靠两个东西维持：\n\n1. 服务器创建 `HttpSession`，把数据存在服务端，给它一个唯一 ID。\n2. 服务器通过响应头 `Set-Cookie: JSESSIONID=xxx` 把 ID 交给浏览器；浏览器之后每次请求自动带 `Cookie: JSESSIONID=xxx`。\n\n```java\n// 登录成功\nHttpSession session = request.getSession();\nsession.setAttribute(\"loginUser\", user);\nsession.setMaxInactiveInterval(30 * 60);     // 30 分钟不活动即失效\n\n// 后续请求\nObject user = request.getSession(false).getAttribute(\"loginUser\");\n\n// 退出\nsession.invalidate();\n```\n\n| 对比项 | Cookie | Session |\n| --- | --- | --- |\n| 存储位置 | 浏览器 | 服务器内存（或持久化） |\n| 安全性 | 低（用户可见可改） | 相对高（只暴露 ID） |\n| 容量 | 单个约 4KB | 受服务器内存限制 |\n| 生命周期 | 可设 `maxAge`，关浏览器是否失效看是否设了有效期 | 默认 30 分钟不活动失效，或调 `invalidate` |\n| 跨设备 | 不共享 | 依赖 JSESSIONID，换浏览器就换会话 |\n\n**如果浏览器禁用了 Cookie 怎么办**：容器支持 URL 重写，把 JSESSIONID 拼在地址上（`;jsessionid=xxx`）。调用 `response.encodeURL(url)` 由容器决定是否拼。这是简答题的常见追问。"
+      },
+      {
+        "title": "Filter 与 Listener（知道即可，但链式调用必须记）",
+        "body": "Filter 在 Servlet 之前/之后插一段逻辑，典型用途是编码统一、登录拦截。\n\n```java\n@WebFilter(\"/*\")\npublic class EncodingFilter implements Filter {\n    @Override\n    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)\n            throws IOException, ServletException {\n        request.setCharacterEncoding(\"UTF-8\");\n        response.setContentType(\"text/html;charset=UTF-8\");\n        chain.doFilter(request, response);      // ← 漏了这句，请求就断在这儿\n    }\n}\n```\n\n**`chain.doFilter` 是 Filter 的灵魂**：它表示\"放行到下一个 Filter 或目标 Servlet\"。不写这句，浏览器会一直等，页面白屏。这也解释了为什么\"filter 里 return 之前必须放行\"。\n\nListener 监听应用与会话的生命周期事件，最常用的是 `ServletContextListener`（启动时加载配置）与 `HttpSessionListener`（统计在线人数）。"
+      },
+      {
+        "title": "考试怎么考",
+        "body": "| 题型 | 常见问法 | 答题要点 |\n| --- | --- | --- |\n| 简答 | \"Servlet 的生命周期\" | 四阶段 + 各自执行次数 + 由容器调用 |\n| 简答 | \"转发与重定向的区别\" | 至少写出请求次数、地址栏、request 作用域、能否进 WEB-INF 四项 |\n| 选择 | \"哪个 url-pattern 优先级最高\" | 精确匹配 |\n| 选择 | \"load-on-startup 配 0 表示\" | 启动时加载（0 和正整数都表示启动加载，数字越小越早） |\n| 判断 | \"Servlet 是多实例的\" | 错，单实例多线程 |\n| 应用 | 写一个处理登录的 Servlet | 编码 → 取参 → 校验 → session 存用户 → 重定向/转发 |\n| 应用 | 写一个编码 Filter | `setCharacterEncoding` + `chain.doFilter` |"
+      },
+      {
+        "title": "自测清单",
+        "body": "1. `init` 里能拿到 `ServletConfig` 吗？构造函数里呢？\n2. 两个线程同时访问一个只有成员变量计数器的 Servlet，最终计数会偏大还是偏小？为什么？\n3. `@WebServlet(\"/user/*\")` 能否匹配 `/user`（不带后面的路径）？\n4. 登录失败要把错误信息带回页面，为什么必须用 forward？\n5. 用户禁用 Cookie 后，Session 还能用吗？靠什么机制？\n6. Filter 里忘了写 `chain.doFilter` 会发生什么？"
       }
     ],
-    "pitfalls": [
-      "doPost 里复用 doGet 要写 doGet(request, response)，两个参数别漏。",
-      "destroy 不要拼成 destory。",
-      "Filter 放行必须写 chain.doFilter(request, response)，漏了请求就断了。"
-    ]
-  },
-  {
-    "moduleId": "javaweb:kb:jdbc",
-    "topicId": "javaweb:topic:jdbc",
-    "title": "JDBC",
-    "summary": "五步流程和 PreparedStatement 是简答常客。",
-    "items": [
+    "videos": [
       {
-        "title": "五步流程",
-        "detail": "加载驱动 → 建立连接 → 创建语句对象 → 执行 SQL → 关闭资源。"
-      },
-      {
-        "title": "加载驱动",
-        "detail": "Class.forName(\"com.mysql.jdbc.Driver\")，把驱动类注册到 DriverManager。"
-      },
-      {
-        "title": "三个核心接口",
-        "detail": "Connection 连接、Statement / PreparedStatement 执行、ResultSet 结果集。"
-      },
-      {
-        "title": "PreparedStatement 的好处",
-        "detail": "SQL 预编译、用 ? 占位传参、能防 SQL 注入、重复执行效率更高。"
-      },
-      {
-        "title": "两个执行方法",
-        "detail": "executeQuery 返回 ResultSet（查询用）；executeUpdate 返回影响行数（增删改用）。"
+        "title": "尚硅谷 JavaWeb 全套教程 · Servlet 部分",
+        "url": "https://www.bilibili.com/video/BV1Y7411K7zz",
+        "note": "生命周期与转发/重定向有专门的对比演示"
       }
     ],
-    "pitfalls": [
-      "关闭顺序与打开相反：ResultSet → Statement → Connection。",
-      "用字符串拼 SQL 会被注入，参数一律走 ? 占位。"
-    ]
+    "resources": [
+      {
+        "title": "Jakarta Servlet 规范",
+        "url": "https://jakarta.ee/specifications/servlet/",
+        "note": "url-pattern 匹配规则以规范原文为准"
+      }
+    ],
+    "estimatedMinutes": 35,
+    "examFocus": "简答必考\"生命周期\"与\"转发与重定向的区别\"；选择常考 url-pattern 匹配优先级与 load-on-startup。"
   },
   {
     "moduleId": "javaweb:kb:spring",
     "topicId": "javaweb:topic:spring",
     "title": "Spring",
-    "summary": "IOC、DI 两种注入、Bean 作用域与注解。",
-    "items": [
+    "summary": "IOC 不是\"把 new 交给框架\"这么简单——它解决的是\"改一个实现类要动几处代码\"的问题。",
+    "items": [],
+    "pitfalls": [
+      "构造器注入必须用 constructor-arg，写成 property 不生效",
+      "prototype 每次 getBean 都是新对象，singleton 才是同一个",
+      "@Autowired 按类型找不到时会报错，required=false 才会留空",
+      "@Transactional 加在 private 方法或同类内部调用上不生效（代理没经过）",
+      "同一接口有多个实现时，只用 @Autowired 会因\"候选不唯一\"启动失败"
+    ],
+    "goals": [
+      "用自己的话说清 IOC 与 DI 的区别，而不是把两个词当同义词背",
+      "能写 setter 注入与构造器注入两套配置，并说清 `<property>` 与 `<constructor-arg>` 各自对应什么",
+      "能列出 singleton 与 prototype 的差别，并说出各自适用的对象",
+      "能解释 @Autowired 按类型、@Resource 按名称，以及类型冲突时怎么补 @Qualifier",
+      "能说出 AOP 五个概念的含义，以及 JDK 动态代理与 CGLIB 的分工",
+      "能列出 @Transactional 失效的三种常见情形"
+    ],
+    "sections": [
       {
-        "title": "IOC 控制反转",
-        "detail": "对象的创建和依赖关系交给 Spring 容器，代码里不再自己 new。"
+        "title": "这一节解决什么问题",
+        "body": "不用 Spring 时，一个 Service 依赖 Dao 是这样写的：\n\n```java\npublic class UserService {\n    private UserDao dao = new UserDaoImpl();   // 写死了具体实现\n}\n```\n\n想换成 `UserDaoMyBatisImpl`，就要改这一行、重新编译。依赖一多，改动会像链条一样扩散。Spring 的做法是：**对象不在代码里 new，而是由容器创建好、按需注入**。于是\"换实现\"变成\"改配置（或改一个注解）\"。\n\n这就是 IOC 与 DI 要解决的问题，也是这一章所有细节（标签、作用域、注解）的来处。"
       },
       {
-        "title": "DI 依赖注入",
-        "detail": "容器把依赖“注入”进来，两种方式：属性注入（setter）、构造器注入（构造方法）。"
+        "title": "一分钟速览",
+        "body": "| 主题 | 必须记住的内容 |\n| --- | --- |\n| IOC | 控制反转：对象的创建权从代码交给容器 |\n| DI | 依赖注入：容器把依赖塞进对象（IOC 的实现方式） |\n| 两种注入 | setter 注入（`<property>`）、构造器注入（`<constructor-arg>`） |\n| ref / value | `ref` 引用另一个 Bean，`value` 赋基本类型或字符串 |\n| 作用域 | `singleton`（默认）、`prototype`、`request`、`session`、`application` |\n| 四个派生注解 | `@Component` / `@Service` / `@Repository` / `@Controller` |\n| 两个注入注解 | `@Autowired` 按类型、`@Resource` 按名称 |\n| AOP | 把日志、事务这类横切逻辑从业务代码里抽出去 |"
       },
       {
-        "title": "两个注入标签",
-        "detail": "<property> 对应 setter 注入；<constructor-arg> 对应构造方法注入。"
+        "title": "IOC 与 DI：一个说\"谁管创建\"，一个说\"怎么给\"",
+        "body": "| 概念 | 全称 | 回答的问题 | 变化前后 |\n| --- | --- | --- | --- |\n| IOC | Inversion of Control 控制反转 | 对象的**创建权**归谁 | 代码 `new` → 容器创建 |\n| DI | Dependency Injection 依赖注入 | 依赖**怎么进去** | 构造方法/`set` 主动传 → 容器反射注入 |\n\n关系一句话：**IOC 是目标，DI 是手段**。说\"用了 IOC\"通常意味着\"用了 DI\"，但它们是两个不同层次的词，简答题分开写才拿满分。\n\n三种获取对象的方式对比：\n\n| 方式 | 谁创建 | 换实现要改哪 | 缺点 |\n| --- | --- | --- | --- |\n| 直接 `new` | 业务代码 | 改业务代码、重新编译 | 耦合最紧 |\n| 简单工厂 | 工厂类 | 改工厂类 | 工厂会膨胀成巨型 switch |\n| IOC 容器 | 容器 | 改配置或注解 | 需要理解容器规则（本章成本） |"
       },
       {
-        "title": "ref 与 value",
-        "detail": "ref 引用另一个 Bean 的 id；value 赋基本类型或字符串。"
+        "title": "两种注入方式",
+        "body": "### setter 注入（属性注入）\n\n前提：类里有 setter。\n\n```xml\n<bean id=\"userDao\" class=\"com.shop.dao.UserDaoImpl\"/>\n\n<bean id=\"userService\" class=\"com.shop.service.UserServiceImpl\">\n  <property name=\"userDao\" ref=\"userDao\"/>          <!-- 引用另一个 Bean -->\n  <property name=\"pageSize\" value=\"10\"/>           <!-- 基本类型/字符串 -->\n</bean>\n```\n\n```java\npublic class UserServiceImpl {\n    private UserDao userDao;\n    private int pageSize;\n    public void setUserDao(UserDao userDao) { this.userDao = userDao; }\n    public void setPageSize(int pageSize) { this.pageSize = pageSize; }\n}\n```\n\n### 构造器注入\n\n前提：类里有对应参数的构造方法。\n\n```xml\n<bean id=\"userService\" class=\"com.shop.service.UserServiceImpl\">\n  <constructor-arg name=\"userDao\" ref=\"userDao\"/>\n  <constructor-arg name=\"pageSize\" value=\"10\"/>\n</bean>\n```\n\n`<constructor-arg>` 的定位属性有三种写法，考试可能问\"参数名不保留时怎么办\"：\n\n| 写法 | 示例 | 适用 |\n| --- | --- | --- |\n| `name` | `<constructor-arg name=\"userDao\" .../>` | 编译时保留了参数名（推荐） |\n| `index` | `<constructor-arg index=\"0\" .../>` | 参数名丢失时按位置 |\n| `type` | `<constructor-arg type=\"int\" .../>` | 有重载、靠类型区分 |\n\n### 两种方式怎么选\n\n| 对比项 | setter 注入 | 构造器注入 |\n| --- | --- | --- |\n| 依赖是否可缺 | 可以（不注入就是 null） | 不行（必须给，否则创建失败） |\n| 能否注入 final 字段 | 不能 | 能 |\n| 循环依赖 | 能解开（先建后填） | 解不开（构造时就要对方） |\n| 推荐场景 | 可选依赖、配置项 | 必需依赖（Spring 官方推荐） |"
       },
       {
-        "title": "Bean 作用域",
-        "detail": "singleton 默认，容器里只有一个实例；prototype 每次获取都新建。"
+        "title": "ref 与 value：别混",
+        "body": "```xml\n<property name=\"userDao\" ref=\"userDao\"/>     <!-- ref：值是另一个 Bean 的 id -->\n<property name=\"pageSize\" value=\"10\"/>       <!-- value：值是字面量 -->\n<property name=\"tags\">\n  <list><value>a</value><value>b</value></list>   <!-- 集合用 list/map/set/props -->\n</property>\n```\n\n判断规则很简单：**值要指向容器里的另一个 bean → `ref`；值本身就是要赋的数据 → `value`**。"
       },
       {
-        "title": "四个派生注解",
-        "detail": "@Component 通用，@Service 业务层、@Repository 持久层、@Controller 控制层，都是交给容器管理。"
+        "title": "Bean 的常用属性与作用域",
+        "body": "```xml\n<bean id=\"userService\"\n      class=\"com.shop.service.UserServiceImpl\"\n      scope=\"singleton\"\n      init-method=\"init\"\n      destroy-method=\"close\"\n      lazy-init=\"false\"/>\n```\n\n| 属性 | 作用 | 考点 |\n| --- | --- | --- |\n| `id` | 容器内唯一标识 | `ref` 引的就是它；不写时默认用类名首字母小写 |\n| `class` | 全限定类名 | 类必须有无参构造（反射用） |\n| `scope` | 作用域 | 见下表 |\n| `init-method` | 初始化方法 | 属性注入**之后**执行 |\n| `destroy-method` | 销毁方法 | 只对 singleton 生效 |\n| `lazy-init` | 是否延迟创建 | `true` 时第一次 `getBean` 才创建 |\n\n| 作用域 | 实例个数 | 什么时候用 |\n| --- | --- | --- |\n| `singleton` | 容器内 1 个（默认） | 无状态的 Service、Dao |\n| `prototype` | 每次 `getBean` 都新建 | 有状态的 Bean（如一次请求的上下文对象） |\n| `request` | 每个请求 1 个 | Web 环境 |\n| `session` | 每个会话 1 个 | Web 环境，如登录用户 |\n| `application` | 每个应用 1 个 | Web 环境，等价于 `ServletContext` |\n\n**默认是 singleton，这条必考**。很多\"为什么我的成员变量被串了\"的问题，根因就是 singleton 里存了请求级状态。\n\n### Bean 生命周期（简化五步）\n\n```\n实例化（无参构造） → 属性注入 → 初始化（init-method / @PostConstruct）\n   → 使用 → 销毁（destroy-method / @PreDestroy，仅 singleton）\n```\n\n如果实现了 `BeanPostProcessor`，会在初始化前后各插一段——AOP 代理就是在这里生成的。这部分了解即可，简答题写到\"五步 + 初始化前后有后置处理器\"就够。"
       },
       {
-        "title": "两个注入注解",
-        "detail": "@Autowired 按类型找，@Resource 按名称找。"
+        "title": "注解开发",
+        "body": "### 四个派生注解\n\nXML 里写 `<bean>` 太啰嗦，注解的做法是\"打标记 + 开扫描\"：\n\n```xml\n<context:component-scan base-package=\"com.shop\"/>\n```\n\n| 注解 | 语义 | 一般加在哪 |\n| --- | --- | --- |\n| `@Component` | 通用组件 | 不好归类时用 |\n| `@Service` | 业务层 | Service 实现类 |\n| `@Repository` | 持久层 | Dao 实现类（还能把数据库异常转成 Spring 的统一异常） |\n| `@Controller` | 控制层 | SpringMVC 的 Controller |\n\n**四者功能上等价**（都是把类注册进容器），只是语义分层。@Controller 在 SpringMVC 里还会被额外识别为处理器。\n\n```java\n@Service(\"userService\")     // 不写名字时默认 userServiceImpl\npublic class UserServiceImpl implements UserService {\n    @Autowired\n    private UserDao userDao;\n}\n```\n\n### @Autowired 与 @Resource\n\n| 对比项 | `@Autowired` | `@Resource` |\n| --- | --- | --- |\n| 来源 | Spring 提供 | JDK（`javax.annotation` / `jakarta.annotation`） |\n| 默认策略 | 按**类型** | 按**名称**，找不到再按类型 |\n| 可否指定名称 | 配合 `@Qualifier(\"userDaoMysql\")` | 直接用 `@Resource(name=\"userDaoMysql\")` |\n| 找不到时 | 默认抛异常，`required=false` 才留空 | 抛异常 |\n| 放在哪 | 字段、setter、构造器 | 字段、setter |\n\n同一接口有多个实现时的标准写法：\n\n```java\n@Service\npublic class UserServiceImpl implements UserService {\n    @Autowired\n    @Qualifier(\"userDaoMysql\")     // 类型不唯一时用名称收窄\n    private UserDao userDao;\n}\n```\n\n**纯注解配置**（零 XML）：\n\n```java\n@Configuration\n@ComponentScan(\"com.shop\")\npublic class AppConfig {\n    @Bean\n    public DataSource dataSource() { ... }     // 方法返回值就是 Bean，方法名是 id\n}\n```\n\n```java\nApplicationContext ctx = new AnnotationConfigApplicationContext(AppConfig.class);\nUserService service = ctx.getBean(UserService.class);\n```"
+      },
+      {
+        "title": "AOP：横切逻辑不该散落在业务里",
+        "body": "日志、事务、权限校验，每个方法入口都要来一遍。如果每个 Service 方法里都写 `log.info(...)`，业务代码会被淹没。AOP 把它们抽成\"切面\"，在编译或运行时织入。\n\n| 概念 | 含义 |\n| --- | --- |\n| 连接点（JoinPoint） | 所有\"可以被增强\"的点，Spring AOP 里就是方法调用 |\n| 切点（Pointcut） | 真正被选中的那批连接点（用表达式描述） |\n| 通知（Advice） | 增强做什么：前置、后置、异常、最终、环绕 |\n| 切面（Aspect） | 切点 + 通知的组合 |\n| 织入（Weaving） | 把切面应用到目标对象、生成代理的过程 |\n\n```java\n@Aspect\n@Component\npublic class LogAspect {\n    @Around(\"execution(* com.shop.service..*(..))\")\n    public Object around(ProceedingJoinPoint pjp) throws Throwable {\n        long start = System.currentTimeMillis();\n        Object result = pjp.proceed();                  // 调用原方法\n        System.out.println(pjp.getSignature() + \" 耗时 \" + (System.currentTimeMillis() - start));\n        return result;\n    }\n}\n```\n\n五种通知：`@Before`、`@AfterReturning`、`@AfterThrowing`、`@After`（finally 语义）、`@Around`（最强，能改参数与返回值）。\n\n**底层代理**：\n\n| 目标类 | 用的代理 |\n| --- | --- |\n| 实现了接口 | JDK 动态代理（基于接口） |\n| 没有接口 | CGLIB（生成子类） |\n\n这条解释了\"为什么注入时建议用接口类型\"：用 JDK 代理时，容器里放的是代理对象，只能按接口取。"
+      },
+      {
+        "title": "声明式事务",
+        "body": "```java\n@Service\npublic class OrderService {\n    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)\n    public void createOrder(Order order) {\n        orderDao.insert(order);\n        stockDao.decrease(order.getProductId());    // 抛异常 → 整个方法回滚\n    }\n}\n```\n\n| 属性 | 常用值 | 说明 |\n| --- | --- | --- |\n| `propagation` | `REQUIRED`（默认）、`REQUIRES_NEW` | 有事务就加入 / 总是新建 |\n| `isolation` | `DEFAULT`、`READ_COMMITTED` | 隔离级别 |\n| `rollbackFor` | `Exception.class` | 默认只回滚 `RuntimeException` 与 `Error` |\n| `readOnly` | `true` | 查询用，可优化 |\n\n**默认只回滚运行时异常**，这是最常被踩的一条：受检异常（如 `IOException`）不会触发回滚，必须显式 `rollbackFor`。\n\n四种\"加了注解却不生效\"的情形：\n\n| 情形 | 原因 |\n| --- | --- |\n| 加在 `private`/`static`/`final` 方法上 | 代理无法重写该方法 |\n| 同类内部方法互相调用 | 调用没经过代理对象 |\n| 异常被 `catch` 掉没抛出 | 切面感知不到失败 |\n| 类没被容器管理（没加 `@Service` 等） | 根本没生成代理 |"
+      },
+      {
+        "title": "Spring 在全栈里的位置",
+        "body": "```\n浏览器\n  → DispatcherServlet（SpringMVC：接请求、找 Controller）\n    → Controller（参数绑定、调 Service）\n      → Service（业务、@Transactional 事务边界）\n        → Dao / Mapper（JDBC 或 MyBatis）\n          → 数据库\n```\n\nSpring 负责的是：**把这条链上的对象都创建好、按依赖注入、在 Service 层套上事务与切面**。SpringMVC 负责 Web 层，MyBatis 负责持久层，三者靠 Spring 的容器串起来。"
+      },
+      {
+        "title": "考试怎么考",
+        "body": "| 题型 | 常见问法 | 答题要点 |\n| --- | --- | --- |\n| 选择 | \"默认作用域是什么\" | singleton |\n| 选择 | \"构造器注入用哪个标签\" | `<constructor-arg>` |\n| 填空 | \"IOC 的全称是 ____\" | Inversion of Control |\n| 判断 | \"@Autowired 按名称注入\" | 错，按类型；按名称是 @Resource |\n| 简答 | \"IOC 与 DI 的关系\" | IOC 是目标（创建权转移），DI 是实现方式 |\n| 简答 | \"两种注入方式的区别\" | 依赖是否可缺、能否 final、循环依赖 |\n| 应用 | 写 XML 把 Dao 注入 Service | `<property name=\"...\" ref=\"...\"/>` 别写成 value |\n| 应用 | 用注解实现一个 Service 并注入 Dao | `@Service` + `@Autowired`（或 `@Resource`） |"
+      },
+      {
+        "title": "自测清单",
+        "body": "1. `<property name=\"userDao\" value=\"userDao\"/>` 会怎样？错在哪？\n2. singleton 的 Bean 里放了一个 `List<String>` 成员变量用来存当前请求数据，会发生什么？\n3. 两个类实现同一个接口，容器里有俩 Bean，`@Autowired` 注入时会怎样？怎么修？\n4. `@Transactional` 加在 Service 的 `private` 方法上为什么不生效？\n5. 目标类没有实现任何接口，Spring AOP 用什么生成代理？\n6. 为什么\"构造器注入解不开循环依赖\"？"
       }
     ],
-    "pitfalls": [
-      "构造器注入必须用 constructor-arg，写成 property 不生效。",
-      "prototype 每次 getBean 都是新对象，singleton 才是同一个。"
-    ]
+    "videos": [
+      {
+        "title": "尚硅谷 Spring5 框架教程（合集）",
+        "url": "https://www.bilibili.com/video/BV1Vf4y127N5",
+        "note": "IOC 容器与注解开发讲得最细，AOP 部分看后半段"
+      }
+    ],
+    "resources": [
+      {
+        "title": "Spring Framework 官方文档 · Core Container",
+        "url": "https://docs.spring.io/spring-framework/reference/core.html",
+        "note": "Bean 生命周期、作用域的权威说明"
+      }
+    ],
+    "estimatedMinutes": 30,
+    "examFocus": "选择/填空高频：IOC 与 DI 的定义、两种注入的标签、Bean 作用域、四个派生注解、@Autowired 与 @Resource 的区别。"
   },
   {
     "moduleId": "javaweb:kb:springmvc",
     "topicId": "javaweb:topic:springmvc",
     "title": "SpringMVC",
-    "summary": "执行流程、三大组件、参数绑定与视图解析器。",
-    "items": [
+    "summary": "一个 DispatcherServlet 串起九个组件——把\"请求怎么找到方法、结果怎么变成页面\"讲成一条能背下来的流水线。",
+    "items": [],
+    "pitfalls": [
+      "@ResponseBody 是写响应体，@RequestBody 是读请求体，方向相反，最容易记混",
+      "url-pattern 写 /* 会把 JSP 也拦住，应该写 /",
+      "返回值 String 时默认当视图名解析，想直接返回字符串内容必须加 @ResponseBody",
+      "视图解析器的 prefix 已经含 /WEB-INF/，Controller 里再写一遍会拼出双份路径",
+      "拦截器的 preHandle 返回 false 就中断，且 postHandle 不会执行"
+    ],
+    "goals": [
+      "能按顺序复述一次请求在 SpringMVC 里的完整流转，并指出每一步由哪个组件负责",
+      "能说清 HandlerMapping、HandlerAdapter、ViewResolver 三者的分工，而不是笼统说\"都是框架做的\"",
+      "能写出接收普通参数、路径变量、JSON 请求体的三种 Controller 方法",
+      "能解释 String 返回值、ModelAndView、@ResponseBody 三者的区别",
+      "能说清为什么 url-pattern 要写 / 而不是 /*，以及静态资源怎么放行"
+    ],
+    "sections": [
       {
-        "title": "执行流程",
-        "detail": "请求 → DispatcherServlet → HandlerMapping 找到处理方法 → HandlerAdapter 调用 → Controller 返回 ModelAndView → ViewResolver 解析 → 渲染视图。"
+        "title": "这一节解决什么问题",
+        "body": "Servlet 章里，一个功能要写一个 Servlet，然后在 `web.xml` 里配一条映射。功能一多，Servlet 类就爆炸，且每个类里都要重复写编码、取参、转发。\n\nSpringMVC 的做法是：**只留一个 Servlet（DispatcherServlet）接所有请求**，再由它按注解把请求分派给普通方法。一个 Controller 类里可以放十个方法，对应十个 URL。这就是\"前端控制器\"模式。"
       },
       {
-        "title": "三大组件",
-        "detail": "HandlerMapping（找谁处理）、HandlerAdapter（怎么调）、ViewResolver（视图怎么解析）。"
+        "title": "一分钟速览",
+        "body": "| 主题 | 必须记住的内容 |\n| --- | --- |\n| 核心 | DispatcherServlet 是唯一入口，负责调度，不干具体活 |\n| 三大组件 | HandlerMapping（找谁）、HandlerAdapter（怎么调）、ViewResolver（怎么解析视图） |\n| 两个基础注解 | `@Controller` 声明控制器、`@RequestMapping` 映射路径 |\n| 参数注解 | `@RequestParam` 取参数、`@PathVariable` 取路径、`@RequestBody` 读请求体 |\n| 返回值 | String = 视图名；ModelAndView = 数据 + 视图；`@ResponseBody` = 直接写响应体 |\n| 视图解析器 | `prefix + 返回值 + suffix` |\n| 静态资源 | `url-pattern` 写 `/`，再配 `<mvc:resources>` 或默认 Servlet 放行 |\n| 拦截器 | `preHandle` / `postHandle` / `afterCompletion` |"
       },
       {
-        "title": "两个基础注解",
-        "detail": "@Controller 声明控制器，@RequestMapping 映射请求路径。"
+        "title": "三大组件：各自只干一件事",
+        "body": "| 组件 | 职责 | 一句话记法 |\n| --- | --- | --- |\n| `HandlerMapping` | 按 URL 找到该由哪个方法处理 | **找谁** |\n| `HandlerAdapter` | 按方法签名调用它（绑定参数、转换返回值） | **怎么调** |\n| `ViewResolver` | 把逻辑视图名解析成真正的视图对象 | **怎么显示** |\n\n为什么\"找谁\"和\"怎么调\"要拆成两个组件？因为处理器可以是注解方法，也可以是实现 `Controller` 接口的类。映射规则与调用方式是两个独立变化的维度，拆开后新增一种处理器类型不用改映射逻辑。"
       },
       {
-        "title": "参数接收",
-        "detail": "同名参数自动绑定到对象；@RequestParam 取请求参数、@PathVariable 取路径变量、@RequestBody 读请求体。"
+        "title": "执行流程：十一步",
+        "body": "这张表建议按顺序背，考试写简答就照这个顺序写，每一步点出责任方。\n\n| 步 | 发生什么 | 责任方 |\n| --- | --- | --- |\n| 1 | 浏览器发出请求，被 `DispatcherServlet` 接住 | 前端控制器 |\n| 2 | 拿 URL 去问 `HandlerMapping`：这个请求归谁 | DispatcherServlet |\n| 3 | 返回 `HandlerExecutionChain`（处理器方法 + 拦截器链） | HandlerMapping |\n| 4 | 找一个能调这个处理器的 `HandlerAdapter` | DispatcherServlet |\n| 5 | 依次执行拦截器 `preHandle` | 拦截器 |\n| 6 | `HandlerAdapter` 做参数绑定并调用 Controller 方法 | HandlerAdapter |\n| 7 | Controller 返回 `ModelAndView`（或视图名） | Controller |\n| 8 | 执行拦截器 `postHandle` | 拦截器 |\n| 9 | `ViewResolver` 把视图名解析成 `View` | 视图解析器 |\n| 10 | 渲染视图（把模型数据填进去），写回响应 | View |\n| 11 | 执行拦截器 `afterCompletion` | 拦截器 |\n\n一条推论：**`postHandle` 在渲染之前执行，所以它还能改 `ModelAndView`；`afterCompletion` 在渲染之后，改不了了。**"
       },
       {
-        "title": "三种返回",
-        "detail": "String 当视图名；ModelAndView 带数据带视图；@ResponseBody 直接写响应体，不走视图解析。"
+        "title": "配置：web.xml 与 springmvc.xml",
+        "body": "```xml\n<!-- web.xml：把 DispatcherServlet 挂到 / 上 -->\n<servlet>\n  <servlet-name>dispatcher</servlet-name>\n  <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>\n  <init-param>\n    <param-name>contextConfigLocation</param-name>\n    <param-value>classpath:springmvc.xml</param-value>\n  </init-param>\n  <load-on-startup>1</load-on-startup>\n</servlet>\n\n<servlet-mapping>\n  <servlet-name>dispatcher</servlet-name>\n  <url-pattern>/</url-pattern>       <!-- 注意：是 /，不是 /* -->\n</servlet-mapping>\n```\n\n```xml\n<!-- springmvc.xml -->\n<context:component-scan base-package=\"com.shop.web\"/>\n<mvc:annotation-driven/>            <!-- 开启注解驱动：注册注解需要的处理器映射与适配器 -->\n\n<bean class=\"org.springframework.web.servlet.view.InternalResourceViewResolver\">\n  <property name=\"prefix\" value=\"/WEB-INF/jsp/\"/>\n  <property name=\"suffix\" value=\".jsp\"/>\n</bean>\n```\n\n### 为什么 url-pattern 写 `/` 而不是 `/*`\n\n| 写法 | 拦什么 | 后果 |\n| --- | --- | --- |\n| `/` | 所有请求，但**不拦 JSP**（JSP 交给容器自带的 JspServlet） | 正确做法 |\n| `/*` | 所有请求，**连 JSP 也拦** | 访问 `.jsp` 时又进 DispatcherServlet，找不到处理器 → 404 |\n\n这条在考试里以\"页面 404 但 Controller 没错\"的形式出现，根因往往就是写成了 `/*`。\n\n### 视图解析器：prefix + 返回值 + suffix\n\n```java\n@Controller\npublic class UserController {\n    @RequestMapping(\"/user/list\")\n    public String list(Model model) {\n        model.addAttribute(\"users\", userService.findAll());\n        return \"userList\";        // 实际视图：/WEB-INF/jsp/userList.jsp\n    }\n}\n```\n\n三个容易错的地方：\n\n1. 返回值写 `\"userList.jsp\"` 会变成 `/WEB-INF/jsp/userList.jsp.jsp`。\n2. 返回值写 `\"/WEB-INF/jsp/userList.jsp\"` 会拼成双份前缀。**要绕过解析器就用 `forward:` / `redirect:` 前缀**。\n3. `redirect:` 是两次请求，`model` 里的数据会丢；`forward:` 是一次请求，数据还在。"
       },
       {
-        "title": "视图解析器",
-        "detail": "prefix + 返回值 + suffix。返回 \"loginSuccess\" 实际是 /WEB-INF/jsp/loginSuccess.jsp。"
+        "title": "参数绑定：六种常见写法",
+        "body": "| 场景 | 写法 | 说明 |\n| --- | --- | --- |\n| 同名简单参数 | `public String f(String name, Integer age)` | 参数名与请求参数名一致即自动绑定 |\n| 改名/必填 | `@RequestParam(\"user_name\") String name` | 可加 `required=false`、`defaultValue` |\n| 路径变量 | `@PathVariable Long id` | 配合 `@RequestMapping(\"/user/{id}\")` |\n| POJO | `public String f(User user)` | 表单字段名与属性名一致即自动封装 |\n| JSON 请求体 | `@RequestBody User user` | 前端 `Content-Type: application/json` |\n| 请求头/Cookie | `@RequestHeader`、`@CookieValue` | 取请求头与 Cookie |\n\n```java\n@Controller\n@RequestMapping(\"/user\")\npublic class UserController {\n\n    // GET /user/3\n    @GetMapping(\"/{id}\")\n    public String detail(@PathVariable Long id, Model model) {\n        model.addAttribute(\"user\", userService.findById(id));\n        return \"userDetail\";\n    }\n\n    // POST /user（JSON 请求体）\n    @PostMapping\n    @ResponseBody\n    public Result<User> create(@RequestBody User user) {\n        userService.save(user);\n        return Result.ok(user);        // 直接写 JSON，不走视图解析\n    }\n\n    // GET /user/search?keyword=x&page=2\n    @GetMapping(\"/search\")\n    public String search(@RequestParam(defaultValue = \"\") String keyword,\n                         @RequestParam(defaultValue = \"1\") int page,\n                         Model model) {\n        model.addAttribute(\"page\", userService.search(keyword, page));\n        return \"userList\";\n    }\n}\n```\n\n两条绑定规则值得单独记：\n\n- **简单类型（String、包装类、日期）用 `@RequestParam` 更稳**，因为参数名依赖编译时保留（`-parameters`），拿不到名就会报错。\n- **中文乱码要在进入 Controller 之前解决**，标准做法是配 `CharacterEncodingFilter`（`forceEncoding=true`），而不是在每个方法里写 `setCharacterEncoding`。"
       },
       {
-        "title": "web.xml 配置",
-        "detail": "配置 DispatcherServlet，用 contextConfigLocation 指定配置文件，url-pattern 写 /。"
+        "title": "返回值：三种形态",
+        "body": "| 返回类型 | 语义 | 是否需要视图解析 | 典型用途 |\n| --- | --- | --- | --- |\n| `String` | 逻辑视图名 | 需要 | 返回页面 |\n| `ModelAndView` | 数据 + 视图名 | 需要 | 既传数据又指定页面 |\n| `void` | 自己往 `response` 写 | 不需要 | 手写输出（少用） |\n| 任意对象 + `@ResponseBody` | 序列化为 JSON/XML 写入响应体 | 不需要 | 前后端分离接口 |\n\n```java\n@RequestMapping(\"/report\")\npublic ModelAndView report() {\n    ModelAndView mv = new ModelAndView();\n    mv.setViewName(\"report\");\n    mv.addObject(\"rows\", reportService.rows());\n    return mv;\n}\n\n@RequestMapping(\"/api/count\")\n@ResponseBody\npublic int count() { return userService.count(); }    // 响应体直接是 12，不是页面\n```\n\n**`@ResponseBody` 与 `@RequestBody` 的方向**：一个写出（response body），一个读入（request body）。记不住就记\"Response 对应响应\"，方向自然对。"
+      },
+      {
+        "title": "静态资源：为什么 css/js 会 404",
+        "body": "把 `url-pattern` 写成 `/` 后，所有请求都进 DispatcherServlet，包括 `/css/app.css`。它找不到对应处理器，于是 404。两种解法：\n\n```xml\n<!-- 解法一：交给容器的默认 Servlet 处理 -->\n<mvc:default-servlet-handler/>\n\n<!-- 解法二：显式指定哪些路径当静态资源 -->\n<mvc:resources mapping=\"/css/**\" location=\"/css/\"/>\n<mvc:resources mapping=\"/js/**\"  location=\"/js/\"/>\n```\n\n两者区别：`default-servlet-handler` 是\"我处理不了就退回给 Tomcat\"；`mvc:resources` 是\"这些路径明确由我按静态文件返回\"。前者省事，后者可控（能配缓存时间）。"
+      },
+      {
+        "title": "拦截器：三个方法，一条顺序",
+        "body": "```java\npublic class LoginInterceptor implements HandlerInterceptor {\n    @Override\n    public boolean preHandle(HttpServletRequest req, HttpServletResponse resp, Object handler)\n            throws Exception {\n        if (req.getSession().getAttribute(\"loginUser\") == null) {\n            resp.sendRedirect(req.getContextPath() + \"/login\");\n            return false;                 // 中断：后续拦截器、Controller、postHandle 都不执行\n        }\n        return true;                      // 放行\n    }\n}\n```\n\n| 方法 | 执行时机 | 常用来做 |\n| --- | --- | --- |\n| `preHandle` | Controller 之前 | 登录校验、权限判断（返回 `false` 即中断） |\n| `postHandle` | Controller 之后、渲染之前 | 往 `ModelAndView` 里补公共数据 |\n| `afterCompletion` | 渲染之后 | 清理资源、记录耗时 |\n\n与 Filter 的区别（常考）：\n\n| 对比项 | Filter | Interceptor |\n| --- | --- | --- |\n| 规范来源 | Servlet 规范 | SpringMVC 提供 |\n| 作用范围 | 所有请求（含静态资源、JSP） | 只拦进 DispatcherServlet 的请求 |\n| 能否拿到处理器方法 | 不能 | 能（`handler` 参数） |\n| 能否用 Spring 的 Bean | 默认不能（容器管理） | 能（本身是 Spring Bean） |"
+      },
+      {
+        "title": "RESTful 风格",
+        "body": "```java\n@RestController                       // = @Controller + @ResponseBody\n@RequestMapping(\"/api/users\")\npublic class UserApiController {\n\n    @GetMapping(\"/{id}\")              // 查\n    public User get(@PathVariable Long id) { return userService.findById(id); }\n\n    @PostMapping                      // 增\n    public User create(@RequestBody User user) { return userService.save(user); }\n\n    @PutMapping(\"/{id}\")              // 改\n    public User update(@PathVariable Long id, @RequestBody User user) { ... }\n\n    @DeleteMapping(\"/{id}\")           // 删\n    public void delete(@PathVariable Long id) { userService.delete(id); }\n}\n```\n\n核心思想：**用 URL 表示资源，用 HTTP 方法表示动作**。`/api/users/3` 这个地址，GET 是查、PUT 是改、DELETE 是删——URL 里不出现动词。"
+      },
+      {
+        "title": "考试怎么考",
+        "body": "| 题型 | 常见问法 | 答题要点 |\n| --- | --- | --- |\n| 简答 | \"SpringMVC 的执行流程\" | 按十一步写，点出 DispatcherServlet / HandlerMapping / HandlerAdapter / ViewResolver |\n| 选择 | \"哪个组件负责解析视图名\" | ViewResolver |\n| 选择 | \"`url-pattern` 应该写\" | `/` |\n| 判断 | \"`@RequestBody` 是往响应体写数据\" | 错，那是 `@ResponseBody` |\n| 填空 | \"视图解析器由 ____ 和 ____ 拼成\" | prefix、suffix |\n| 应用 | 写一个接收路径变量并返回 JSON 的方法 | `@GetMapping(\"/{id}\")` + `@PathVariable` + `@ResponseBody` |\n| 应用 | 写一个登录拦截器 | 实现 `HandlerInterceptor`，`preHandle` 返回 `false` 中断 |"
+      },
+      {
+        "title": "自测清单",
+        "body": "1. Controller 返回 `\"userList\"`，视图解析器 prefix 是 `/WEB-INF/jsp/`，最终访问的文件路径是什么？\n2. 为什么 `url-pattern` 写 `/*` 会导致 JSP 打不开？\n3. `@RequestParam` 与 `@PathVariable` 分别从哪里取数据？\n4. `redirect:` 和 `forward:` 前缀分别对应 Servlet 的哪两个 API？各自的 `model` 数据还在吗？\n5. 拦截器 `preHandle` 返回 `false` 后，`postHandle` 与 `afterCompletion` 还会执行吗？\n6. 静态资源 404，有哪两种标准解法？"
       }
     ],
-    "pitfalls": [
-      "@ResponseBody 是写响应体，@RequestBody 是读请求体，方向相反，最容易记混。",
-      "url-pattern 写 /* 会把 JSP 也拦住，应该写 /。"
-    ]
+    "videos": [
+      {
+        "title": "尚硅谷 SpringMVC 教程（合集）",
+        "url": "https://www.bilibili.com/video/BV1Ry4y1574R",
+        "note": "执行流程与参数绑定有专门的图讲解"
+      }
+    ],
+    "resources": [
+      {
+        "title": "Spring Framework 官方文档 · Web MVC",
+        "url": "https://docs.spring.io/spring-framework/reference/web/webmvc.html",
+        "note": "组件职责与流程的权威描述"
+      }
+    ],
+    "estimatedMinutes": 32,
+    "examFocus": "简答几乎必考\"SpringMVC 执行流程\"；选择常考三大组件职责、@RequestBody 与 @ResponseBody 的方向、url-pattern 写 / 与 /* 的区别。"
   },
   {
     "moduleId": "javaweb:kb:mybatis",
     "topicId": "javaweb:topic:mybatis",
     "title": "MyBatis",
-    "summary": "配置结构、映射四标签、#{} 与 ${}。",
-    "items": [
+    "summary": "把 SQL 写回 XML，把样板代码交给框架——核心就三件事：三个对象、四个标签、#{} 与 ${} 的区别。",
+    "items": [],
+    "pitfalls": [
+      "四个标签名就是增删改查的英文单词，拼错启动就报错",
+      "mappers 里可以用 <package name=\"...\"/> 批量扫描接口",
+      "SqlSession 不是线程安全的，用完必须 close，不要做成成员变量",
+      "${} 是字符串拼接，能被注入，只允许用于表名、列名、排序字段（且要白名单校验）",
+      "resultType 与 resultMap 不能同时写"
+    ],
+    "goals": [
+      "能说清 SqlSessionFactoryBuilder / SqlSessionFactory / SqlSession 各自的生命周期与职责",
+      "能写出完整的最小配置：environments + mappers，并解释 transactionManager 与 dataSource",
+      "能说清 #{} 与 ${} 在编译方式、防注入、适用场景上的三点差异",
+      "能区分 resultType 与 resultMap，并说出什么情况下必须用 resultMap",
+      "能写出 if / where / foreach 三个最常用的动态 SQL 标签"
+    ],
+    "sections": [
       {
-        "title": "三个核心对象",
-        "detail": "SqlSessionFactoryBuilder 读配置建工厂 → SqlSessionFactory → SqlSession 执行 SQL。"
+        "title": "这一节解决什么问题",
+        "body": "用 JDBC 查一张表，代码要写成这样：\n\n```java\nConnection conn = null; PreparedStatement ps = null; ResultSet rs = null;\ntry {\n    conn = DriverManager.getConnection(url, user, pwd);\n    ps = conn.prepareStatement(\"select id, name from user where id = ?\");\n    ps.setLong(1, id);\n    rs = ps.executeQuery();\n    if (rs.next()) { /* 手工把每一列塞进对象 */ }\n} catch (SQLException e) { ... } finally { /* 三层关闭，顺序还不能错 */ }\n```\n\n真正有价值的信息只有两行：**SQL 语句**和**结果怎么映射成对象**。其余全是样板。MyBatis 的定位就是：**SQL 你自己写，样板交给它**。\n\n这也是它和 Hibernate 这类全自动 ORM 的根本区别——SQL 可控，适合需要优化语句的国内项目。"
       },
       {
-        "title": "配置文件两块",
-        "detail": "environments（transactionManager + dataSource）和 mappers（映射文件在哪）。"
+        "title": "一分钟速览",
+        "body": "| 主题 | 必须记住的内容 |\n| --- | --- |\n| 三个核心对象 | `SqlSessionFactoryBuilder` → `SqlSessionFactory` → `SqlSession` |\n| 配置两块 | `environments`（事务管理器 + 数据源）、`mappers`（映射文件在哪） |\n| 四个映射标签 | `select`、`insert`、`update`、`delete` |\n| 两个类型 | `parameterType` 入参、`resultType` 返回 |\n| 取值的两种写法 | `#{}` 预编译占位防注入；`${}` 字符串拼接 |\n| 动态 SQL | `if`、`where`、`set`、`foreach`、`choose` |\n| 缓存 | 一级缓存（SqlSession 内，默认开）、二级缓存（Mapper 级，需配置） |"
       },
       {
-        "title": "dataSource 三种类型",
-        "detail": "UNPOOLED 不用池、POOLED 用连接池、JNDI 从容器取。"
+        "title": "三个核心对象与它们的生命周期",
+        "body": "| 对象 | 作用 | 生命周期 | 建议 |\n| --- | --- | --- | --- |\n| `SqlSessionFactoryBuilder` | 读配置，建工厂 | 用完即可丢 | 只在启动时用一次 |\n| `SqlSessionFactory` | 生产 `SqlSession` | 应用级，一个应用一个 | 做成单例 |\n| `SqlSession` | 执行 SQL、管事务 | 一次会话 | **不能共享，用完必须 `close()`** |\n\n```java\n// 1. 读配置\nInputStream in = Resources.getResourceAsStream(\"mybatis-config.xml\");\n// 2. 建工厂（builder 用完就丢）\nSqlSessionFactory factory = new SqlSessionFactoryBuilder().build(in);\n// 3. 开会话，执行，关闭\ntry (SqlSession session = factory.openSession()) {\n    UserMapper mapper = session.getMapper(UserMapper.class);\n    User user = mapper.findById(3L);\n    session.commit();          // 增删改必须提交，否则不生效\n}\n```\n\n**`SqlSession` 线程不安全**这条要单独记：它内部持有 `Connection` 与一级缓存，两个线程共用一个会串数据。所以绝不能写成 Servlet 的成员变量。\n\n一条常被忽略的事实：**MyBatis 默认不自动提交**。`openSession()` 等价于 `openSession(false)`，增删改后不 `commit()` 数据库里什么都没有——这是\"代码没报错但数据没进去\"的最常见原因。"
       },
       {
-        "title": "映射文件四标签",
-        "detail": "select、insert、update、delete，namespace 一般写接口全限定名。"
+        "title": "配置文件：两块，缺一不可",
+        "body": "```xml\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE configuration PUBLIC \"-//mybatis.org//DTD Config 3.0//EN\"\n        \"https://mybatis.org/dtd/mybatis-3-config.dtd\">\n<configuration>\n  <properties resource=\"db.properties\"/>\n\n  <settings>\n    <setting name=\"mapUnderscoreToCamelCase\" value=\"true\"/>   <!-- user_name → userName -->\n    <setting name=\"logImpl\" value=\"STDOUT_LOGGING\"/>          <!-- 把 SQL 打到控制台 -->\n  </settings>\n\n  <typeAliases>\n    <package name=\"com.shop.model\"/>       <!-- 之后 resultType 可只写 User -->\n  </typeAliases>\n\n  <environments default=\"dev\">\n    <environment id=\"dev\">\n      <transactionManager type=\"JDBC\"/>\n      <dataSource type=\"POOLED\">\n        <property name=\"driver\" value=\"${db.driver}\"/>\n        <property name=\"url\" value=\"${db.url}\"/>\n        <property name=\"username\" value=\"${db.username}\"/>\n        <property name=\"password\" value=\"${db.password}\"/>\n      </dataSource>\n    </environment>\n  </environments>\n\n  <mappers>\n    <package name=\"com.shop.mapper\"/>      <!-- 批量扫描：接口与同名 XML 同包同名时最省事 -->\n  </mappers>\n</configuration>\n```\n\n### transactionManager 的两种类型\n\n| 类型 | 含义 |\n| --- | --- |\n| `JDBC` | 直接用 `Connection` 的 `commit`/`rollback`，**独立使用时选它** |\n| `MANAGED` | 把事务交给容器（如 Spring），自己不管提交 |\n\n与 Spring 整合后，事务由 Spring 的 `DataSourceTransactionManager` 管，MyBatis 这边一般写 `MANAGED` 或不写。\n\n### dataSource 的三种类型\n\n| 类型 | 含义 | 适用 |\n| --- | --- | --- |\n| `UNPOOLED` | 每次请求新建连接，用完关掉 | 学习、极低频场景 |\n| `POOLED` | 内置连接池 | 单机项目默认选择 |\n| `JNDI` | 从容器（Tomcat）取数据源 | 部署在 JavaEE 容器里、由容器统一管连接 |"
       },
       {
-        "title": "resultType 与 parameterType",
-        "detail": "resultType 是返回的单条记录类型，parameterType 是入参类型（可省略）。"
+        "title": "映射文件：四个标签",
+        "body": "```xml\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE mapper PUBLIC \"-//mybatis.org//DTD Mapper 3.0//EN\"\n        \"https://mybatis.org/dtd/mybatis-3-mapper.dtd\">\n<mapper namespace=\"com.shop.mapper.UserMapper\">\n\n  <select id=\"findById\" parameterType=\"long\" resultType=\"User\">\n    select id, user_name, age from t_user where id = #{id}\n  </select>\n\n  <insert id=\"insert\" parameterType=\"User\" useGeneratedKeys=\"true\" keyProperty=\"id\">\n    insert into t_user(user_name, age) values(#{userName}, #{age})\n  </insert>\n\n  <update id=\"updateAge\">\n    update t_user set age = #{age} where id = #{id}\n  </update>\n\n  <delete id=\"deleteById\" parameterType=\"long\">\n    delete from t_user where id = #{id}\n  </delete>\n</mapper>\n```\n\n| 属性 | 作用 | 备注 |\n| --- | --- | --- |\n| `id` | 语句唯一标识 | **必须与 Mapper 接口的方法名一致**，否则调用时报\"找不到语句\" |\n| `parameterType` | 入参类型 | 可省略，MyBatis 能推断 |\n| `resultType` | 单条结果的类型 | 与 `resultMap` **二选一** |\n| `useGeneratedKeys` + `keyProperty` | 回填自增主键 | 插入后对象的 `id` 才有值 |\n| `namespace` | 命名空间 | 接口开发时**必须写接口全限定名** |\n\n**四个标签名拼错会直接导致启动失败**（DTD 校验），这也是最容易发现的错误——反而是\"namespace 写错\"更隐蔽，报错信息是\"Invalid bound statement\"。"
       },
       {
-        "title": "#{} 与 ${}",
-        "detail": "#{} 预编译占位、防注入；${} 字符串拼接，只在动态表名列名时用。"
+        "title": "#{} 与 ${}：这一节的最高频考点",
+        "body": "| 对比项 | `#{}` | `${}` |\n| --- | --- | --- |\n| 底层实现 | 预编译，转成 `?` 占位符 | 字符串直接拼进 SQL |\n| 是否防注入 | **防**（值不会被当 SQL 解析） | **不防**（值会被当 SQL 的一部分） |\n| 类型处理 | 自动按参数类型设置 | 全部按字符串拼 |\n| 适用场景 | 绝大多数取值场景 | 表名、列名、排序字段等**标识符** |\n| 示例 | `where id = #{id}` → `where id = ?` | `order by ${column}` → `order by age` |\n\n```java\n// 用户输入 \"1 or 1=1\"\n// #{id} → where id = ? ，参数整体作为值，查不到 → 安全\n// ${id} → where id = 1 or 1=1 ，整表返回 → 被注入\n```\n\n那什么时候不得不用 `${}`？只有**标识符位置**：`order by ${sortField}`、`select * from ${tableName}`。这时必须自己做白名单：\n\n```java\nprivate static final Set<String> ALLOWED_SORT = Set.of(\"age\", \"user_name\", \"id\");\n\nif (!ALLOWED_SORT.contains(sortField)) throw new IllegalArgumentException(\"非法排序字段\");\n```\n\n一句能写进简答的话：**能用 `#{}` 就用 `#{}`；必须用 `${}` 时必须白名单校验。**"
+      },
+      {
+        "title": "resultType 与 resultMap",
+        "body": "```xml\n<!-- resultType：列名与属性名一致（或开了驼峰映射）时最省事 -->\n<select id=\"findById\" resultType=\"User\">\n  select id, user_name, age from t_user where id = #{id}\n</select>\n\n<!-- resultMap：列名与属性名不一致、或要做关联映射时必须用 -->\n<resultMap id=\"userMap\" type=\"User\">\n  <id property=\"id\" column=\"id\"/>\n  <result property=\"userName\" column=\"user_name\"/>\n  <result property=\"age\" column=\"age\"/>\n</resultMap>\n\n<select id=\"findById2\" resultMap=\"userMap\">\n  select id, user_name, age from t_user where id = #{id}\n</select>\n```\n\n| 对比项 | `resultType` | `resultMap` |\n| --- | --- | --- |\n| 写法成本 | 低（写个类名） | 高（逐列映射） |\n| 自动映射 | 靠列名 = 属性名或驼峰配置 | 显式指定，不依赖约定 |\n| 能否处理关联 | 不能 | 能（`association` / `collection`） |\n| 何时必须用 | — | 列名与属性名不一致且不想开驼峰、一对一/一对多、需要类型转换 |\n\n### 关联映射\n\n```xml\n<!-- 一个用户属于一个部门：association -->\n<resultMap id=\"userWithDept\" type=\"User\">\n  <id property=\"id\" column=\"id\"/>\n  <result property=\"userName\" column=\"user_name\"/>\n  <association property=\"dept\" javaType=\"Dept\">\n    <id property=\"id\" column=\"d_id\"/>\n    <result property=\"deptName\" column=\"d_name\"/>\n  </association>\n</resultMap>\n\n<!-- 一个部门有多个用户：collection -->\n<resultMap id=\"deptWithUsers\" type=\"Dept\">\n  <id property=\"id\" column=\"id\"/>\n  <result property=\"deptName\" column=\"dept_name\"/>\n  <collection property=\"users\" ofType=\"User\">\n    <id property=\"id\" column=\"u_id\"/>\n    <result property=\"userName\" column=\"u_name\"/>\n  </collection>\n</resultMap>\n```\n\n两者都支持嵌套查询（`select` 属性）与嵌套结果（子标签）。嵌套查询能配 `fetchType=\"lazy\"` 实现延迟加载，但会带来 N+1 查询问题——写报告时说明\"延迟加载省了带宽、可能多了往返\"就够。"
+      },
+      {
+        "title": "动态 SQL：四个够用的标签",
+        "body": "```xml\n<select id=\"search\" parameterType=\"UserQuery\" resultType=\"User\">\n  select id, user_name, age from t_user\n  <where>\n    <if test=\"keyword != null and keyword != ''\">\n      and user_name like concat('%', #{keyword}, '%')\n    </if>\n    <if test=\"minAge != null\">\n      and age &gt;= #{minAge}\n    </if>\n    <if test=\"ids != null and ids.size() > 0\">\n      and id in\n      <foreach collection=\"ids\" item=\"it\" open=\"(\" separator=\",\" close=\")\">\n        #{it}\n      </foreach>\n    </if>\n  </where>\n  order by id desc\n</select>\n```\n\n| 标签 | 作用 | 注意 |\n| --- | --- | --- |\n| `<if test=\"...\">` | 条件拼接 | `test` 里写 OGNL 表达式，字符串判空要判 `!= ''` |\n| `<where>` | 自动加 `where`，并去掉开头多余的 `and`/`or` | 比手写 `where 1=1` 干净 |\n| `<set>` | 自动加 `set`，并去掉末尾多余的逗号 | 更新语句必备 |\n| `<foreach>` | 遍历集合拼 `in (...)` | 三个属性必写：`collection`、`item`、`separator` |\n| `<choose>/<when>/<otherwise>` | 多分支，等价 `switch` | 只命中一个分支 |\n\n在 XML 里写 `<` 必须转义成 `&lt;`（或包在 `<![CDATA[ ]]>` 里），这是初学者最常见的语法错误。"
+      },
+      {
+        "title": "缓存：一级与二级",
+        "body": "| 级别 | 范围 | 默认 | 生效条件 |\n| --- | --- | --- | --- |\n| 一级缓存 | 同一个 `SqlSession` | 开启 | 同一会话内重复查同一语句与参数 |\n| 二级缓存 | 同一个 `namespace`（Mapper） | 关闭 | 需在 mapper 里加 `<cache/>`，且实体可序列化 |\n\n两级缓存的失效时机：任何增删改都会清空对应缓存；`session.clearCache()` 可手动清一级缓存。\n\n一个必须知道的坑：**一级缓存是 `SqlSession` 级的，在 Spring 整合后每次查询往往是新会话，所以一级缓存经常\"看起来没生效\"**。想跨请求缓存只能用二级缓存或外部缓存（Redis）。"
+      },
+      {
+        "title": "Mapper 接口开发：为什么不写 Dao 实现类",
+        "body": "```java\npublic interface UserMapper {\n    User findById(Long id);\n    int insert(User user);\n    List<User> search(UserQuery query);\n}\n```\n\n框架按四条约定生成实现（动态代理）：\n\n| 约定 | 说明 |\n| --- | --- |\n| `namespace` = 接口全限定名 | 建立接口与 XML 的绑定 |\n| 方法名 = 语句 `id` | 决定调哪条 SQL |\n| 参数类型 = `parameterType` | 可省略，框架推断 |\n| 返回值 = `resultType` / `resultMap` | 单条给对象，多条给 `List` |\n\n违反任何一条，报错都是 `Invalid bound statement (not found)`。排错顺序：namespace 对不对 → 方法名与 id 是否一致 → XML 是否被 `mappers` 扫到 → XML 是否在 `resources` 下（Maven 默认不打包 `src/main/java` 里的 xml）。"
+      },
+      {
+        "title": "与 Spring 整合后谁管什么",
+        "body": "```xml\n<bean id=\"sqlSessionFactory\" class=\"org.mybatis.spring.SqlSessionFactoryBean\">\n  <property name=\"dataSource\" ref=\"dataSource\"/>\n  <property name=\"mapperLocations\" value=\"classpath:mapper/*.xml\"/>\n</bean>\n\n<bean class=\"org.mybatis.spring.mapper.MapperScannerConfigurer\">\n  <property name=\"basePackage\" value=\"com.shop.mapper\"/>\n</bean>\n```\n\n整合后三件事发生变化：\n\n1. **`SqlSession` 不再自己开**，由 Spring 管理并与事务绑定（同一个事务里共用一个会话）。\n2. **Mapper 接口直接注入**，不需要 `getMapper`。\n3. **事务由 `@Transactional` 控制**，不用手工 `commit`。"
+      },
+      {
+        "title": "考试怎么考",
+        "body": "| 题型 | 常见问法 | 答题要点 |\n| --- | --- | --- |\n| 简答 | \"`#{}` 与 `${}` 的区别\" | 预编译 vs 拼接、防注入、适用场景，三点齐全 |\n| 简答 | \"MyBatis 的优点\" | SQL 可控可优化、映射灵活、学习成本低于 Hibernate |\n| 填空 | \"MyBatis 的三个核心对象\" | Builder / Factory / Session |\n| 填空 | \"dataSource 的三种类型\" | UNPOOLED / POOLED / JNDI |\n| 选择 | \"哪个标签用于遍历集合\" | `foreach` |\n| 判断 | \"`resultType` 与 `resultMap` 可以同时写\" | 错 |\n| 应用 | 写一个带条件与分页的查询 | `<where>` + `<if>` + `limit #{offset}, #{size}` |"
+      },
+      {
+        "title": "自测清单",
+        "body": "1. `SqlSessionFactory` 能不能每次请求都新建一个？为什么？\n2. 增删改之后没 `commit()`，数据库里会有数据吗？\n3. `order by #{column}` 会怎样？正确写法是什么？\n4. 报 `Invalid bound statement`，按什么顺序排查？\n5. 一级缓存为什么在 Spring 项目里常常\"感觉不到\"？\n6. `association` 与 `collection` 分别对应什么关系？"
       }
     ],
+    "videos": [
+      {
+        "title": "尚硅谷 MyBatis 教程（合集）",
+        "url": "https://www.bilibili.com/video/BV1mW411M737",
+        "note": "映射文件与动态 SQL 讲得最细"
+      }
+    ],
+    "resources": [
+      {
+        "title": "MyBatis 3 官方文档（中文）",
+        "url": "https://mybatis.org/mybatis-3/zh_CN/index.html",
+        "note": "配置项与动态 SQL 标签的权威清单"
+      }
+    ],
+    "estimatedMinutes": 28,
+    "examFocus": "简答常考\"#{} 与 ${} 的区别\"与\"MyBatis 的优缺点\"；填空常考核心对象名、四个映射标签、dataSource 三种类型。"
+  },
+  {
+    "moduleId": "javaweb:kb:jdbc",
+    "topicId": "javaweb:topic:jdbc",
+    "title": "JDBC",
+    "summary": "五步流程是骨架，PreparedStatement 是重点——这一章几乎所有题都在问\"为什么不用 Statement\"。",
+    "items": [],
     "pitfalls": [
-      "四个标签名就是增删改查的英文单词，拼错启动就报错。",
-      "mappers 里可以用 <package name=\"...\"/> 批量扫描接口。"
-    ]
+      "关闭顺序与打开相反：ResultSet → Statement → Connection",
+      "用字符串拼 SQL 会被注入，参数一律走 ? 占位",
+      "setString 的下标从 1 开始，不是 0",
+      "只 close 外层、Connection 没关会耗尽连接池",
+      "executeUpdate 返回的是影响行数，不是查询结果集"
+    ],
+    "goals": [
+      "能默写 JDBC 五步流程，并说出每一步用到的接口",
+      "能写出一段完整的查询代码，资源关闭顺序正确",
+      "能用\"万能密码\"这个例子解释 SQL 注入，并说清 PreparedStatement 为什么能防住",
+      "能区分 executeQuery、executeUpdate、execute 三个方法的返回值",
+      "能手动控制事务：关自动提交 → 执行多条 → 提交或回滚"
+    ],
+    "sections": [
+      {
+        "title": "这一节解决什么问题",
+        "body": "Java 程序要读写数据库，但不同数据库（MySQL、Oracle、SQL Server）的通信协议完全不同。如果每换一个数据库就重写一遍访问代码，成本不可接受。\n\nJDBC 的做法是**定一套接口，各数据库厂商提供驱动实现**。你的代码只依赖 `java.sql.*` 里的接口，运行时由驱动接管——这就是\"面向接口编程\"最典型的例子，也是它出现在这门课里的原因。"
+      },
+      {
+        "title": "一分钟速览",
+        "body": "| 主题 | 必须记住的内容 |\n| --- | --- |\n| 五步 | 加载驱动 → 建立连接 → 创建语句对象 → 执行 SQL → 关闭资源 |\n| 三个接口 | `Connection`、`Statement`/`PreparedStatement`、`ResultSet` |\n| 查询 | `executeQuery` 返回 `ResultSet` |\n| 增删改 | `executeUpdate` 返回影响行数 |\n| 防注入 | 用 `?` 占位 + `setXxx(下标从 1 开始)` |\n| 事务 | `setAutoCommit(false)` → 多条 SQL → `commit()` / `rollback()` |\n| 关闭顺序 | 与打开相反：`ResultSet` → `Statement` → `Connection` |"
+      },
+      {
+        "title": "五步流程与完整代码",
+        "body": "```java\npublic User findById(long id) {\n    String url = \"jdbc:mysql://localhost:3306/shop?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai\";\n    Connection conn = null;\n    PreparedStatement ps = null;\n    ResultSet rs = null;\n    try {\n        // 1. 加载驱动（JDBC 4.0 之后可省略，驱动会通过 SPI 自动注册）\n        Class.forName(\"com.mysql.cj.jdbc.Driver\");\n\n        // 2. 建立连接\n        conn = DriverManager.getConnection(url, \"root\", \"123456\");\n\n        // 3. 创建语句对象（用 ? 占位，不要拼字符串）\n        ps = conn.prepareStatement(\"select id, user_name, age from t_user where id = ?\");\n\n        // 4. 执行 SQL：下标从 1 开始\n        ps.setLong(1, id);\n        rs = ps.executeQuery();\n\n        // 5. 处理结果\n        if (rs.next()) {\n            User user = new User();\n            user.setId(rs.getLong(\"id\"));\n            user.setUserName(rs.getString(\"user_name\"));\n            user.setAge(rs.getInt(\"age\"));\n            return user;\n        }\n        return null;\n    } catch (ClassNotFoundException | SQLException e) {\n        throw new RuntimeException(\"查询用户失败\", e);\n    } finally {\n        // 6. 关闭资源：后开的先关，每个都单独 try\n        close(rs);\n        close(ps);\n        close(conn);\n    }\n}\n```\n\n同样的逻辑，用 try-with-resources 会短很多（JDBC 4.1 起 `Connection` 实现了 `AutoCloseable`）：\n\n```java\ntry (Connection conn = DriverManager.getConnection(url, user, pwd);\n     PreparedStatement ps = conn.prepareStatement(SQL)) {\n    ps.setLong(1, id);\n    try (ResultSet rs = ps.executeQuery()) {\n        return rs.next() ? mapRow(rs) : null;\n    }\n}\n```\n\n### 五个步骤各自的考点\n\n| 步 | 做什么 | 常见错法 |\n| --- | --- | --- |\n| 1 加载驱动 | `Class.forName(\"com.mysql.cj.jdbc.Driver\")` | 用旧版类名 `com.mysql.jdbc.Driver`（MySQL 8 已废弃，会警告） |\n| 2 建立连接 | `DriverManager.getConnection(url, user, pwd)` | URL 少写时区参数，MySQL 8 会报时区错误 |\n| 3 创建语句 | `conn.prepareStatement(sql)` | 用 `createStatement()` 然后拼字符串 |\n| 4 执行 | `executeQuery` / `executeUpdate` | 查询用 `executeUpdate`，抛异常 |\n| 5 处理结果 | `while (rs.next())` 逐行取 | 忘了 `next()` 先调一次，直接 `getString` 报错 |\n| 6 关闭 | 逆序、逐个 try | 只关 `Connection`，`ResultSet` 泄漏 |\n\n### 连接 URL 的格式\n\n```\njdbc:mysql://主机:端口/数据库名?参数1=值1&参数2=值2\n```\n\n三个常用参数：\n\n| 参数 | 作用 |\n| --- | --- |\n| `useUnicode=true&characterEncoding=utf8` | 指定客户端编码，防止中文乱码 |\n| `serverTimezone=Asia/Shanghai` | MySQL 8 必须，否则时区报错 |\n| `useSSL=false` | 本地开发关掉 SSL，避免警告 |"
+      },
+      {
+        "title": "三个核心接口",
+        "body": "| 接口 | 职责 | 谁创建 |\n| --- | --- | --- |\n| `Connection` | 一个数据库连接，管事务 | `DriverManager` 或连接池 |\n| `Statement` / `PreparedStatement` | 承载并执行 SQL | `conn.createStatement()` / `conn.prepareStatement()` |\n| `ResultSet` | 查询结果集，像游标一样逐行前进 | `executeQuery()` 返回 |\n\n`ResultSet` 的两个要点：\n\n- 初始时游标在**第一行之前**，必须先 `rs.next()` 才能读第一行。\n- 取值可以按列名 `rs.getString(\"user_name\")`，也可以按下标 `rs.getString(2)`。**按列名更稳**（列顺序变了不会错），但列名写错要到运行时才发现。"
+      },
+      {
+        "title": "Statement 与 PreparedStatement",
+        "body": "这是本章最重要的一张表。\n\n| 对比项 | `Statement` | `PreparedStatement` |\n| --- | --- | --- |\n| SQL 形式 | 每次拼完整字符串 | 带 `?` 占位的预编译 SQL |\n| 编译 | 每次执行都编译 | **一次编译，多次执行** |\n| SQL 注入 | 有风险 | **防得住**（参数不会被当 SQL 解析） |\n| 参数类型 | 只能拼字符串，日期/数字要自己转 | `setInt`/`setString`/`setDate` 类型安全 |\n| 可读性 | 拼接长了完全没法维护 | SQL 结构清晰 |\n| 执行效率 | 循环执行时反复编译 | 批量与重复执行更快 |\n| 二进制数据 | 不能直接处理 | `setBinaryStream` 可以 |\n\n### 注入是怎么发生的\n\n```java\n// ✘ 错误写法\nString sql = \"select * from t_user where user_name='\" + name + \"' and password='\" + pwd + \"'\";\n```\n\n输入 `name = \"admin' -- \"`、密码随便填，拼出来是：\n\n```sql\nselect * from t_user where user_name='admin' -- ' and password='xxx'\n```\n\n`--` 之后全被注释掉，条件只剩用户名 → **不需要密码就能登录**。这就是\"万能密码\"。\n\n```java\n// ✔ 正确写法\nString sql = \"select * from t_user where user_name=? and password=?\";\nPreparedStatement ps = conn.prepareStatement(sql);\nps.setString(1, name);\nps.setString(2, pwd);\n```\n\n`?` 的位置由数据库预编译成参数位，用户输入**永远只是值**，不可能变成 SQL 结构。这是 PreparedStatement 防注入的本质——不是\"转义做得更细\"，而是\"值根本不参与语法解析\"。"
+      },
+      {
+        "title": "执行方法怎么选",
+        "body": "| 方法 | 返回 | 用于 |\n| --- | --- | --- |\n| `executeQuery()` | `ResultSet` | `select` |\n| `executeUpdate()` | `int`（影响行数） | `insert` / `update` / `delete` |\n| `execute()` | `boolean`（是否有结果集） | 不确定语句类型时（很少用） |\n\n一条常见错误：调用 `executeUpdate()` 执行 `select`，会抛 `SQLException: Can not issue executeUpdate() for SELECTs`。"
+      },
+      {
+        "title": "事务：手动控制的四步",
+        "body": "JDBC 默认**每条 SQL 自动提交**，所以两次更新之间出错，前一条已经生效了。要保证\"要么全成功、要么全失败\"，必须关掉自动提交：\n\n```java\nConnection conn = null;\ntry {\n    conn = DriverManager.getConnection(url, user, pwd);\n    conn.setAutoCommit(false);                       // 1. 关自动提交\n\n    try (PreparedStatement ps1 = conn.prepareStatement(\n            \"update t_account set balance = balance - ? where id = ?\")) {\n        ps1.setBigDecimal(1, amount);\n        ps1.setLong(2, fromId);\n        ps1.executeUpdate();\n    }\n    try (PreparedStatement ps2 = conn.prepareStatement(\n            \"update t_account set balance = balance + ? where id = ?\")) {\n        ps2.setBigDecimal(1, amount);\n        ps2.setLong(2, toId);\n        ps2.executeUpdate();\n    }\n\n    conn.commit();                                   // 2. 全成功才提交\n} catch (SQLException e) {\n    if (conn != null) conn.rollback();               // 3. 任何一步失败就回滚\n    throw new RuntimeException(\"转账失败\", e);\n} finally {\n    if (conn != null) {\n        conn.setAutoCommit(true);                    // 4. 还原（连接池复用前必须做）\n        conn.close();\n    }\n}\n```\n\n**第 4 步常被忘**：连接是池化复用的，不还原 `autoCommit` 会把\"手动事务\"状态带给下一个使用者。\n\nACID 四个特性（简答常问）：\n\n| 特性 | 含义 | 由谁保证 |\n| --- | --- | --- |\n| 原子性 Atomicity | 要么全做，要么全不做 | `commit` / `rollback` |\n| 一致性 Consistency | 事务前后数据满足约束 | 约束 + 业务逻辑 |\n| 隔离性 Isolation | 并发事务互不干扰 | 隔离级别 + 锁 |\n| 持久性 Durability | 提交后不丢 | 数据库日志 |"
+      },
+      {
+        "title": "批处理：循环插入的加速开关",
+        "body": "```java\nconn.setAutoCommit(false);\ntry (PreparedStatement ps = conn.prepareStatement(\"insert into t_user(user_name, age) values(?, ?)\")) {\n    for (User u : users) {\n        ps.setString(1, u.getUserName());\n        ps.setInt(2, u.getAge());\n        ps.addBatch();                     // 先攒着\n        if (++count % 500 == 0) ps.executeBatch();   // 每 500 条发一次\n    }\n    ps.executeBatch();\n    conn.commit();\n}\n```\n\n两个配合项：`rewriteBatchedStatements=true`（MySQL 驱动参数，让批量真正合并成一条多值 insert）、合理的批大小（太大会撑爆内存或超过 `max_allowed_packet`）。"
+      },
+      {
+        "title": "连接池：为什么不能每次 new 连接",
+        "body": "建立一次 TCP 连接 + 认证，代价是毫秒级。高并发下\"每请求一连接\"会让数据库连接数瞬间打满。\n\n| 方案 | 说明 |\n| --- | --- |\n| 无池（`DriverManager`） | 每次新建、用完销毁，只适合学习与脚本 |\n| Druid | 阿里开源，带监控面板，国内项目常用 |\n| HikariCP | Spring Boot 2 起的默认实现，性能最好 |\n| C3P0 | 较早的实现，老项目里还能见到 |\n\n池化的三个参数含义要能说清：`initialSize`（初始连接数）、`maxActive`（最大连接数）、`maxWait`（拿不到连接时最多等多久）。"
+      },
+      {
+        "title": "DAO 模式：把 SQL 关进一个类",
+        "body": "```java\npublic interface UserDao {\n    User findById(long id);\n    List<User> findAll();\n    int insert(User user);\n}\n\npublic class UserDaoImpl implements UserDao {\n    private final DataSource dataSource;          // 从外部注入，不在类里 new\n    public UserDaoImpl(DataSource dataSource) { this.dataSource = dataSource; }\n    // 每个方法内部完成\"取连接 → 执行 → 关闭\"\n}\n```\n\n分层的价值在这一层最明显：Service 只调 `userDao.findById(3)`，完全不知道底层是 JDBC、MyBatis 还是别的。这也是后面 MyBatis 能\"平滑替换 DAO 实现\"的前提。"
+      },
+      {
+        "title": "考试怎么考",
+        "body": "| 题型 | 常见问法 | 答题要点 |\n| --- | --- | --- |\n| 简答 | \"JDBC 操作数据库的步骤\" | 五步，每步点出接口名 |\n| 简答 | \"PreparedStatement 的好处\" | 预编译、防注入、类型安全、批量效率，四点 |\n| 选择 | \"`executeUpdate` 返回什么\" | 影响行数（int） |\n| 填空 | \"`setString` 的下标从 ____ 开始\" | 1 |\n| 判断 | \"关闭连接只需关 Connection\" | 错，逆序关三个 |\n| 应用 | 写一段按 id 查询并返回对象 | 五步 + 逆序关闭 + 用 `?` 占位 |\n| 应用 | 写一段转账事务 | `setAutoCommit(false)` + `commit` + `rollback` |"
+      },
+      {
+        "title": "自测清单",
+        "body": "1. 为什么 `Class.forName` 之后驱动就被注册了？（提示：静态代码块）\n2. `setString(0, x)` 会发生什么？\n3. `executeQuery` 执行 `update` 语句会怎样？\n4. 转账代码里忘了 `commit()`，数据库会是什么状态？\n5. 连接池里归还连接前为什么要 `setAutoCommit(true)`？\n6. 为什么\"按列名取值\"比\"按下标取值\"更安全？"
+      }
+    ],
+    "videos": [
+      {
+        "title": "尚硅谷 JDBC 核心技术（合集）",
+        "url": "https://www.bilibili.com/video/BV1eJ411c7rf",
+        "note": "五步流程与 SQL 注入演示很直观"
+      }
+    ],
+    "resources": [
+      {
+        "title": "Oracle JDBC 基础教程",
+        "url": "https://docs.oracle.com/javase/tutorial/jdbc/basics/",
+        "note": "接口语义以官方为准"
+      }
+    ],
+    "estimatedMinutes": 26,
+    "examFocus": "简答常考\"JDBC 操作数据库的步骤\"与\"PreparedStatement 相比 Statement 的好处\"；应用常考手写一段带参数查询并正确关闭资源。"
   }
 ]
