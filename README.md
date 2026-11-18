@@ -1,182 +1,222 @@
-# quiz-web · JavaWeb 期末题库
+# quiz-web · 通用刷题
 
-一套单文件刷题 Web 应用：Markdown 题库 → JSON → 单个 HTML，双击即用，可选登录同步云端。
+一套**不预置题库**的通用刷题 Web 应用：把任意科目的题目资料转成题库包（JSON），导入即用。
+学习 / 题库 / 刷题 / 模考 / 复习 / 我的，六个入口开箱即用。
 
-本仓库有两条线，互不阻塞：
-
-- **旧版**（根目录单文件 HTML）：继续照常可用，任何改动都以"不破坏旧版"为前提。
-- **通用版**（`web-v2/`）：S1～S4 已通过（S3 多题库/本地记录/导入导出，S4 错题复习与统计闭环），证据见 `web-v2/docs/reports/s3-gate-review.md` 与 `s4-review-loop.md`。
+- **空壳设计**：产品不含任何内置题库，打开即是导入引导页，上传题库包后进入完整功能。
+- **六种题型**：单选、多选、判断、填空、代码填空、简答（主观题自评打分）。
+- **本地优先**：不登录也能用——题库与学习记录默认保存在浏览器本地（IndexedDB），可随时导出 JSON 备份。
+- **登录云同步**：支持手机验证码 / 微信 / WorkBuddy 登录，学习记录可同步到云端（WorkBuddy 云）。
+- **PWA**：可安装到桌面，离线可用。
 
 ---
 
-## 1. 一分钟跑起来（旧版）
-
-```bash
-# 1) 由 Markdown 题库生成 JSON
-python3 _build/build_json.py        # 产出 _build/data.json
-
-# 2) 由 JSON + 模板生成单文件 HTML
-python3 _build/build_html.py        # 产出 JavaWeb期末题库.html 与 题库网页/index.html
-
-# 3) 自检（15 项，零第三方依赖）
-python3 _build/ci_check.py
-```
-
-打开 `JavaWeb期末题库.html` 即可使用，无需服务器、无需 npm、无需联网（云端同步功能除外）。
-
-**环境要求**：仅需 Python 3（标准库），无第三方包。`ci_check.py` 会额外调用 `node --check` 校验内联 JS，若本机没有 Node，该两项会跳过并给出提示。
-
-**只想要能用的页面、不想构建**：直接用仓库里的 `JavaWeb期末题库.html`（已提交的产物，与 `main` 上的源码一致）。
-
-### 通用版（`web-v2/`）
+## 1. 快速开始
 
 ```bash
 cd web-v2
 pnpm install
-pnpm dev            # 本地开发（http://localhost:5173）
-pnpm verify         # 边界扫描 + 扩展点扫描 + 构建 + 空位/对账 + 全量单测
+pnpm dev          # http://localhost:5173
 ```
 
-五个入口：学习 / 题库 / 刷题 / 复习 / 我的。数据默认存在浏览器本地（IndexedDB），
-「我的 → 数据导入导出」可导出 JSON 备份或导入第二份题库包，无需登录。
+打开即是导入引导页——选择一份题库包（`.json`）导入，即可开始练习。
 
----
-
-## 2. 源码与产物的关系
-
-```
-JavaWeb期末全题型题库.md      ← 唯一内容源（147 题：选择 62 / 判断 45 / 填空 27 / 简答 8 / 应用 5）
-        │  build_json.py
-        ▼
-_build/data.json              ← 中间产物，供迁移对照与数量验收，不是长期数据标准
-        │  build_html.py  ←  _build/template.html + _build/cloud-sdk.js + sdk.js
-        ▼
-JavaWeb期末题库.html          ← 本地预览产物（单文件，数据与 SDK 均内联）
-题库网页/index.html           ← 线上发布产物（内容同上，路径不同）
+```bash
+pnpm verify       # 边界扫描 + 扩展点扫描 + 构建 + 全量单测（提交前跑这个）
 ```
 
-三条硬规则：
+> 技术细节（包结构、ADR、数据契约）见 [`web-v2/docs/`](web-v2/docs/)；本页是产品介绍与题库制作入口。
 
-1. **绝不手改 HTML**。手改会在下次构建时被覆盖，且 CI 会因此变红（它比对新构建产物与提交物）。
-2. **改内容只改 Markdown**。题干、答案、解析都在 `JavaWeb期末全题型题库.md` 里，改完重新构建。
-3. **两份 HTML 必须字节一致**。`build_html.py` 用同一份输入生成两份，`ci_check.py` 会校验它们的 md5。
+## 2. 题库包格式（`quiz.bank` JSON）
 
-> 两份 HTML 为什么要同时存在？`题库网页/` 是线上发布目录（发布工具按目录取 `index.html`），根目录那份是"双击就能用"的本地副本。切换发布方式前不要合并它们。
+导入的文件是一个 JSON 对象，顶层**只允许四个字段**：
 
-### 通用版讲义（`web-v2/`，S7-E8 起）
-
-讲义同样遵守"内容只改 Markdown、产物重新生成"：
-
-```
-web-v2/packages/content/javaweb-final/lectures/NN-*.md   ← 唯一内容源（7 篇，格式见该目录 README.md）
-        │  pnpm knowledge:build（含契约校验，错则退出非 0）
-        ▼
-web-v2/packages/content/javaweb-final/knowledge.json     ← 生成物，禁止手改
+```json
+{
+  "kind": "quiz.bank",
+  "manifest": { "schemaVersion": 1, "bankId": "os_final", "title": "操作系统期末题库", "...": "..." },
+  "questions": [ "…" ],
+  "knowledge": []
+}
 ```
 
-重建命令（在 `web-v2/` 根目录执行）：
+| 字段 | 说明 |
+| --- | --- |
+| `kind` | 固定 `"quiz.bank"`，标识这是一个题库包 |
+| `manifest` | 题库清单：`bankId` / `title` / `questionCount`（必须等于题目数）/ `topics`（至少 1 个知识点）/ `examTemplates`（模考模板）/ `createdAt` |
+| `questions` | 题目数组，每题含共同字段 + 题型专属字段（见下） |
+| `knowledge` | 讲义数组，可为空 `[]` |
+
+每道题的共同字段：`schemaVersion`(1)、`questionId`（形如 `os_final:single_choice:001`，题型段必须与 `type` 一致）、`bankId`（与 manifest 相同）、`revision`（12 位小写十六进制）、`topicIds`（引用 manifest 里的知识点，至少 1 个）、`stem`、`explanation?`、`legacyKeys`(`[]`)。
+
+六种题型的专属字段：
+
+| `type` | 专属字段 | 答案 |
+| --- | --- | --- |
+| `single_choice` | `options`：`[{optionId, text}]` ≥2 | `answer`：单个 `optionId` |
+| `multiple_choice` | `options` ≥2 | `answer`：`optionId` 数组 |
+| `true_false` | — | `answer`：`true` / `false` |
+| `fill_blank` | `blanks`：`[{blankId, accepted[], hint?}]` ≥1，题干里用 `{{blankId}}` 标空位 | 每空一组等价写法 |
+| `code_blank` | `files`：`[{fileId, label, language, code, solutionCode?}]` + `blanks`，代码里用 `___(blankId)___` 标空位 | 每空一组等价写法 |
+| `short_answer` | `rubric`：`[{pointId, text, score}]` ≥1 | 按采分点自评 |
+
+导入校验**宁可拒绝、不静默丢题**：字段拼错、选项答案引用不存在的 `optionId`、空位标记对不上、题量与 `questionCount` 不符，都会整包拒绝并给出精确到题目字段的错误位置。
+
+完整 schema 见 [`web-v2/packages/core/src/schema.ts`](web-v2/packages/core/src/schema.ts)，样例见 [`web-v2/apps/web/src/data/demoBank.ts`](web-v2/apps/web/src/data/demoBank.ts)。
+
+## 3. 用 AI 把文档转成题库包（转换提示词）
+
+手写几百道题的 JSON 不现实。把下面的提示词连同你的题目文档（Word / PDF / Markdown / 纯文本均可）一起发给任意 AI 助手（WorkBuddy、ChatGPT、Claude……），让它输出可直接导入的题库包 JSON。
+
+**用法**：复制下方整块提示词 → 粘贴给 AI → 在提示词末尾附上你的文档内容 → 把 AI 返回的 JSON 保存为 `xxx.json` → 在应用「我的 → 数据导入导出」或首屏引导页导入。若被拒绝，把应用报错原样贴回给 AI 让它修复。
+
+````text
+你是题库数据转换器。请把我提供的文档内容转换为「通用刷题」应用的题库包 JSON。
+要求：只输出纯 JSON 本身（不要解释文字、不要 Markdown 代码块包裹），JSON 必须能通过下述全部校验规则。
+
+【一、顶层结构】只允许 4 个字段，不多不少：
+{
+  "kind": "quiz.bank",
+  "manifest": { …见【二】… },
+  "questions": [ …见【三】【四】… ],
+  "knowledge": []
+}
+knowledge 固定输出空数组。
+
+【二、manifest 题库清单】
+{
+  "schemaVersion": 1,
+  "bankId": "小写英文/数字/下划线，如 os_final",
+  "title": "题库标题",
+  "subject": "科目名（可省略）",
+  "questionCount": 与 questions 数组长度严格相等的整数,
+  "topics": [
+    { "topicId": "<bankId>:topic:001", "bankId": "同 manifest.bankId", "name": "知识点名称", "order": 0 }
+  ],
+  "examTemplates": [ …见【五】… ],
+  "createdAt": "2026-01-01T00:00:00.000Z"
+}
+规则：
+- topics 至少 1 个；按文档章节/知识体系划分，每道题必须归属至少一个 topicId。
+- topicId 形如 <bankId>:topic:001，全包唯一。
+- 不要输出上述清单以外的字段（多余字段会被整包拒绝）。
+
+【三、每道题的共同字段】
+{
+  "schemaVersion": 1,
+  "questionId": "<bankId>:<type>:<三位数以上序号，如 001>",
+  "bankId": "同 manifest.bankId",
+  "revision": "12 位小写十六进制，见下方说明",
+  "topicIds": ["引用 manifest.topics 中的 topicId，至少 1 个"],
+  "stem": "题干原文",
+  "explanation": "解析（文档有才写，可省略）",
+  "legacyKeys": [],
+  "type": "题型名",
+  …题型专属字段，见【四】
+}
+规则：
+- questionId 的题型段必须与 type 一致（例如 os_final:single_choice:001 的 type 必须是 single_choice）。
+- questionId 全包唯一，序号从 001 起连续补零。
+- revision：恰好 12 位小写十六进制字符。推荐对「题干+答案」取确定性哈希（如 MD5 前 12 位）；无法精确计算时，可按题目顺序生成 000000000001、000000000002……（必须 12 位）。同一题内容不变时该值保持稳定即可。
+- legacyKeys 固定输出 []。
+- 绝对不要输出 tags、difficulty 或任何未列出的字段——出现未知字段整包会被拒绝。
+
+【四、六种题型的专属字段】
+
+1) single_choice 单选
+   "type": "single_choice",
+   "options": [ { "optionId": "o1", "text": "选项A" }, { "optionId": "o2", "text": "选项B" } ],  // 至少 2 个
+   "answer": "o1"    // 单个 optionId
+
+2) multiple_choice 多选
+   "type": "multiple_choice",
+   "options": [ …至少 2 个，同上… ],
+   "answer": ["o1", "o3"]    // optionId 数组，至少 1 个
+
+3) true_false 判断
+   "type": "true_false",
+   "answer": true    // 布尔值；「对/√/正确」→ true，「错/×/错误」→ false
+
+4) fill_blank 填空
+   "type": "fill_blank",
+   "stem": "题干中用 {{b1}}、{{b2}} 标出每个空位",
+   "blanks": [
+     { "blankId": "b1", "accepted": ["标准答案", "可接受的等价写法"], "hint": "可省略" }
+   ]
+   规则：每个 blank 的 {{blankId}} 必须出现在 stem 中；accepted 至少 1 个写法。
+
+5) code_blank 代码填空
+   "type": "code_blank",
+   "files": [
+     { "fileId": "f1", "label": "Main.java", "language": "java",
+       "code": "挖空后的代码，空位写成 ___(b1)___",
+       "solutionCode": "完整答案代码，可省略" }
+   ],
+   "blanks": [
+     { "blankId": "b1", "fileId": "f1", "accepted": ["答案"], "hint": "可省略" }
+   ]
+   规则：每个 blank 的标记 ___(blankId)___ 必须出现在其 fileId 指向的 code 里；
+   code 里出现的每个标记都必须有对应的 blank（不能有无答案的孤儿标记）。
+
+6) short_answer 简答
+   "type": "short_answer",
+   "rubric": [
+     { "pointId": "r1", "text": "采分点描述", "score": 2 },   // score > 0，至少 1 个采分点
+     { "pointId": "r2", "text": "第二个采分点", "score": 3 }
+   ]
+
+【五、examTemplates 模考模板】至少输出 1 个：
+{
+  "templateId": "<bankId>:exam:full",
+  "bankId": "同 manifest.bankId",
+  "title": "全真模考",
+  "durationSec": 3600,
+  "sections": [
+    { "sectionId": "s1", "title": "单选题", "questionType": "single_choice", "count": 20, "scoreEach": 2 },
+    { "sectionId": "s2", "title": "判断题", "questionType": "true_false", "count": 10, "scoreEach": 1 }
+  ],
+  "totalScore": 50
+}
+规则：
+- sections 的 count × scoreEach 之和必须等于 totalScore。
+- 每个 section 的 count 不得超过该题型实际拥有的题数；只包含文档里实际存在的题型。
+- durationSec 为秒，可省略（省略 = 不限时）。
+
+【六、转换纪律】
+1. 以文档为准：不捏造文档里没有的题目；答案、选项文字忠实于原文（可轻度规整格式，不改语义）。
+2. 题型识别：明确「多选」→ multiple_choice；「判断/对错」→ true_false；挖空填空 → fill_blank；带代码挖空 → code_blank；「简答/问答/论述」→ short_answer（把答案拆成采分点）；其余 → single_choice。
+3. 输出前自检：questionCount = 题目数；questionId / topicId 全包唯一；每题 topicIds 都能在 topics 里找到；选择题 answer 引用的 optionId 都存在；填空/代码填空的每个标记都有答案。
+4. 只输出 JSON，从 { 开始到 } 结束。
+
+我的文档内容如下：
+```（把文档内容粘贴在这里）```
+````
+
+> 提示：仓库里的 [`JavaWeb期末全题型题库.md`](JavaWeb期末全题型题库.md) 是一份完整样例文档（147 题、5 种题型），可以直接拿来试跑这条提示词。
+
+## 4. 构建产物与部署
 
 ```bash
 cd web-v2
-pnpm knowledge:build        # 由 lectures/*.md 重新生成 knowledge.json
+pnpm build        # 产物在 apps/web/dist/
 ```
 
-- **绝不手改 `knowledge.json`**：它是生成物，手改会在下次构建时被覆盖；改讲义只改 `lectures/` 下的 `.md`。
-- 生成脚本会顺带跑契约校验（缺 `moduleId`、视频地址为空、空讲义都会报错退出），重跑两次产物字节一致。
-- **Windows 注意（CRLF）**：脚本解析 front matter 只认 LF 行尾。若 `git config core.autocrlf` 为 `true`，checkout 后讲义会变 CRLF，直接跑会报「缺少 front matter」。此时先把讲义转回 LF 再跑：
-  ```bash
-  cd web-v2/packages/content/javaweb-final/lectures
-  sed -i 's/\r$//' *.md        # 转 LF（仅影响工作区，不改入库内容）
-  ```
-  入库统一 LF 存储（见 `.gitattributes`），Linux/CI 上不受影响；本地踩到此坑时按上式转即可。
-- 新增字段（`goals`/`sections`/`videos`/`resources`/`estimatedMinutes`/`examFocus`）全部可选，旧讲义零迁移可读；详见 `web-v2/docs/adr/0007-knowledge-lecture-schema.md`。
+产物是纯静态站点，可用任意静态服务器托管；WorkBuddy「发布为应用」可一键发布到保留域名（云登录需要与云同域的 HTTPS Origin）。仓库根的 `.wbapp_*.genie` 是本机发布凭据，不入库。
 
----
+## 5. 仓库构成
 
-## 3. 分支规则
-
-| 分支 | 用途 | 谁能合入 | 状态 |
-| --- | --- | --- | --- |
-| `main` | 旧版正式线。**只有它对外发布** | PR + CI 绿 | 受保护（保护规则待 CI 就绪后开启） |
-| `general-dev` | 通用版开发线（`web-v2/`） | PR + CI 绿 | 与 `main` 同基线，允许领先 |
-
-- 修旧版缺陷：`main` 建 `fix/legacy-*` → 修 → 跑自检 → PR 合 `main` → 再合并到 `general-dev`
-- 加新功能：**一律进 `general-dev`**，不往旧版单文件里堆
-- 题库内容变更：建 `content/javaweb-*` → 只改 Markdown → 重新构建 → PR
-
-详细日常操作见 `通用刷题Web改造方案与执行计划.md` §5.8。
-
----
-
-## 4. 发布方式
-
-- **发布目录**：`题库网页/`（入口 `index.html`）
-- **发布工具**：WorkBuddy「发布为应用」，应用名 `JavaWeb期末刷题`，`appId` 记录在仓库根 `.wbapp_*.genie`（该文件不入库）
-- **发布前置条件**：`python3 _build/ci_check.py` 全绿；`题库网页/index.html` 与 `JavaWeb期末题库.html` 字节一致
-
-> 新版达到切换门槛（S6）之前，**不发布 `general-dev`**，也不用它替换正式入口。
-
----
-
-## 5. 目录与文件职责
-
-| 路径 | 一句话说明 |
+| 路径 | 说明 |
 | --- | --- |
-| `JavaWeb期末全题型题库.md` | 唯一内容源 |
-| `_build/build_json.py` | Markdown → JSON 解析器（含题量/答案自检输出） |
-| `_build/build_html.py` | JSON + 模板 → 单文件 HTML |
-| `_build/ci_check.py` | 15 项结构自检，本地与 CI 共用 |
-| `_build/template.html` | 页面模板（架构冻结，只允许必要修复） |
-| `_build/cloud-sdk.js` / `sdk.js` | 固定版本云 SDK，构建时内联 |
-| `_build/data.json` | 中间产物，供迁移对照 |
-| `JavaWeb期末题库.html` · `题库网页/index.html` | 发布产物，**禁止手改** |
-| `web-v2/packages/content/javaweb-final/lectures/` | 通用版讲义唯一内容源（Markdown），可改；改完跑 `pnpm knowledge:build` |
-| `web-v2/packages/content/javaweb-final/knowledge.json` | 讲义生成物，**禁止手改**（见 §2） |
-| `项目规划/` | 阶段计划与执行记录（`00` 阶段地图、`01` S0、`02` S1…） |
-| `通用刷题Web改造方案与执行计划.md` | 总方案 |
-| `题库应用技术交接文档.md` | 旧版架构与历史缺陷 |
-| `迁移与验证报告.md` | 旧版验证结论（6/6 冒烟） |
+| `web-v2/` | **当前产品**：通用刷题 Web 应用（源码、测试、ADR、报告） |
+| `JavaWeb期末全题型题库.md` | 样例文档：147 题的原始 Markdown，可作转换提示词的测试材料 |
+| `项目规划/` | 阶段计划、执行协议与任务窗口记录 |
+| `通用刷题Web改造方案与执行计划.md` 等根目录文档 | 历史方案与交接文档，保留备查 |
+| `题库网页/`、`sdk.js`、`tools/` | 旧版单文件应用与数据导出工具，历史留存 |
 
-完整职责表（哪些可改、哪些禁止手改、哪些保留勿删）：**`项目规划/T0-7-文件职责表.md`**
+## 6. 常见问题
 
----
+**导入被拒绝怎么办？** 应用会指出具体是哪道题的哪个字段有问题（如 `questions[12].answer 引用了不存在的 optionId`）。把报错原文贴回给 AI，让它修好后重新输出整包即可。整包要么导入成功，要么完全不写入——不存在导入一半的情况。
 
-## 6. `.workbuddy/` 是什么
+**数据存在哪里？** 不登录：全部在浏览器本地（IndexedDB），换浏览器/清缓存会丢，建议定期用「我的 → 数据导入导出」备份。登录后：学习记录可同步云端。
 
-它不是缓存，是项目的工作区数据目录，**只忽略、不删除**（已写入 `.gitignore`）：
-
-| 内容 | 作用 |
-| --- | --- |
-| `.workbuddy/memory/YYYY-MM-DD.md` | 会话工作日志，append-only |
-| `.workbuddy/memory/MEMORY.md` | 跨会话的项目长期结论 |
-| `.workbuddy/applications.yaml` | 本机发布应用的登记 |
-
-同理 `.wbapp_*.genie` 是本机发布凭据，也不入库。**换机器后这两个信息不会跟过来**，需要在新的机器上重新发布一次。
-
----
-
-## 7. 自检覆盖什么
-
-`python3 _build/ci_check.py` 的 15 项检查分六组：
-
-| 组 | 检查 |
-| --- | --- |
-| 文件与副本 | 必需文件齐全；三处 `sdk.js` 一致；两份 HTML 一致 |
-| 数据基线 | 147 题且分布为 62/45/27/8/5；每题有答案；唯一空位编号 89 且每个标记都有答案 |
-| 产物完整性 | `data.json` 与 `cloud-sdk.js` 真被内联；占位符无残留 |
-| 结构 | 六个 Tab + 8 个关键元素 id |
-| 安全 | 无外部资源加载；无令牌/私钥/手机号 |
-| 语法 | 两段内联 JS 过 `node --check` |
-
-**CI 只做结构冒烟**。行为级六项冒烟（搜题、组卷、判分、错题重做、续刷、刷新恢复）是阶段门禁的人工项，由人执行并留证——这一点写在 `项目规划/00` §9，不是遗漏。
-
----
-
-## 8. 遇到问题先看哪里
-
-| 现象 | 先看 |
-| --- | --- |
-| 构建后页面空白 / 数据错 | `python3 _build/ci_check.py` 的报错项，它会指到具体哪份产物不一致 |
-| 云端功能不可用 | `题库网页/` 是否已发布；页面是否被网关拦截（旧版只上送短标签正是为此） |
-| 想知道某文件能不能删 | `项目规划/T0-7-文件职责表.md` |
-| 想知道数据格式与迁移风险 | `项目规划/T0-8-旧数据契约清单.md` |
+**能改题目吗？** 题库包是纯 JSON，改完重新导入即可（同 `bankId` 覆盖）。`revision` 是内容指纹——内容变了应换新值。
