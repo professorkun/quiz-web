@@ -11,38 +11,38 @@
 - 冻结契约：`web-v2/docs/plans/parallel-contract.md`（S7-E8 唯一接口权威，全员只读）。
 - 基线分支 / tag：`integrate/s7-e8` / `s7e8-baseline-20261118`。
 - 已决结论：**P-1 = 保留草稿**；**P-2 = 先按 A**（题库页内精读区，`router.ts` / `App.tsx` / `ui/AppShell.tsx` 三方冻结）。
-- 最终判定、冻结报告编号与草稿核对摘要：**待 INT 证据表回填**（冻结报告路径 `web-v2/docs/reports/w0-freeze-report.md`，由 G0 产出）。
+- 最终判定：契约冻结已确认（E-01 基线可追溯 `40314328`，冻结报告 `web-v2/docs/reports/w0-freeze-report.md`）。草稿核对摘要：P-1 保留的草稿已在 S7-E10 Step 5 逐组裁决（22 项有效提交、2 项过时草稿丢弃、AppShell 冻结留痕），`git status` 干净。
 
 ## W1 · 核心契约与校验
 
 - 窗口分支：`feat/s7e8-core-contract`；报告：`web-v2/docs/reports/w1-contract-test.md`。
 - 范围：`packages/core/src/**`、`packages/data/src/**`——`KnowledgeModule` 六可选字段、`items` 放宽缺省 `[]`、`parseMediaSource`、`validateKnowledgeModules`、`parseBankJson` 接入讲义校验（失败不写入）。
-- 最终结论 / 验收日期 / 遗留问题数：**待阶段 B 回填**（依据 W1 报告 + INT 证据表）。
+- 最终结论：通过（契约 C-1~C-4 + B-1/B-2 复核全过；C-5 变更已在 `00` §9 登记）；验收日期 2026-11-18；遗留 0。依据 W1 报告 + INT 证据表 E-06。
 
 ## W2 · 讲义内容生产
 
 - 窗口分支：`content/s7e8-lectures`；报告：`web-v2/docs/reports/w2-content-check.md`。
 - 范围：`packages/content/**`——`lectures/NN-*.md`（唯一内容源）、`scripts/build-knowledge.mjs`（生成脚本）、`knowledge.json`（生成物，禁止手改）。
 - 前置说明：`pnpm knowledge:build` 依赖 W2 交付的 `scripts/build-knowledge.mjs` 与 `lectures/`（P-1 保留草稿下已在工作区）。W6 阶段 A 只做 npm script 登记与 README 重建说明，**脚本文件与讲义源归 W2 独占**，W6 不改动。
-- 最终结论 / 讲义篇数 / 验收日期：**待阶段 B 回填**（依据 W2 报告 + INT 证据表）。
+- 最终结论：通过；讲义 7 篇 / 86 节 / 59.3k 字 / 0 视频，`knowledge:build` 两次 sha256 一致（幂等）；验收日期 2026-11-18。依据 W2 报告 + INT 证据表 E-02。
 
 ## W3 · 讲义阅读与视频界面
 
 - 窗口分支：`feat/s7e8-lecture-ui`；报告：`web-v2/docs/reports/w3-ui-smoke.md`。
 - 范围：`apps/web/src/features/knowledge/**`、`features/banks/BanksPage.tsx`、`apps/web/src/styles.css`——精读区与视频播放（站外 iframe 点击后才加载、未点击零第三方请求、断网文字自足）。
-- 最终结论 / 验收日期 / 遗留问题数：**待阶段 B 回填**（依据 W3 报告 + INT 证据表）。
+- 最终结论：通过（B-2 非法协议拒收、B-3 未点击零第三方请求、B-4 断网讲义可读，E-07/E-08 全绿）；验收日期 2026-11-18；遗留 0。依据 W3 报告 + INT 证据表。
 
 ## W4 · 既有页面一致性
 
 - 窗口分支：`fix/s7e8-ui-consistency`；报告：`web-v2/docs/reports/w4-parity-regression.md`。
 - 范围：`features/practice/**`、`features/me/ImportExport.tsx`、`apps/web/src/app.test.tsx` 及既有测试——清占位、补回归用例；P-2 已决 A，不碰路由三文件。
-- 最终结论 / 验收日期 / 遗留问题数：**待阶段 B 回填**（依据 W4 报告 + INT 证据表）。
+- 最终结论：通过（六入口回归 6/6、导入导出往返恒等，E-10/E-12 全绿；P-2 冻结文件仅留痕未改路由拓扑）；验收日期 2026-11-18；遗留 0。依据 W4 报告 + INT 证据表。
 
 ## W5 · S6 上线收尾
 
 - 窗口分支：`chore/s6-closeout`；报告：`web-v2/docs/reports/w5-s6-closeout.md`。
 - 范围：`apps/web/src/cloud/**`、`docs/cloud/**`、`.github/workflows/**`、`apps/web/public/**`、`项目规划/07`——真实迁移、回退演练、双 CI。
-- 最终结论 / S6 验收日期 / 标签 / 遗留问题数：**待阶段 B 回填**（依据 W5 报告 + INT 证据表）。
+- 最终结论：**阻塞（待外部凭据）**——云配置/RLS/同步/迁移演练静态与单测就绪，但真实数据迁移、RLS 双账号交叉验证、断网手测、回退演练、双 CI 实跑均未执行（G6-1~G6-7 多项阻塞），按 `w5-s6-closeout.md`「静态审查 ≠ 实跑通过」不宣布通过。S6 验收日期 / 标签 / 状态数据字段保留待回填；遗留 5 项，待 Step 8 凭据到位后由 W5/W6 补齐。依据 W5 报告 + INT 证据表 E-11（待凭据）。
 
 ## W6 · 文档、ADR 与集成登记
 
