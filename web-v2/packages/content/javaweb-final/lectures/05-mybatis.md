@@ -17,8 +17,6 @@ pitfalls:
   - SqlSession 不是线程安全的，用完必须 close，不要做成成员变量
   - ${} 是字符串拼接，能被注入，只允许用于表名、列名、排序字段（且要白名单校验）
   - resultType 与 resultMap 不能同时写
-videos:
-  - 尚硅谷 MyBatis 教程（合集） | https://www.bilibili.com/video/BV1mW411M737 | 映射文件与动态 SQL 讲得最细
 resources:
   - MyBatis 3 官方文档（中文） | https://mybatis.org/mybatis-3/zh_CN/index.html | 配置项与动态 SQL 标签的权威清单
 ---

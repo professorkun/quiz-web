@@ -18,8 +18,6 @@ pitfalls:
   - @Autowired 按类型找不到时会报错，required=false 才会留空
   - @Transactional 加在 private 方法或同类内部调用上不生效（代理没经过）
   - 同一接口有多个实现时，只用 @Autowired 会因"候选不唯一"启动失败
-videos:
-  - 尚硅谷 Spring5 框架教程（合集） | https://www.bilibili.com/video/BV1Vf4y127N5 | IOC 容器与注解开发讲得最细，AOP 部分看后半段
 resources:
   - Spring Framework 官方文档 · Core Container | https://docs.spring.io/spring-framework/reference/core.html | Bean 生命周期、作用域的权威说明
 ---

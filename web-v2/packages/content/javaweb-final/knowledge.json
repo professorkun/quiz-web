@@ -71,13 +71,7 @@
         "body": "不看资料，能全部答上来才算过：\n\n1. 浏览器输入 `http://localhost:8080/shop/a/b?x=1` ，`getContextPath()`、`getRequestURI()`、`getParameter(\"x\")` 各返回什么？\n2. 只实现了 `doPost` 的 Servlet 被 GET 访问，返回哪个状态码？为什么？\n3. 为什么 `sendRedirect` 到 `WEB-INF` 下的 JSP 会 404，而 `forward` 不会？\n4. 表单不写 `method` 属性时用的是什么方法？会带来哪两个具体麻烦？\n5. 一次登录请求里，`request.setAttribute` 放的数据，在重定向后的页面还能拿到吗？"
       }
     ],
-    "videos": [
-      {
-        "title": "尚硅谷 JavaWeb 全套教程（合集）",
-        "url": "https://www.bilibili.com/video/BV1Y7411K7zz",
-        "note": "从 HTML/HTTP 讲到 Servlet/JSP，本节的 HTTP 与 Tomcat 部分在前 20 集"
-      }
-    ],
+    "videos": [],
     "resources": [
       {
         "title": "MDN · HTTP 概述",
@@ -159,13 +153,7 @@
         "body": "1. 为什么 JSP 里可以直接用 `out`，而普通 Java 类里不行？\n2. `<%! int n = 0; n++; %>` 在并发访问下会发生什么？为什么？\n3. `request.setAttribute(\"msg\", \"x\")` 之后 `sendRedirect` 到另一个页面，`${msg}` 能取到吗？\n4. `property=\"*\"` 时表单字段名写成 `user_name`、Bean 属性名是 `userName`，会发生什么？\n5. `<jsp:include page=\"a.jsp\"><jsp:param name=\"id\" value=\"1\"/></jsp:include>`，`a.jsp` 里怎么取这个 `id`？"
       }
     ],
-    "videos": [
-      {
-        "title": "尚硅谷 JavaWeb 全套教程 · JSP 部分",
-        "url": "https://www.bilibili.com/video/BV1Y7411K7zz",
-        "note": "内置对象与 EL 表达式讲得最细，跳着看对应集即可"
-      }
-    ],
+    "videos": [],
     "resources": [
       {
         "title": "Jakarta Server Pages 规范",
@@ -250,13 +238,7 @@
         "body": "1. `init` 里能拿到 `ServletConfig` 吗？构造函数里呢？\n2. 两个线程同时访问一个只有成员变量计数器的 Servlet，最终计数会偏大还是偏小？为什么？\n3. `@WebServlet(\"/user/*\")` 能否匹配 `/user`（不带后面的路径）？\n4. 登录失败要把错误信息带回页面，为什么必须用 forward？\n5. 用户禁用 Cookie 后，Session 还能用吗？靠什么机制？\n6. Filter 里忘了写 `chain.doFilter` 会发生什么？"
       }
     ],
-    "videos": [
-      {
-        "title": "尚硅谷 JavaWeb 全套教程 · Servlet 部分",
-        "url": "https://www.bilibili.com/video/BV1Y7411K7zz",
-        "note": "生命周期与转发/重定向有专门的对比演示"
-      }
-    ],
+    "videos": [],
     "resources": [
       {
         "title": "Jakarta Servlet 规范",
@@ -338,13 +320,7 @@
         "body": "1. `<property name=\"userDao\" value=\"userDao\"/>` 会怎样？错在哪？\n2. singleton 的 Bean 里放了一个 `List<String>` 成员变量用来存当前请求数据，会发生什么？\n3. 两个类实现同一个接口，容器里有俩 Bean，`@Autowired` 注入时会怎样？怎么修？\n4. `@Transactional` 加在 Service 的 `private` 方法上为什么不生效？\n5. 目标类没有实现任何接口，Spring AOP 用什么生成代理？\n6. 为什么\"构造器注入解不开循环依赖\"？"
       }
     ],
-    "videos": [
-      {
-        "title": "尚硅谷 Spring5 框架教程（合集）",
-        "url": "https://www.bilibili.com/video/BV1Vf4y127N5",
-        "note": "IOC 容器与注解开发讲得最细，AOP 部分看后半段"
-      }
-    ],
+    "videos": [],
     "resources": [
       {
         "title": "Spring Framework 官方文档 · Core Container",
@@ -425,13 +401,7 @@
         "body": "1. Controller 返回 `\"userList\"`，视图解析器 prefix 是 `/WEB-INF/jsp/`，最终访问的文件路径是什么？\n2. 为什么 `url-pattern` 写 `/*` 会导致 JSP 打不开？\n3. `@RequestParam` 与 `@PathVariable` 分别从哪里取数据？\n4. `redirect:` 和 `forward:` 前缀分别对应 Servlet 的哪两个 API？各自的 `model` 数据还在吗？\n5. 拦截器 `preHandle` 返回 `false` 后，`postHandle` 与 `afterCompletion` 还会执行吗？\n6. 静态资源 404，有哪两种标准解法？"
       }
     ],
-    "videos": [
-      {
-        "title": "尚硅谷 SpringMVC 教程（合集）",
-        "url": "https://www.bilibili.com/video/BV1Ry4y1574R",
-        "note": "执行流程与参数绑定有专门的图讲解"
-      }
-    ],
+    "videos": [],
     "resources": [
       {
         "title": "Spring Framework 官方文档 · Web MVC",
@@ -516,13 +486,7 @@
         "body": "1. `SqlSessionFactory` 能不能每次请求都新建一个？为什么？\n2. 增删改之后没 `commit()`，数据库里会有数据吗？\n3. `order by #{column}` 会怎样？正确写法是什么？\n4. 报 `Invalid bound statement`，按什么顺序排查？\n5. 一级缓存为什么在 Spring 项目里常常\"感觉不到\"？\n6. `association` 与 `collection` 分别对应什么关系？"
       }
     ],
-    "videos": [
-      {
-        "title": "尚硅谷 MyBatis 教程（合集）",
-        "url": "https://www.bilibili.com/video/BV1mW411M737",
-        "note": "映射文件与动态 SQL 讲得最细"
-      }
-    ],
+    "videos": [],
     "resources": [
       {
         "title": "MyBatis 3 官方文档（中文）",
@@ -603,13 +567,7 @@
         "body": "1. 为什么 `Class.forName` 之后驱动就被注册了？（提示：静态代码块）\n2. `setString(0, x)` 会发生什么？\n3. `executeQuery` 执行 `update` 语句会怎样？\n4. 转账代码里忘了 `commit()`，数据库会是什么状态？\n5. 连接池里归还连接前为什么要 `setAutoCommit(true)`？\n6. 为什么\"按列名取值\"比\"按下标取值\"更安全？"
       }
     ],
-    "videos": [
-      {
-        "title": "尚硅谷 JDBC 核心技术（合集）",
-        "url": "https://www.bilibili.com/video/BV1eJ411c7rf",
-        "note": "五步流程与 SQL 注入演示很直观"
-      }
-    ],
+    "videos": [],
     "resources": [
       {
         "title": "Oracle JDBC 基础教程",

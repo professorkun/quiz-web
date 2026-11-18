@@ -15,8 +15,6 @@ pitfalls:
   - 重定向（302）访问不到 WEB-INF 下的页面，只有服务器内部转发可以
   - 8080 是 Tomcat 默认端口，不是 HTTP 的默认端口（HTTP 是 80）
   - 状态码 302 是"临时跳转"，301 是"永久跳转"，考试常拿来设陷阱
-videos:
-  - 尚硅谷 JavaWeb 全套教程（合集） | https://www.bilibili.com/video/BV1Y7411K7zz | 从 HTML/HTTP 讲到 Servlet/JSP，本节的 HTTP 与 Tomcat 部分在前 20 集
 resources:
   - MDN · HTTP 概述 | https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Overview | 报文结构、方法、状态码的权威速查
   - RFC 9110 · HTTP 语义 | https://www.rfc-editor.org/rfc/rfc9110.html | 想知道"规范原文怎么写的"时查这里

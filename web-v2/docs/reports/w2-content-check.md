@@ -75,3 +75,47 @@ $ pnpm --filter @quiz/content test
 
 - W2-3 需 INT 集成期用 W1 的 `validateKnowledgeModules` 对 `knowledge.json` 复验一次（本地 `validateLocally` 已按同语义通过）。
 - 讲义体积增量：JS bundle 影响由 INT/W3 在集成期测量（阈值 ≤150KB）。
+
+---
+
+## 8. 修订（2026-11-18）：视频去题库化
+
+> 用户要求：视频功能不依赖当前题库添加；清理按题库硬编码的视频数据，但保留可扩展入口，
+> 方便后续新题库导入后接入。本节为本次修订的权威说明，**与 §5 / §6 冲突处以本节为准**。
+
+### 处置
+
+| 项 | 处置 |
+| --- | --- |
+| 7 篇讲义 `front matter` 的 `videos:` 及 7 条 BV 号 | **已删除**（每篇恰好 2 行，diff 可审） |
+| `knowledge.json` | 已重生成：7 篇 / 86 节 / 59.3k 字 / **视频 0 条**，每篇 `videos: []`，全文无 BV 号 |
+| `src/knowledge.test.ts` | A-2 去掉「每篇 ≥1 视频」硬断言，改为「videos 允许为空、必须是数组」；B-6 改为「填了才逐条校验可解析」 |
+| `lectures/README.md` | front matter 示例去掉具体链接；新增「视频是可选扩展位」章节，列明五层已保留入口与新题库接入方法 |
+| 生成脚本 / core Schema / VideoCard / parseMediaSource | **未改动**，全部保留（这是扩展入口，不能删） |
+
+**§5 的视频清单与 §6 的「季度外链巡检清单：7 个 BV 号」即刻作废**，不再有外链需要巡检。
+
+### 保留的五层扩展入口（新题库接入无需改代码）
+
+1. `KnowledgeVideoSchema`（W1 `core/src/schema.ts`）：`url` 必填 + 可选 title/note/startSec
+2. `parseMediaSource`（W1 `core/src/media.ts`）：B站/YouTube/直链/HLS/网页/非法协议
+3. `parseTriples(meta.videos, …)`（W2 `scripts/build-knowledge.mjs`）：留空→`[]`，填了→校验
+4. 质量门禁（W2 `src/knowledge.test.ts`）：允许空、填了才校验
+5. `VideoCard`（W3）：按 `kind` 分支渲染；`videos: []` 时不渲染视频区，正文照常可读
+
+新题库接入只需在其讲义 `front matter` 填 `videos: - 标题 | 地址 | 说明` 并重跑生成脚本。
+
+### 重新验证（修订后实测）
+
+```
+$ node packages/content/scripts/build-knowledge.mjs
+讲义 7 篇 / 86 节 / 正文 59.3k 字 / 视频 0 条
+$ pnpm --filter @quiz/core build && pnpm --filter @quiz/platform build   # 隔离 worktree 补 dist
+$ pnpm --filter @quiz/content test
+ Test Files  5 passed (5)
+      Tests  41 passed (41)
+$ 生成两次 sha256 一致 → 幂等 PASS
+```
+
+> 注：隔离 worktree 内首次跑 content 测试曾报 `@quiz/core` 无法解析，原因是缺构建产物 dist
+> （按矩阵 dist 不提交），补 `pnpm --filter @quiz/core build` 后全绿；非本次改动引入。

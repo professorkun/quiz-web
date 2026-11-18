@@ -17,8 +17,6 @@ pitfalls:
   - 返回值 String 时默认当视图名解析，想直接返回字符串内容必须加 @ResponseBody
   - 视图解析器的 prefix 已经含 /WEB-INF/，Controller 里再写一遍会拼出双份路径
   - 拦截器的 preHandle 返回 false 就中断，且 postHandle 不会执行
-videos:
-  - 尚硅谷 SpringMVC 教程（合集） | https://www.bilibili.com/video/BV1Ry4y1574R | 执行流程与参数绑定有专门的图讲解
 resources:
   - Spring Framework 官方文档 · Web MVC | https://docs.spring.io/spring-framework/reference/web/webmvc.html | 组件职责与流程的权威描述
 ---

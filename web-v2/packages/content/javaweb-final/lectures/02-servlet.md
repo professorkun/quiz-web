@@ -17,8 +17,6 @@ pitfalls:
   - Filter 放行必须写 chain.doFilter(request, response)，漏了请求就断了
   - init 只执行一次，别把"每次请求都要做的事"写进去
   - 重定向后 request 作用域失效，之前 setAttribute 的数据取不到
-videos:
-  - 尚硅谷 JavaWeb 全套教程 · Servlet 部分 | https://www.bilibili.com/video/BV1Y7411K7zz | 生命周期与转发/重定向有专门的对比演示
 resources:
   - Jakarta Servlet 规范 | https://jakarta.ee/specifications/servlet/ | url-pattern 匹配规则以规范原文为准
 ---

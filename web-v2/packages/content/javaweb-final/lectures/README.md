@@ -36,12 +36,36 @@ goals:                            # 选填，3~5 条，动词开头
   - 能默写 Servlet 生命周期的四个阶段
 pitfalls:                         # 选填，易错点，展示在正文之后
   - destroy 不要拼成 destory
-videos:                           # 选填，格式：标题 | 地址 | 说明
-  - 尚硅谷 JavaWeb 全套教程 | https://www.bilibili.com/video/BV1Y7411K7zz | Servlet 部分
+videos:                           # 选填，格式：标题 | 地址 | 说明；可整块省略
 resources:                        # 选填，格式同上
   - Jakarta Servlet 规范 | https://jakarta.ee/specifications/servlet/
 ---
 ```
+
+### 视频是可选扩展位（不绑定当前题库）
+
+**当前题库（javaweb-final）不预置任何视频**：7 篇源文件的 `videos` 全部留空，
+生成出的 `knowledge.json` 里每篇 `videos: []`。视频能力本身没有删除，只是不塞
+属于某个具体题库的内容数据——避免"换个题库就带着别人的课程链接"。
+
+后续导入**新题库**时，无需改任何代码，只要在新题库的讲义 `front matter` 里填：
+
+```yaml
+videos:
+  - 课程标题 | https://www.bilibili.com/video/BV1Y7411K7zz | 从对应章节看起
+```
+
+然后重跑生成脚本即可。整条链路已经就绪、默认空转：
+
+| 层 | 已保留的扩展入口 | 位置 |
+| --- | --- | --- |
+| 数据契约 | `KnowledgeVideoSchema`（`url` 必填，`title`/`note`/`startSec` 可选） | W1 · `packages/core/src/schema.ts` |
+| 地址解析 | `parseMediaSource` 纯函数（B站/YouTube/直链/HLS/网页/非法协议） | W1 · `packages/core/src/media.ts` |
+| 内容生成 | `parseTriples(meta.videos, …)`：留空 → `[]`，填了 → 校验地址非空且可解析 | W2 · `scripts/build-knowledge.mjs` |
+| 质量门禁 | 允许 `videos` 为空；一旦填了就逐条校验可解析 | W2 · `src/knowledge.test.ts` |
+| 界面渲染 | `VideoCard` 按 `kind` 分支（原生 video / iframe 点击才加载 / 提示卡） | W3 · `features/knowledge/VideoCard.tsx` |
+
+`videos: []` 时界面不渲染任何视频区，讲义正文照常完整可读、断网不受影响。
 
 ### 视频地址能填什么
 

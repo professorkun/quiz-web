@@ -17,8 +17,6 @@ pitfalls:
   - exception 对象只在 isErrorPage="true" 的页面里能用
   - <%@ include %> 是编译期合并成一个文件；<jsp:include> 是运行期分别执行再拼结果
   - <%! %> 里声明的是成员变量（所有请求共享），不是局部变量，常被误用成计数器
-videos:
-  - 尚硅谷 JavaWeb 全套教程 · JSP 部分 | https://www.bilibili.com/video/BV1Y7411K7zz | 内置对象与 EL 表达式讲得最细，跳着看对应集即可
 resources:
   - Jakarta Server Pages 规范 | https://jakarta.ee/specifications/pages/ | 想知道"九大内置对象是规范规定的吗"就查这里
 ---

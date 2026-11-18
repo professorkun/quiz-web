@@ -17,8 +17,6 @@ pitfalls:
   - setString 的下标从 1 开始，不是 0
   - 只 close 外层、Connection 没关会耗尽连接池
   - executeUpdate 返回的是影响行数，不是查询结果集
-videos:
-  - 尚硅谷 JDBC 核心技术（合集） | https://www.bilibili.com/video/BV1eJ411c7rf | 五步流程与 SQL 注入演示很直观
 resources:
   - Oracle JDBC 基础教程 | https://docs.oracle.com/javase/tutorial/jdbc/basics/ | 接口语义以官方为准
 ---
