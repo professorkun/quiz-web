@@ -12,7 +12,9 @@ import type { Attempt } from "@quiz/core";
 import type { StorageInfo } from "@quiz/platform";
 import { recomputeBank, verifyBank } from "@quiz/data";
 
+import { useInstallPrompt } from "../../pwa";
 import { usePlatform } from "../../platform/PlatformProvider";
+import { AccountCard } from "./AccountCard";
 import { ImportExport } from "./ImportExport";
 
 interface SessionRow {
@@ -61,6 +63,7 @@ function groupSessions(attempts: readonly Attempt[]): readonly SessionRow[] {
 export function MePage(): React.ReactElement {
   const { platform, activeBank, banks, version, bump, showToast } = usePlatform();
   const bankId = activeBank.manifest.bankId;
+  const { canInstall, promptInstall } = useInstallPrompt();
 
   const [attempts, setAttempts] = useState<readonly Attempt[]>([]);
   const [favorites, setFavorites] = useState(0);
@@ -217,13 +220,31 @@ export function MePage(): React.ReactElement {
         </div>
       </section>
 
+      <AccountCard />
+
+      <section className="card">
+        <h2>安装到桌面 · 离线可用</h2>
+        <p className="muted">
+          装到桌面/主屏后，断网也能打开并继续刷已缓存的题库；有更新时会提示你刷新。
+        </p>
+        <div className="row" style={{ marginTop: 10 }}>
+          {canInstall ? (
+            <button type="button" className="btn" onClick={() => void promptInstall()}>
+              安装到桌面
+            </button>
+          ) : (
+            <span className="muted">
+              可点浏览器地址栏的「安装」，或在菜单里选「安装应用 / 添加到主屏幕」。
+            </span>
+          )}
+        </div>
+      </section>
+
       <section className="card muted">
-        <h2>后续阶段</h2>
-        <ul style={{ margin: 0, paddingLeft: 18 }}>
-          <li>复习排期（1/3/7 天）与掌握状态：S4</li>
-          <li>模考与成绩单：S5</li>
-          <li>账号登录与云同步：S6</li>
-        </ul>
+        <h2>关于</h2>
+        <p className="muted" style={{ margin: 0 }}>
+          通用刷题 V1 · 数据本地优先，六题型练习 + 模考 + 错题复习闭环。后续增强项（编辑器、AI 讲题等）见 S7 路线。
+        </p>
       </section>
     </div>
   );

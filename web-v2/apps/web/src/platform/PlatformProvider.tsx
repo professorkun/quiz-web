@@ -15,6 +15,7 @@ import type { BankContent } from "@quiz/core";
 import type { Platform } from "@quiz/platform";
 import { createWebPlatform } from "@quiz/platform-web";
 
+import { cloudAuth, createCloudAuthAdapter } from "../cloud/auth";
 import { BUILTIN_BANKS } from "../data/banks";
 
 export interface PendingSession {
@@ -102,9 +103,13 @@ export function PlatformProvider(props: {
 
     const boot = async (): Promise<void> => {
       try {
+        // OAuth 回调要在任何守卫之前处理；失败不阻塞启动（退回本地游客模式）
+        if (injected === undefined) {
+          await cloudAuth.handleCallback().catch(() => null);
+        }
         const created =
           injected === undefined
-            ? await createWebPlatform({ builtinBanks })
+            ? await createWebPlatform({ builtinBanks, auth: createCloudAuthAdapter() })
             : { platform: injected, degraded: null as string | null };
         const platform = created.platform;
         // 注入平台时允许调用方带入"存储不可用"的说明（测试、S6 云同步失败都走这条）

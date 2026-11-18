@@ -10,9 +10,26 @@
  */
 
 import DOMPurifyFactory from "dompurify";
-import hljs from "highlight.js";
+import hljs from "highlight.js/lib/core";
+import css from "highlight.js/lib/languages/css";
+import java from "highlight.js/lib/languages/java";
+import javascript from "highlight.js/lib/languages/javascript";
+import json from "highlight.js/lib/languages/json";
+import sql from "highlight.js/lib/languages/sql";
+import xml from "highlight.js/lib/languages/xml";
 import katex from "katex";
 import { marked, Renderer } from "marked";
+
+// 按需注册语言：全量 `import hljs from "highlight.js"` 会把上百种语法都打进包里
+// （约 800KB）。题库实际只用到 java/xml(jsp/html)/sql/json/js/css，注册这些即可。
+hljs.registerLanguage("java", java);
+hljs.registerLanguage("xml", xml);
+hljs.registerLanguage("html", xml); // HTML 走 XML 语法
+hljs.registerLanguage("jsp", xml); // hljs 无独立 JSP，按 XML 高亮
+hljs.registerLanguage("sql", sql);
+hljs.registerLanguage("json", json);
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("css", css);
 
 export interface RichTextRenderOptions {
   /** 只渲染行内内容（填空题干片段、采分点），不产生 <p>/<pre> 块 */
