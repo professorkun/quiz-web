@@ -83,6 +83,12 @@ pnpm knowledge:build        # 由 lectures/*.md 重新生成 knowledge.json
 
 - **绝不手改 `knowledge.json`**：它是生成物，手改会在下次构建时被覆盖；改讲义只改 `lectures/` 下的 `.md`。
 - 生成脚本会顺带跑契约校验（缺 `moduleId`、视频地址为空、空讲义都会报错退出），重跑两次产物字节一致。
+- **Windows 注意（CRLF）**：脚本解析 front matter 只认 LF 行尾。若 `git config core.autocrlf` 为 `true`，checkout 后讲义会变 CRLF，直接跑会报「缺少 front matter」。此时先把讲义转回 LF 再跑：
+  ```bash
+  cd web-v2/packages/content/javaweb-final/lectures
+  sed -i 's/\r$//' *.md        # 转 LF（仅影响工作区，不改入库内容）
+  ```
+  入库统一 LF 存储（见 `.gitattributes`），Linux/CI 上不受影响；本地踩到此坑时按上式转即可。
 - 新增字段（`goals`/`sections`/`videos`/`resources`/`estimatedMinutes`/`examFocus`）全部可选，旧讲义零迁移可读；详见 `web-v2/docs/adr/0007-knowledge-lecture-schema.md`。
 
 ---
