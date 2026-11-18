@@ -9,7 +9,7 @@
  */
 
 import type { BankContent } from "@quiz/core";
-import { StorageError, systemClock, type Clock, type Platform } from "@quiz/platform";
+import { StorageError, systemClock, type AuthAdapter, type Clock, type Platform } from "@quiz/platform";
 
 import { openIndexedDbStore } from "./indexeddb.js";
 import { MemoryKeyValueStore, type KeyValueStore } from "./kv.js";
@@ -26,6 +26,8 @@ export interface CreateWebPlatformOptions {
   readonly builtinBanks: readonly BankContent[];
   readonly dbName?: string;
   readonly clock?: Clock;
+  /** 真实认证适配器（S6 云登录）；不传则回退为本地游客模式 */
+  readonly auth?: AuthAdapter;
 }
 
 export interface WebPlatformResult {
@@ -53,7 +55,12 @@ export async function createWebPlatform(
   }
 
   return {
-    platform: createPlatform({ kv, builtinBanks: options.builtinBanks, clock }),
+    platform: createPlatform({
+      kv,
+      builtinBanks: options.builtinBanks,
+      clock,
+      ...(options.auth === undefined ? {} : { auth: options.auth }),
+    }),
     degraded,
   };
 }

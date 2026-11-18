@@ -38,6 +38,7 @@ import {
   DEFAULT_PRACTICE_SETTINGS,
   StorageError,
   type AttemptRepository,
+  type AuthAdapter,
   type BankRepository,
   type Clock,
   type ExamRepository,
@@ -436,6 +437,8 @@ export interface CreatePlatformOptions {
   readonly kv: KeyValueStore;
   readonly builtinBanks: readonly BankContent[];
   readonly clock: Clock;
+  /** 真实认证适配器（S6 云登录）；不传则为本地游客模式 */
+  readonly auth?: AuthAdapter;
 }
 
 /** 游客态：S3 不做登录，S6 换成真实适配器，接口不变 */
@@ -536,7 +539,7 @@ export function createPlatform(options: CreatePlatformOptions): Platform {
     exams,
     favorites,
     settings,
-    auth: createAnonymousAuth(),
+    auth: options.auth ?? createAnonymousAuth(),
     info,
     exportAll,
     clearLearningData,
