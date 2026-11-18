@@ -8,8 +8,10 @@
 
 import {
   BankManifestSchema,
+  KnowledgeModuleSchema,
   QuestionSchema,
   type BankManifest,
+  type KnowledgeModule,
   type Question,
 } from "./schema.js";
 
@@ -231,4 +233,53 @@ export function validateBankPackage(input: unknown): ValidateResult {
   }
 
   return { ok: issues.length === 0, issues, questions };
+}
+
+export interface KnowledgeValidateResult {
+  readonly ok: boolean;
+  readonly issues: readonly ValidationIssue[];
+  readonly modules: readonly KnowledgeModule[];
+}
+
+/**
+ * 讲义校验（S7-E8）：导入题库包时**必须**走这一道。
+ *
+ * 之前的实现把 `knowledge` 直接 `as BankContent["knowledge"]` 断言过去，
+ * 等于"讲义写错了也不报"——正是 S1 要消灭的那类静默失败。
+ * 这里除了形状校验，还查一条形状表达不了的语义：**一篇讲义不能什么都没有**。
+ */
+export function validateKnowledgeModules(input: unknown): KnowledgeValidateResult {
+  const issues: ValidationIssue[] = [];
+  const modules: KnowledgeModule[] = [];
+
+  if (!Array.isArray(input)) {
+    issues.push({ code: ValidationCode.SCHEMA_INVALID, message: "knowledge 必须是数组", path: "knowledge" });
+    return { ok: false, issues, modules };
+  }
+
+  input.forEach((raw, index) => {
+    const parsed = KnowledgeModuleSchema.safeParse(raw);
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        issues.push({
+          code: ValidationCode.SCHEMA_INVALID,
+          message: issue.message,
+          path: `knowledge[${index}].${issue.path.join(".")}`,
+        });
+      }
+      return;
+    }
+    const module = parsed.data;
+    if (module.items.length === 0 && module.sections.length === 0) {
+      issues.push({
+        code: ValidationCode.SCHEMA_INVALID,
+        message: `讲义「${module.title}」既没有要点（items）也没有正文（sections）`,
+        path: `knowledge[${index}]`,
+      });
+      return;
+    }
+    modules.push(module);
+  });
+
+  return { ok: issues.length === 0, issues, modules };
 }

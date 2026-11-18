@@ -16,6 +16,7 @@
 import {
   LearningSnapshotSchema,
   validateBankPackage,
+  validateKnowledgeModules,
   type Attempt,
   type BankContent,
   type ExamRecord,
@@ -373,6 +374,12 @@ export function parseBankJson(text: string): ParseResult<BankContent> {
     return { ok: false, value: null, issues, warnings: [] };
   }
 
+  // 讲义走与题目同样的校验强度：形状不对就拒绝，并指出是第几篇的哪个字段
+  const validatedKnowledge = validateKnowledgeModules(knowledge);
+  for (const issue of validatedKnowledge.issues) {
+    issues.push({ path: issue.path ?? "$.knowledge", message: `[${issue.code}] ${issue.message}` });
+  }
+
   if (issues.length > 0) return { ok: false, value: null, issues, warnings: [] };
 
   return {
@@ -380,7 +387,7 @@ export function parseBankJson(text: string): ParseResult<BankContent> {
     value: {
       manifest: manifest as BankContent["manifest"],
       questions: validated.questions,
-      knowledge: knowledge as BankContent["knowledge"],
+      knowledge: validatedKnowledge.modules,
     },
     issues,
     warnings: [],

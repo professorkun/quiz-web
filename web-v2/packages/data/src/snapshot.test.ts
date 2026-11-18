@@ -197,6 +197,34 @@ describe("题库包解析", () => {
     expect(result.ok).toBe(false);
     expect(result.issues.some((i) => i.path === "$.kind")).toBe(true);
   });
+
+  it("畸形讲义使整个包被拒，且不返回部分数据（验收 C-3）", () => {
+    const text = JSON.stringify({
+      kind: BANK_FILE_KIND,
+      manifest: bank.manifest,
+      questions: bank.questions,
+      // 空壳讲义：既无 items 也无 sections，validateKnowledgeModules 必拒
+      knowledge: [{ moduleId: "javaweb:kb:bad", topicId: "javaweb:topic:a", title: "空壳", summary: "无内容" }],
+    });
+    const result = parseBankJson(text);
+    expect(result.ok).toBe(false);
+    expect(result.value).toBeNull(); // 失败不写入：没有半解析的 value 泄漏出去
+    expect(result.issues.some((i) => i.path.includes("knowledge[0]"))).toBe(true);
+    expect(result.issues.some((i) => i.message.includes("[SCHEMA_INVALID]"))).toBe(true);
+  });
+
+  it("讲义字段非数组时拒绝而不猜测（验收 C-3）", () => {
+    const text = JSON.stringify({
+      kind: BANK_FILE_KIND,
+      manifest: bank.manifest,
+      questions: bank.questions,
+      knowledge: { not: "array" },
+    });
+    const result = parseBankJson(text);
+    expect(result.ok).toBe(false);
+    expect(result.value).toBeNull();
+    expect(result.issues.some((i) => i.path === "$.knowledge")).toBe(true);
+  });
 });
 
 describe("导出 → 清空 → 导入", () => {
