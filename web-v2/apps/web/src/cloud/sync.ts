@@ -300,11 +300,15 @@ export async function pullAndMerge(transport: SyncTransport, platform: Platform)
     const cloudUpdated = iso(r.updated_at);
     if (prefRows.length > 0 && cloudUpdated > current.updatedAt) {
       const next: AppSettings = {
-        activeBankId: (r.active_bank_id ?? null) as string | null,
+        // `|| null` 而不是 `?? null`：兼容旧客户端写进云端的空串（契约只认 null 或真实 ID）
+        activeBankId: (r.active_bank_id || null) as string | null,
         practice: (r.practice as AppSettings["practice"]) ?? {},
         updatedAt: cloudUpdated,
       };
-      await platform.settings.saveApp(next);
+      // 偏好是 LWW 合并，单行不合契约不应连累后面的收藏合并：跳过并留痕，不中断同步
+      await platform.settings.saveApp(next).catch((cause) => {
+        console.warn("云端偏好行不符合契约，已跳过合并（本机设置不受影响）", cause);
+      });
     }
     const cloudFavs = (r.favorites as FavoriteEntry[]) ?? [];
     for (const f of cloudFavs) {

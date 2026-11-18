@@ -49,7 +49,8 @@ const PlatformContext = createContext<ContextValue | null>(null);
 interface State {
   readonly platform: Platform;
   readonly banks: readonly BankContent[];
-  readonly activeBankId: string;
+  /** null = 尚无题库可选（空壳态）。持久化时也存 null——契约禁止空字符串 ID */
+  readonly activeBankId: string | null;
   readonly degraded: string | null;
 }
 
@@ -120,7 +121,9 @@ export function PlatformProvider(props: {
 
         const settings = await platform.settings.getApp();
         const known = banks.some((b) => b.manifest.bankId === settings.activeBankId);
-        const activeBankId = known ? settings.activeBankId! : (banks[0]?.manifest.bankId ?? "");
+        // 空壳态没有题库可选时必须落 null 而不是空串：AppSettingsSchema 禁止空字符串，
+        // 写 "" 会让下一次启动读设置直接判「结构不符合契约」，整个应用卡死在无法启动。
+        const activeBankId = known ? settings.activeBankId : (banks[0]?.manifest.bankId ?? null);
 
         if (!known) {
           await platform.settings.saveApp({

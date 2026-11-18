@@ -14,7 +14,11 @@
 import { describe, expect, it } from "vitest";
 
 import { SCHEMA_VERSION, type Attempt, type BankContent, type ExamRecord } from "@quiz/core";
-import { StorageError, type Clock } from "@quiz/platform";
+import {
+  DEFAULT_PRACTICE_SETTINGS,
+  StorageError,
+  type Clock,
+} from "@quiz/platform";
 
 import { MemoryKeyValueStore, type KeyValueStore } from "./kv.js";
 import { createPlatform, LEARNING_SNAPSHOT_VERSION, STORAGE_KEYS } from "./repositories.js";
@@ -468,5 +472,83 @@ describe("模考成绩（S5）", () => {
     await platform.clearLearningData();
     expect(await platform.exams.listRecords("javaweb")).toHaveLength(0);
     expect((await platform.exportAll()).examRecords).toHaveLength(0);
+  });
+});
+
+describe("设置行自愈与写入闸门（2026-11-18 线上「无法启动」回归）", () => {
+  it("不兼容的应用设置行（activeBankId 空串）：返回默认、备份原值、留自愈标记，不抛错", async () => {
+    const { kv, platform } = platformWith();
+    const bad = JSON.stringify({ activeBankId: "", practice: {}, updatedAt: "2026-11-18T00:00:00.000Z" });
+    await kv.set(STORAGE_KEYS.appSettings, bad);
+
+    const settings = await platform.settings.getApp();
+    expect(settings.activeBankId).toBeNull();
+    // 原始值备份留痕（重置偏好 ≠ 销毁证据）
+    expect(await kv.get(STORAGE_KEYS.settingsCorruptBackup(STORAGE_KEYS.appSettings))).toBe(bad);
+    // 自愈标记供 createWebPlatform 翻译成可见提示
+    expect(await kv.get(STORAGE_KEYS.settingsRecovered)).toBe("1");
+    // 自愈后同一次会话继续可用，写入也能落盘
+    await platform.settings.saveApp({ ...settings, updatedAt: "2026-11-18T01:00:00.000Z" });
+    expect((await platform.settings.getApp()).activeBankId).toBeNull();
+  });
+
+  it("saveApp 拒绝契约外设置（空字符串 activeBankId），且不污染已存数据", async () => {
+    const { kv, platform } = platformWith();
+    const good = { activeBankId: null, practice: {}, updatedAt: "2026-11-18T00:00:00.000Z" };
+    await platform.settings.saveApp(good);
+
+    await expect(
+      platform.settings.saveApp({
+        activeBankId: "" as unknown as string,
+        practice: {},
+        updatedAt: "2026-11-18T01:00:00.000Z",
+      }),
+    ).rejects.toThrow(/契约/);
+    expect(((await kv.get(STORAGE_KEYS.appSettings)) ?? "").includes('"activeBankId":null')).toBe(true);
+  });
+
+  it("空壳合法态：activeBankId=null 可写可读可往返（线上砖死场景的回归锁）", async () => {
+    const { platform } = platformWith();
+    await platform.settings.saveApp({
+      activeBankId: null,
+      practice: {},
+      updatedAt: "2026-11-18T00:00:00.000Z",
+    });
+    expect((await platform.settings.getApp()).activeBankId).toBeNull();
+  });
+
+  it("练习设置坏行：回退默认不抛，并同样备份留痕", async () => {
+    const { kv, platform } = platformWith();
+    const key = STORAGE_KEYS.practiceSettings("javaweb");
+    await kv.set(key, JSON.stringify({ order: "sideways" }));
+
+    const practice = await platform.settings.getPractice("javaweb");
+    expect(practice).toEqual(DEFAULT_PRACTICE_SETTINGS);
+    expect(await kv.get(STORAGE_KEYS.settingsCorruptBackup(key))).toContain("sideways");
+  });
+
+  it("savePractice 拒绝契约外偏好，不动已存行", async () => {
+    const { kv, platform } = platformWith();
+    await platform.settings.savePractice("javaweb", {
+      order: "random",
+      topicIds: [],
+      types: [],
+      limit: 0,
+      onlyUnseen: false,
+      onlyUnmastered: false,
+      mode: "practice",
+    });
+    await expect(
+      platform.settings.savePractice("javaweb", {
+        order: "sideways" as unknown as "sequential",
+        topicIds: [],
+        types: [],
+        limit: 0,
+        onlyUnseen: false,
+        onlyUnmastered: false,
+        mode: "practice",
+      }),
+    ).rejects.toThrow(/契约/);
+    expect((await platform.settings.getPractice("javaweb")).order).toBe("random");
   });
 });

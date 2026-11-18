@@ -71,6 +71,10 @@ const K = {
   importedBanks: "bank:imported:",
   importedBank: (bankId: string): string => `bank:imported:${bankId}`,
   probe: "__probe__",
+  /** 设置行自愈时的原始值备份键：重置偏好不等于销毁证据 */
+  settingsCorruptBackup: (key: string): string => `${key}:corrupt-bak`,
+  /** 设置行自愈后的一次性提示标记，由 createWebPlatform 翻译成可见提示后清除 */
+  settingsRecovered: "__meta__:settings-recovered",
 } as const;
 
 function parseRow<T>(
@@ -390,42 +394,88 @@ class ExamRepositoryImpl implements ExamRepository {
 }
 
 /* ------------------------------------------------------------------ 设置 */
+/**
+ * 设置仓储与记录仓储有一条刻意的分界线：
+ * 记录（作答/成绩）是**事实**，坏行宁可抛错也不能静默吞掉；
+ * 设置（activeBankId / 练习偏好）是**偏好**，随时可重建——
+ * 让一行坏掉的偏好把整个应用卡死在「无法启动」，代价远大于重置它。
+ * 所以这里对坏行做**自愈**：原始值备份到 `*:corrupt-bak`、写回默认、留一次性提示标记，
+ * 读不抛错；写入侧反向从严（saveApp/savePractice 拒绝契约外数据），杜绝再写坏。
+ */
 class SettingsRepositoryImpl implements SettingsRepository {
   constructor(
     private readonly kv: KeyValueStore,
     private readonly clock: Clock,
   ) {}
 
+  private defaultApp(): AppSettings {
+    return { activeBankId: null, practice: {}, updatedAt: this.clock.now().toISOString() };
+  }
+
+  /** 坏行自愈：备份原值 → 写回默认 → 留提示标记。任何一步失败都不阻塞启动 */
+  private async recover<T>(key: string, raw: string, fallback: T, label: string): Promise<T> {
+    try {
+      await this.kv.set(K.settingsCorruptBackup(key), raw);
+      await this.kv.set(key, JSON.stringify(fallback));
+      await this.kv.set(K.settingsRecovered, "1");
+    } catch {
+      /* 存储不可写时也要返回可用默认值，提示由 degraded 链路兜底 */
+    }
+    console.warn(`${label} 的本地数据不符合契约，已备份原值并重置为默认`);
+    return fallback;
+  }
+
   async getApp(): Promise<AppSettings> {
-    const row = parseRow<AppSettings>(
-      await this.kv.get(K.appSettings),
-      AppSettingsSchema,
-      "应用设置",
-    );
-    return row ?? { activeBankId: null, practice: {}, updatedAt: this.clock.now().toISOString() };
+    const raw = await this.kv.get(K.appSettings);
+    if (raw === null) return this.defaultApp();
+    try {
+      return parseRow<AppSettings>(raw, AppSettingsSchema, "应用设置") ?? this.defaultApp();
+    } catch (cause) {
+      if (cause instanceof StorageError && cause.kind === "corrupt") {
+        return this.recover(K.appSettings, raw, this.defaultApp(), "应用设置");
+      }
+      throw cause;
+    }
   }
 
   async saveApp(settings: AppSettings): Promise<void> {
-    await this.kv.set(K.appSettings, JSON.stringify(settings));
+    const parsed = AppSettingsSchema.safeParse(settings);
+    if (!parsed.success) {
+      throw new StorageError(
+        "corrupt",
+        "拒绝写入：应用设置不符合契约（activeBankId 不能是空字符串，应使用 null 或真实题库 ID）",
+        { cause: parsed.error },
+      );
+    }
+    await this.kv.set(K.appSettings, JSON.stringify(parsed.data));
   }
 
   async getPractice(bankId: string): Promise<PracticeSettings> {
     const app = await this.getApp();
-    const row = parseRow<PracticeSettings>(
-      await this.kv.get(K.practiceSettings(bankId)),
-      PracticeSettingsSchema,
-      "练习设置",
-    );
-    return row ?? app.practice[bankId] ?? DEFAULT_PRACTICE_SETTINGS;
+    const key = K.practiceSettings(bankId);
+    const raw = await this.kv.get(key);
+    if (raw === null) return app.practice[bankId] ?? DEFAULT_PRACTICE_SETTINGS;
+    try {
+      return parseRow<PracticeSettings>(raw, PracticeSettingsSchema, "练习设置") ?? DEFAULT_PRACTICE_SETTINGS;
+    } catch (cause) {
+      if (cause instanceof StorageError && cause.kind === "corrupt") {
+        return this.recover(key, raw, app.practice[bankId] ?? DEFAULT_PRACTICE_SETTINGS, "练习设置");
+      }
+      throw cause;
+    }
   }
 
   async savePractice(bankId: string, settings: PracticeSettings): Promise<void> {
-    await this.kv.set(K.practiceSettings(bankId), JSON.stringify(settings));
+    const parsed = PracticeSettingsSchema.safeParse(settings);
+    if (!parsed.success) {
+      throw new StorageError("corrupt", "拒绝写入：练习设置不符合契约", { cause: parsed.error });
+    }
+    await this.kv.set(K.practiceSettings(bankId), JSON.stringify(parsed.data));
     // 同时写回 app.practice，导出文件里才不会丢掉"每题库存了什么筛选条件"
     const app = await this.getApp();
     await this.saveApp({
       ...app,
-      practice: { ...app.practice, [bankId]: settings },
+      practice: { ...app.practice, [bankId]: parsed.data },
       updatedAt: this.clock.now().toISOString(),
     });
   }

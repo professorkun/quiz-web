@@ -13,7 +13,7 @@ import { StorageError, systemClock, type AuthAdapter, type Clock, type Platform 
 
 import { openIndexedDbStore } from "./indexeddb.js";
 import { MemoryKeyValueStore, type KeyValueStore } from "./kv.js";
-import { createPlatform, LEARNING_SNAPSHOT_VERSION } from "./repositories.js";
+import { createPlatform, LEARNING_SNAPSHOT_VERSION, STORAGE_KEYS } from "./repositories.js";
 import { ensureSchemaVersion } from "./schema-version.js";
 
 export * from "./kv.js";
@@ -54,15 +54,22 @@ export async function createWebPlatform(
     kv = new MemoryKeyValueStore();
   }
 
-  return {
-    platform: createPlatform({
-      kv,
-      builtinBanks: options.builtinBanks,
-      clock,
-      ...(options.auth === undefined ? {} : { auth: options.auth }),
-    }),
-    degraded,
-  };
+  const platform = createPlatform({
+    kv,
+    builtinBanks: options.builtinBanks,
+    clock,
+    ...(options.auth === undefined ? {} : { auth: options.auth }),
+  });
+
+  // 设置行自愈要说出口：触发一次读取（损坏的设置行会在这里备份并重置，见 repositories），
+  // 把「发生过重置」翻译成 degraded 提示交给页面——降级不静默吞掉，但也不阻塞启动。
+  await platform.settings.getApp().catch(() => null);
+  if (degraded === null && (await kv.get(STORAGE_KEYS.settingsRecovered).catch(() => null)) !== null) {
+    await kv.delete(STORAGE_KEYS.settingsRecovered).catch(() => undefined);
+    degraded = "应用设置与新版本不兼容，已重置为默认（学习记录不受影响）";
+  }
+
+  return { platform, degraded };
 }
 
 export const SNAPSHOT_VERSION = LEARNING_SNAPSHOT_VERSION;
