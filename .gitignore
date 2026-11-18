@@ -2,6 +2,12 @@
 .workbuddy/
 .wbapp_*.genie
 
+# 子 agent / 冒烟测试用的临时 git worktree（体积可达数百 MB，含 node_modules）。
+# 不忽略会让 git add -A 把整份仓库副本卷进提交，触发 GitHub 大文件拒绝。
+# 这些目录是临时检出点，成果已提交在对应分支，可安全用 `git worktree remove` 清理。
+.workbuddy-*/
+刷题-窗口/
+
 # 新版依赖与构建
 node_modules/
 web-v2/dist/
