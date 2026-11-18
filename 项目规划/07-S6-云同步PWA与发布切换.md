@@ -242,6 +242,13 @@
 
 ## 12. 阶段收尾记录
 
+> **进展记录（进行中）**
+> - **2026-11-17 · T6-1 设计**：V2 五表 DDL + 契约映射说明（`web-v2/docs/cloud/`）+ 字段对齐证据（`packages/data/src/cloud/schema-map.test.ts` 10 断言绿）。
+> - **2026-11-18 · 云开通 + T6-1/T6-2 部署**：WorkBuddy 云 `wbapp_g64vX7uZdYwdm0BJTVINDk` 开通（endpoint `wbapp-g64vx7uzdywdm0bjtvindk.app.workbuddy.host`）；五表建成 + 索引 + `GRANT`(authenticated) + **可写可查实测**；五表 RLS + **20 条策略**(`owner_id = auth.uid()`, roles={authenticated}) + **REVOKE anon**（云默认给 anon `SELECT`，与方案 G6-1「匿名显式拒绝」冲突，已修）+ **模拟 A/B 隔离实测**（A 见 1 / B 见 1 / 总 2）。旧云 `wbapp-x4curlcgbt2kilpzdqg6lh` 全程未触碰。
+> - **网页侧（同批）**：T6-9 PWA（manifest/SW/离线/更新/安装）、T6-10 可访问性与移动适配、主包 1.79MB→919KB 已完成并浏览器实测六页通过。
+> - **待办**：T6-3 认证适配器（云 SDK 登录）、T6-4 同步层、T6-5/6 跨云迁移演练与执行、T6-7/8 本地转换与游客合并、T6-12 发布。
+> - **证据**：`list_tables` RLSOn×5；`pg_policies` 20 条；`role_table_grants` anon 零权限；模拟 A/B 计数表；`schema-map.test.ts` 10 断言；web 单测 43/43。
+
 | 项 | 内容 |
 | --- | --- |
 | 实际耗时（工作块） | |
