@@ -53,7 +53,7 @@
   - 职责与说明：`README.md` §2 讲义源与生成物关系及重建命令；`项目规划/T0-7-文件职责表.md` §8.1 源可改 / 生成物禁改。
   - 脚本登记：根 `web-v2/package.json` 与 `packages/content/package.json` 的 `knowledge:build`。
   - 决策同步：P-1 / P-2 结论在 `13` 附录 C、`14` §0、各任务窗口分文件「已决前提」行表述一致。
-  - **W6-2 实测（2026-11-18）**：`knowledge:build` 在隔离 worktree 复跑通过——**7 篇 / 86 节 / 59.3k 字 / 7 条视频**；跑两次 hash 一致（幂等）；产物与 W2 提交版**字节一致**。实测发现 Windows + `core.autocrlf=true` 下讲义 checkout 为 CRLF，脚本 front matter 解析只认 LF，直接跑报「缺少 front matter」——已在 `README.md` §2 补 CRLF 前置说明与转换命令（`sed -i 's/\r$//' *.md`）。脚本逻辑本身正确，属行尾约定坑，不改 W2 源码。
+  - **W6-2 实测（2026-11-18）**：`knowledge:build` 在隔离 worktree 复跑通过——**7 篇 / 86 节 / 59.3k 字 / 0 条视频**；跑两次 hash 一致（幂等）。视频为可选扩展位，当前题库不预置；新题库导入时填 front matter `videos` 即接入；产物与 W2 提交版**字节一致**。实测发现 Windows + `core.autocrlf=true` 下讲义 checkout 为 CRLF，脚本 front matter 解析只认 LF，直接跑报「缺少 front matter」——已在 `README.md` §2 补 CRLF 前置说明与转换命令（`sed -i 's/\r$//' *.md`）。脚本逻辑本身正确，属行尾约定坑，不改 W2 源码。
   - 变更登记纪律：`00` §8 状态表在阶段 A **保持未动**（含 S7 仍为「未开始」），避免在 W5 状态数据与 INT 证据表到位前造成「假通过」。
 - 阶段 B 待回填（`00` §8 状态表、阶段标签如 `s7-e8-lectures`、正式 changelog 条目）：**待阶段 B 回填**（硬依赖 W5 的 S6 状态数据 + INT 证据表）。
 
