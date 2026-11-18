@@ -63,6 +63,34 @@ JavaWeb期末题库.html          ← 本地预览产物（单文件，数据与
 
 > 两份 HTML 为什么要同时存在？`题库网页/` 是线上发布目录（发布工具按目录取 `index.html`），根目录那份是"双击就能用"的本地副本。切换发布方式前不要合并它们。
 
+### 通用版讲义（`web-v2/`，S7-E8 起）
+
+讲义同样遵守"内容只改 Markdown、产物重新生成"：
+
+```
+web-v2/packages/content/javaweb-final/lectures/NN-*.md   ← 唯一内容源（7 篇，格式见该目录 README.md）
+        │  pnpm knowledge:build（含契约校验，错则退出非 0）
+        ▼
+web-v2/packages/content/javaweb-final/knowledge.json     ← 生成物，禁止手改
+```
+
+重建命令（在 `web-v2/` 根目录执行）：
+
+```bash
+cd web-v2
+pnpm knowledge:build        # 由 lectures/*.md 重新生成 knowledge.json
+```
+
+- **绝不手改 `knowledge.json`**：它是生成物，手改会在下次构建时被覆盖；改讲义只改 `lectures/` 下的 `.md`。
+- 生成脚本会顺带跑契约校验（缺 `moduleId`、视频地址为空、空讲义都会报错退出），重跑两次产物字节一致。
+- **Windows 注意（CRLF）**：脚本解析 front matter 只认 LF 行尾。若 `git config core.autocrlf` 为 `true`，checkout 后讲义会变 CRLF，直接跑会报「缺少 front matter」。此时先把讲义转回 LF 再跑：
+  ```bash
+  cd web-v2/packages/content/javaweb-final/lectures
+  sed -i 's/\r$//' *.md        # 转 LF（仅影响工作区，不改入库内容）
+  ```
+  入库统一 LF 存储（见 `.gitattributes`），Linux/CI 上不受影响；本地踩到此坑时按上式转即可。
+- 新增字段（`goals`/`sections`/`videos`/`resources`/`estimatedMinutes`/`examFocus`）全部可选，旧讲义零迁移可读；详见 `web-v2/docs/adr/0007-knowledge-lecture-schema.md`。
+
 ---
 
 ## 3. 分支规则
@@ -102,6 +130,8 @@ JavaWeb期末题库.html          ← 本地预览产物（单文件，数据与
 | `_build/cloud-sdk.js` / `sdk.js` | 固定版本云 SDK，构建时内联 |
 | `_build/data.json` | 中间产物，供迁移对照 |
 | `JavaWeb期末题库.html` · `题库网页/index.html` | 发布产物，**禁止手改** |
+| `web-v2/packages/content/javaweb-final/lectures/` | 通用版讲义唯一内容源（Markdown），可改；改完跑 `pnpm knowledge:build` |
+| `web-v2/packages/content/javaweb-final/knowledge.json` | 讲义生成物，**禁止手改**（见 §2） |
 | `项目规划/` | 阶段计划与执行记录（`00` 阶段地图、`01` S0、`02` S1…） |
 | `通用刷题Web改造方案与执行计划.md` | 总方案 |
 | `题库应用技术交接文档.md` | 旧版架构与历史缺陷 |

@@ -15,7 +15,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "migrate": "node scripts/migrate-legacy.mjs"
+    "migrate": "node scripts/migrate-legacy.mjs",
+    "knowledge:build": "node scripts/build-knowledge.mjs"
   },
   "dependencies": {
     "@quiz/core": "workspace:*"
