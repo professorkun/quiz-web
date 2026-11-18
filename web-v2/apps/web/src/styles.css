@@ -111,7 +111,9 @@ h2 { font-size: 16px; margin: 0 0 8px; }
 .navitem.on { background: var(--pri-l); color: var(--pri); border-color: var(--pri-l); font-weight: 600; }
 .sidebar-foot { margin-top: auto; }
 .content { flex: 1; min-width: 0; padding: 18px 20px 28px; }
-.page { max-width: 1040px; }
+/* 居中 + 自适应：内容是块级元素，光有 max-width 会一直贴着侧栏左对齐，
+   宽屏下右侧留一大片空白。margin 自动平分剩余空间，width:100% 保证窄屏不塌陷。 */
+.page { width: 100%; max-width: 1040px; margin: 0 auto; }
 .page-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
 .page-head h1 { margin-bottom: 2px; }
 .bottomnav { display: none; }

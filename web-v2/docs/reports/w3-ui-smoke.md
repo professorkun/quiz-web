@@ -161,3 +161,45 @@ $ pnpm check:extension
 | L-2 | 站外 iframe 的第三方请求发生在 iframe 自身文档作用域，父页 resource timing 不可见 | 网络面板证据以「点击前 iframe=0 + 点击后 iframe.src=player.bilibili.com」为准 | INT 复验时开 DevTools Network 面板目视确认 |
 | L-3 | 真实内容里 HLS / YouTube / page / invalid 四类无现成条目 | 这四类只走了组件级分支断言（jsdom） | W2 补样例后由 INT 复验 |
 | L-4 | 共享工作树上另有窗口的未提交改动（如 `PlatformProvider.tsx` 的 cloud 引用悬空），主工作树全量 typecheck 会报 W5 领地的 6 个错误 | 与 W3 白名单无关；W3 验证在冒烟工作树隔离完成 | W5 收尾时补齐 `cloud/**` |
+
+---
+
+## 补充（2026-11-18）：UI 整体靠左修复
+
+### 定位
+
+浏览器打开后页面内容整体贴左、右侧大片空白。排查 `apps/web/src/styles.css` 的顶层布局链：
+
+```
+.shell  { display:flex }                    → 左侧 .sidebar 固定 216px
+.content{ flex:1; padding:18px 20px 28px } → 剩余宽度全部给内容区
+.page   { max-width:1040px }               → 只有最大宽度，没有居中
+```
+
+`.page` 是块级元素，缺 `margin: 0 auto` 时始终靠内容区左边缘对齐；
+而旧容器 `.wrap` 本来写了 `margin:0 auto`，两代样式不一致导致新页面统一靠左。
+`className="page"` 被 6 个页面组件共用（banks/exam/learn/me/practice/review），故一处修复覆盖全部页面。
+
+### 修复（仅 styles.css 一处）
+
+```css
+.page { width: 100%; max-width: 1040px; margin: 0 auto; }
+```
+
+- `margin:0 auto` 让内容块在 `.content` 内水平居中；
+- `width:100%` 保证窄屏按可用宽度自适应，不塌陷；
+- 全局已有 `box-sizing:border-box`，与移动端 `@media (max-width:860px)` 的
+  `.content` 左右 `padding: max(12px, env(safe-area-inset-*))` 不会叠加溢出。
+- 未触碰 `.shell` / `.sidebar` / `router.ts` / `App.tsx` / `AppShell.tsx`（P-2 冻结）。
+
+### 验证
+
+```
+$ pnpm --filter @quiz/web typecheck   → 退出码 0
+$ pnpm --filter @quiz/web test        → 10 files / 63 tests 全绿
+```
+
+> 隔离 worktree 单跑时曾报 `@quiz/core` / `@quiz/content` 无法解析、以及
+> `parseMediaSource is not a function`：因 W3 分支从基线创建，本身不含 W1 的契约与解析器，
+> 按 14 号计划属「合并期兑现」的依赖。验证时临时注入 W1 的 core 源码模拟集成态后全绿；
+> 注入文件已在提交前全部还原/删除，本次提交**只有 styles.css**。
