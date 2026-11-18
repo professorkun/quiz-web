@@ -32,6 +32,9 @@ importers:
       '@quiz/platform-web':
         specifier: workspace:*
         version: link:../../packages/platform/web
+      '@tencent-ai/workbuddy-cloud-sdk':
+        specifier: 0.1.4-dev.71e5d1e.202611161655
+        version: 0.1.4-dev.71e5d1e.202611161655
       dompurify:
         specifier: ^3.4.18
         version: 3.4.18
@@ -575,6 +578,10 @@ packages:
     resolution: {integrity: sha512-ADb1Uz2MNM0sxVpAlMNdQG16Hw4sgW1aqVL7NeqBMpcZeiHb192d7W6shZdMQs33D+w9ihDYBBPsYqqc4MlD8w==}
     cpu: [x64]
     os: [win32]
+
+  '@tencent-ai/workbuddy-cloud-sdk@0.1.4-dev.71e5d1e.202611161655':
+    resolution: {integrity: sha512-HYIlwOKVxkZlqUDnBAqWVpCkUZJCYXxnb2bfUn9I2JfH90SHHKcosRZJKskj05zNPz4+f1t1zdeCEIWEiPAJYw==}
+    engines: {node: '>=18'}
 
   '@testing-library/dom@10.4.2':
     resolution: {integrity: sha512-yzr2S9HyAIdhz2/6qHgbs665Q7PKVcDF05vsOlHPxG1mo36gKVesdYVeDLnXgfjJ03CrKRk08knc6+E/9m8v2Q==}
@@ -1418,6 +1425,8 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.68.3':
     optional: true
+
+  '@tencent-ai/workbuddy-cloud-sdk@0.1.4-dev.71e5d1e.202611161655': {}
 
   '@testing-library/dom@10.4.2':
     dependencies:

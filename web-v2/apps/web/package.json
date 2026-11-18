@@ -16,6 +16,7 @@
     "@quiz/data": "workspace:*",
     "@quiz/platform": "workspace:*",
     "@quiz/platform-web": "workspace:*",
+    "@tencent-ai/workbuddy-cloud-sdk": "0.1.4-dev.71e5d1e.202611161655",
     "dompurify": "^3.4.18",
     "highlight.js": "^11.12.0",
     "katex": "^0.19.1",
