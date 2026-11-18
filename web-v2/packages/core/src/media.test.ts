@@ -86,3 +86,63 @@ describe("讲义视频源解析（S7-E8）", () => {
     expect(source.reason).toContain("BV 号");
   });
 });
+
+describe("行为表逐行与补充边界（G0 §2）", () => {
+  it("watchUrl 保留分集参数；裸 BV 的 page 来自 options.page", () => {
+    const full = parseMediaSource("https://www.bilibili.com/video/BV1Y7411K7zz?p=3");
+    expect(full.watchUrl).toBe("https://www.bilibili.com/video/BV1Y7411K7zz?p=3");
+
+    const bare = parseMediaSource("BV1Vf4y127N5", { page: 5 });
+    expect(bare.watchUrl).toBe("https://www.bilibili.com/video/BV1Vf4y127N5?p=5");
+    expect(bare.embedUrl).toContain("page=5");
+  });
+
+  it("YouTube 缺 11 位 id 判 invalid，原因可读", () => {
+    const source = parseMediaSource("https://www.youtube.com/watch?v=short");
+    expect(source.kind).toBe("invalid");
+    expect(source.reason).toContain("11 位视频 id");
+    expect(source.watchUrl).toBeNull();
+  });
+
+  it("b23.tv 短链 provider 标明短链，且不硬猜 id", () => {
+    const source = parseMediaSource("https://b23.tv/abc123");
+    expect(source.provider).toBe("哔哩哔哩（短链）");
+    expect(source.id).toBeNull();
+    expect(source.watchUrl).toBe("https://b23.tv/abc123");
+  });
+
+  it("绝对 http 但非可播扩展名 → page，不内嵌", () => {
+    const source = parseMediaSource("https://example.com/page.html");
+    expect(source.kind).toBe("page");
+    expect(source.embedUrl).toBeNull();
+  });
+
+  it("vbscript:/file: 与 javascript:/data: 同类一律 invalid", () => {
+    for (const bad of ["vbscript:msgbox(1)", "file:///etc/passwd"]) {
+      const source = parseMediaSource(bad);
+      expect(source.kind).toBe("invalid");
+      expect(source.reason).toBe("不允许 javascript:/data: 这类地址");
+    }
+  });
+
+  it("空串与全空白都判空，三个地址字段全为 null", () => {
+    for (const empty of ["", "   "]) {
+      const source = parseMediaSource(empty);
+      expect(source.kind).toBe("invalid");
+      expect(source.reason).toBe("视频地址为空");
+      expect(source.watchUrl).toBeNull();
+      expect(source.embedUrl).toBeNull();
+      expect(source.id).toBeNull();
+    }
+  });
+
+  it("javascript: 的 reason 可读，且不携带任何可渲染地址", () => {
+    const source = parseMediaSource("javascript:alert(1)");
+    expect(source.reason).toBe("不允许 javascript:/data: 这类地址");
+    expect(source.watchUrl).toBeNull();
+    expect(source.embedUrl).toBeNull();
+    expect(source.id).toBeNull();
+    expect(source.nativeVideo).toBe(false);
+    expect(source.needsNetwork).toBe(false);
+  });
+});
