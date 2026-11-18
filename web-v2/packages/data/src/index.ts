@@ -12,6 +12,13 @@ export { computeProgress, recomputeProgress } from "./progress.js";
 export { verifyBank, recomputeBank } from "./recompute.js";
 export type { ReconcileReport } from "./recompute.js";
 export { dryRunLegacyRecords } from "./legacy-records.js";
+export { migrateLegacyToV2 } from "./migrate-v2.js";
+export type {
+  MigrationV2Input,
+  MigrationV2Result,
+  MigrationV2Report,
+  LegacyDrillRow,
+} from "./migrate-v2.js";
 export {
   LEARNING_FILE_KIND,
   BANK_FILE_KIND,

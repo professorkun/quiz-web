@@ -2,7 +2,19 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 允许缩放：不设 maximum-scale / user-scalable=no（S6 · G6-10） -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="本地优先的通用刷题应用：选择、判断、填空、简答、代码填空与全真模考。" />
+    <meta name="theme-color" content="#2563eb" />
+
+    <!-- PWA（T6-9） -->
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="通用刷题" />
+
     <title>通用刷题</title>
   </head>
   <body>
