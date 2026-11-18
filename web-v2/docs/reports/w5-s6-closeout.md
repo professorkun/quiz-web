@@ -112,15 +112,28 @@
 
 时间 2026-11-18 · Node 20 / pnpm 12.14.0 · 命令在 `web-v2/` 下执行
 
+**⚠️ 跨窗口实时并行，两次跑测结果有漂移（如实记录，不取好看的那次）**：
+
+| 时刻 | `@quiz/data` | `cloud/sync.test.ts` | 备注 |
+| --- | --- | --- | --- |
+| 13:55（首轮） | ✅ 36 / 36 | ✅ 3 / 3 | 当时 data 包共 36 项 |
+| 14:21（提交后复跑） | ❌ **38 / 42，4 失败** | ✅ 3 / 3 | 测试数涨到 42：并行窗口新增 `snapshot-knowledge.test.ts`（6 项，4 失败） |
+
+失败项**全部**在 `packages/data/src/snapshot-knowledge.test.ts`（`??` 未跟踪，**不在本次提交内**，归 W1）：
+- `expected true to be false`（导入本应失败却成功）×2
+- `knowledge[0].sections` 期望 `[]` 得到 `undefined`——即契约 §1.2 的 `.default([])` 未生效
+
+**判定（重要）**：W5 自身代码 `apps/web/src/cloud/**`（3/3）与 `migrate-v2` 相关逻辑**未出现失败**；data 包 4 项失败的根因是 W1 的讲义导入契约实现（新契约六字段缺省值未补），与 typecheck 红项同源。**这不是 W5 能单独修的**（`packages/data/src/**` 归 W1）。
+
+其余本地验证：
+
 | 命令 | 结果 | 说明 |
 | --- | --- | --- |
-| `pnpm --filter @quiz/data test` | ✅ **36 / 36 通过** | 含 `migrate-v2.test.ts` 迁移演练、`schema-map.test.ts` 字段对齐 10 断言 |
-| `apps/web` → `cloud/sync.test.ts` | ✅ **3 / 3 通过** | 幂等去重 / 并集合并 / 重复同步不产生重复记录 |
 | `apps/web` 其余测试 | ✅ 37 项通过 | renderRichText 7、short_answer 5、all-renderers 7、exam 9 等 |
-| `pnpm typecheck` | ❌ **红** | `packages/content/src/banks/chemistry.ts(278,3)` TS2322 缺 `goals/sections/videos/resources`（**W2 范围**，新契约六字段未补）；`packages/platform/web` 亦报错（**W1 范围**） |
-| `apps/web` → `app.test.tsx` | ❌ **6 / 15 失败** | 根因 `features/knowledge/LectureArticle.tsx:23` 读 `module.sections.length` 得 undefined（**W3 范围**） |
+| `pnpm typecheck` | ❌ **红** | `packages/content/src/banks/chemistry.ts(278,3)` TS2322 缺 `goals/sections/videos/resources`（**W2**）；`packages/platform/web` 亦报错（**W1**） |
+| `apps/web` → `app.test.tsx` | ❌ **6 / 15 失败** | 根因 `features/knowledge/LectureArticle.tsx:23` 读 `module.sections.length` 得 undefined（**W3**） |
 
-**判读（重要）**：W5 自身代码 `cloud/**` 与 `packages/data` **全部绿**。当前红项根因逐一落在 W2 / W3 / W1 范围，正对应契约 §5.3「六窗口并行、INT 才总判」——**单窗口绿 ≠ 集成绿**。故 G6-7 在其它窗口红项清零前不能宣布，这不是 W5 能单独解决的。
+**判读（重要）**：W5 自身代码绿。当前全部红项根因落在 **W1（契约缺省值）/ W2（内容缺六字段）/ W3（组件未判空）**，三者同源——都是契约 §1.2 新增六字段尚未在各窗口落地。正对应契约 §5.3「六窗口并行、INT 才总判」：**单窗口绿 ≠ 集成绿**。故 G6-7 在其它窗口红项清零前不能宣布。
 
 > 补充：`pnpm verify` 本轮未完整执行（含 `build`，可能撞 D-06）。待其它窗口红项清零后再跑一次并记录，届时按「改名不删源码」口径处置。
 
@@ -138,8 +151,10 @@
   失败处置已逐条整理（禁止直接切回覆盖、失败即停、旧表只读保留、观察期不清理）。
 CI 记录（legacy-ci / general-ci）：未实际触发，无 CI 运行日志。
   静态审查：legacy-ci 配置存在且合理；general-ci 配置本轮已补建（.github/workflows/general-ci.yml），静态合理。
-  本地可确定性验证（实跑）：packages/data 36/36 绿；cloud/sync.test.ts 3/3 绿；app 其余 37 项绿。
-  本地 typecheck/test 当前红，根因在 W2（chemistry.ts 缺六字段）/ W3（LectureArticle sections undefined）/ W1（platform/web）范围，非 W5 代码。
+  本地可确定性验证（实跑）：cloud/sync.test.ts 3/3 绿（W5 自身代码）。
+  @quiz/data 两跑结果漂移：13:55 为 36/36，14:21 复跑为 38/42（4 失败，全在 W1 新增的 snapshot-knowledge.test.ts，
+  根因=契约 §1.2 新增六字段 .default([]) 未生效，与 typecheck 红项同源）。详见 §4.1。
+  本地 typecheck/test 当前红，根因在 W1（契约缺省值）/ W2（chemistry.ts 缺六字段）/ W3（LectureArticle sections undefined），非 W5 代码。
 验收结果：
   G6-1 阻塞（缺≥2测试账号/凭据；仅有 §12 云端模拟 A/B 静态记录，非真实双账号交叉验证）
   G6-2 阻塞（缺凭据/账号/备份，无真实对账表，差异 0 未证实）
@@ -183,6 +198,8 @@ W6 回填 `00` §8 需要「验收日期 / Release 标签 / 遗留问题数」�
 | L8 | publishableKey 前端可读 | 待安全复查 | G6-1「无凭据/令牌」 | 确认其为 publishable 而非特权密钥（静态看注释如此，未验证） |
 | L9 | 07 文档章节引用偏差 | 文档一致性 | 不影响代码 | 任务/W5 文档称「§6 回退方案」，现行 07 实际为 §10；建议后续统一措辞（07 属 W5 白名单，但本窗口未改动） |
 | L10 | `pwa.tsx` 位于 `src/` 根非 `public/**` | 所有权边界待定 | 不影响本窗口 | 该文件是 PWA 注册逻辑但不在 W5 白名单字面范围内，**本轮未提交**；建议 INT/W6 拍板其归属（W5 白名单 / 划归其它窗口） |
+| L11 | S6 迁移代码落在 W1 路径下 | 所有权冲突（需 INT 拍板） | 影响提交归属 | `packages/data/src/cloud/**`、`migrate-v2.ts`、`rehearse-migration.mjs` 是 S6 迁移产物（W5 的任务内容），但路径 `packages/data/src/**` 按契约 §5.1 归 **W1**。本轮**严格按矩阵未提交**它们。建议 INT 明确：迁移到 `cloud/` 独占路径，或给 W5 开路径例外 |
+| L12 | 并行窗口实时写盘，验证结果会漂移 | 过程风险 | 影响 G6-7 判定 | 本轮 13:55→14:21 两次跑测已漂移（36/36 → 38/42）。**最终 CI 绿必须以 INT 在冻结点统一重跑为准**，单窗口任何时刻的绿都不算数 |
 
 ---
 
