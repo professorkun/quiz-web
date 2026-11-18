@@ -18,6 +18,9 @@ export {
   TopicSchema,
   KnowledgeItemSchema,
   KnowledgeModuleSchema,
+  KnowledgeSectionSchema,
+  KnowledgeVideoSchema,
+  KnowledgeResourceSchema,
   ExamTemplateSectionSchema,
   ExamTemplateShapeSchema,
   ExamTemplateSchema,
@@ -51,6 +54,9 @@ export type {
   Topic,
   KnowledgeItem,
   KnowledgeModule,
+  KnowledgeSection,
+  KnowledgeVideo,
+  KnowledgeResource,
   ExamFilter,
   ExamTemplateSection,
   ExamTemplate,
@@ -72,6 +78,10 @@ export type {
 
 export { makeQuestionId, parseQuestionId, nextSeq, padSeq } from "./ids.js";
 export type { ParsedQuestionId } from "./ids.js";
+
+// 讲义视频源解析（S7-E8）：纯函数，UI 不自己判断"这个链接该怎么播"
+export { parseMediaSource } from "./media.js";
+export type { MediaKind, MediaSource } from "./media.js";
 
 export { canonicalize, computeRevision, fnv1a32 } from "./revision.js";
 
@@ -157,8 +167,13 @@ export type {
   RestoreResult,
 } from "./practice/index.js";
 
-export { ValidationCode, validateBankPackage } from "./validate.js";
-export type { ValidationIssue, BankPackage, ValidateResult } from "./validate.js";
+export { ValidationCode, validateBankPackage, validateKnowledgeModules } from "./validate.js";
+export type {
+  ValidationIssue,
+  BankPackage,
+  ValidateResult,
+  KnowledgeValidateResult,
+} from "./validate.js";
 
 // 作答事件构造（S3/T4-1）：事件不可变，首次标记从历史推断
 export { buildAttempt, isFirstAttemptFor } from "./records/attempt.js";

@@ -242,14 +242,73 @@ export const KnowledgeItemSchema = z.object({
 });
 export type KnowledgeItem = z.infer<typeof KnowledgeItemSchema>;
 
+/**
+ * 讲义章节（S7-E8）。
+ *
+ * `body` 是 **Markdown**，不是 HTML：渲染统一走 `renderRichText`（marked → DOMPurify），
+ * 因此表格、代码块、公式都能用，同时不可能绕过清洗（R-08）。
+ * 与 `items` 的分工：`items` 是「一句话要点」，用于速览与旧数据兼容；
+ * `sections` 是「正文」，用于零基础精读。两者可共存，缺一个不影响渲染。
+ */
+export const KnowledgeSectionSchema = z.object({
+  title: z.string().min(1),
+  body: z.string().min(1),
+});
+export type KnowledgeSection = z.infer<typeof KnowledgeSectionSchema>;
+
+/**
+ * 讲义视频（S7-E8）：只存 URL 与元信息，**不存文件**。
+ *
+ * 为什么不在题库包里放视频：题库包要能整体导入导出、要能进小程序分包，
+ * 带视频会让包体积失控（S7-E3 的同类约束）。所以这里只记「去哪看」，
+ * 播放在前端按 URL 类型决定（原生 `<video>` / 站外嵌入 / 仅跳转）。
+ */
+export const KnowledgeVideoSchema = z.object({
+  url: z.string().min(1),
+  title: z.string().min(1).optional(),
+  /** 一句话说明：这段视频对应本节哪部分，避免用户盲点 */
+  note: z.string().min(1).optional(),
+  /** 直链起播秒数（合集跳到某一节时有用） */
+  startSec: z.number().int().nonnegative().optional(),
+});
+export type KnowledgeVideo = z.infer<typeof KnowledgeVideoSchema>;
+
+/** 拓展阅读/官方文档链接：同样是"去哪看"，不是内容副本 */
+export const KnowledgeResourceSchema = z.object({
+  title: z.string().min(1),
+  url: z.string().min(1),
+  note: z.string().min(1).optional(),
+});
+export type KnowledgeResource = z.infer<typeof KnowledgeResourceSchema>;
+
+/**
+ * 知识讲义模块（「题库 → 知识讲义」的一篇）。
+ *
+ * 向后兼容约定：`items` 由 `min(1)` 放宽为「缺省空数组」，
+ * 因为新讲义可能只写 `sections` 不写要点；旧数据（含 legacy 迁移产物）依然全部合法。
+ * 但**内容必须非空**这一条不变：`items` 与 `sections` 至少有一个非空，
+ * 该约束在 `validate.ts` 里给出可定位的错误，不在 Zod 形状层表达（Zod 难以给出好信息）。
+ */
 export const KnowledgeModuleSchema = z.object({
   moduleId: IdStr,
   topicId: IdStr,
   title: z.string().min(1),
   summary: z.string().min(1),
-  items: z.array(KnowledgeItemSchema).min(1),
+  items: z.array(KnowledgeItemSchema).default([]),
   /** 易错点：旧版 `pits`，展示在模块末尾 */
   pitfalls: z.array(z.string().min(1)).default([]),
+  /** 学完这一节应该能做到什么（3~5 条，动词开头） */
+  goals: z.array(z.string().min(1)).default([]),
+  /** 精读正文，按小节切分；顺序即阅读顺序 */
+  sections: z.array(KnowledgeSectionSchema).default([]),
+  /** 配套视频：可为空（不联网也能读讲义） */
+  videos: z.array(KnowledgeVideoSchema).default([]),
+  /** 拓展阅读：官方文档、规范原文等 */
+  resources: z.array(KnowledgeResourceSchema).default([]),
+  /** 预计精读时长（分钟），用于给用户一个心理预期 */
+  estimatedMinutes: z.number().int().positive().optional(),
+  /** 考试权重与常见问法，一句话。不写"必考"这类无法证伪的话 */
+  examFocus: z.string().min(1).optional(),
 });
 export type KnowledgeModule = z.infer<typeof KnowledgeModuleSchema>;
 
