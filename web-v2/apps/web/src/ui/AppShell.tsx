@@ -5,6 +5,7 @@
  * 桌面端把它拉成一条 860px 的竖条，等于把 60% 的屏幕留白。
  */
 
+import { PwaUpdateBar } from "../pwa";
 import { ROUTES, ROUTE_LABEL, type Route } from "../router";
 import { usePlatform } from "../platform/PlatformProvider";
 
@@ -55,6 +56,7 @@ export function AppShell(props: AppShellProps): React.ReactElement {
       </aside>
 
       <main className="content">
+        <PwaUpdateBar />
         {degraded === null ? null : (
           <div className="notice banner">
             {degraded}。当前仍可继续作答，但关闭页面后这些记录会丢失；
