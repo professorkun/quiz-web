@@ -119,3 +119,67 @@ $ 生成两次 sha256 一致 → 幂等 PASS
 
 > 注：隔离 worktree 内首次跑 content 测试曾报 `@quiz/core` 无法解析，原因是缺构建产物 dist
 > （按矩阵 dist 不提交），补 `pnpm --filter @quiz/core build` 后全绿；非本次改动引入。
+
+---
+
+## 8. S7-E9 收尾批次 · T-1 修复（2026-11-18）
+
+| 项 | 内容 |
+| --- | --- |
+| 任务 | S7-E9 P0 · T-1：修 `chemistry.ts` TS2322 |
+| 分支 | `content/s7e8-lectures`（HEAD `902aae3`） |
+| 上位文档 | `项目规划/任务窗口/S7-E9-收尾任务分配方案.md` §2 硬约束 |
+
+### 8.1 问题与修复
+
+**病灶**：`src/banks/chemistry.ts` 约 278 行 `KNOWLEDGE.map((m) => ({ ...m, items: …, pitfalls: […] }))` 只补了 `items`/`pitfalls`，缺 W1 契约的四个 Zod 输出必填字段（`.default([])` 只作用于解析输入，直接构造类型对象必须显式给出）：
+
+| 字段 | 修复 | 说明 |
+| --- | --- | --- |
+| `goals` | `goals: []` | 学习目标；化学题库暂无讲义正文，留空 |
+| `sections` | `sections: []` | 精读正文小节；同上 |
+| `videos` | `videos: []` | **视频可选扩展位，留空是合法形态**——不回填任何题库专属视频链接 |
+| `resources` | `resources: []` | 拓展阅读；同上 |
+
+**修法**：统一在 `KNOWLEDGE.map` 里补四个空数组（一处改动覆盖三篇），附注释说明契约依据。未改 `core/schema.ts`、未改契约、未改其它题库文件。
+
+### 8.2 验证实测
+
+```
+$ sed -i 's/\r$//' web-v2/packages/content/javaweb-final/lectures/*.md   # CRLF 防御（实际无操作）
+$ pnpm --filter @quiz/core build                                          # 补 dist ✓
+$ pnpm typecheck                                                          # 全 workspace
+packages/core Done / packages/content Done / packages/platform Done
+packages/platform/web Done / packages/data Done / apps/web Done
+→ EXIT 0（chemistry.ts TS2322 消除）
+
+$ pnpm --filter @quiz/content test
+ Test Files  5 passed (5)
+      Tests  41 passed (41)                                                # 41/41 全绿
+
+$ node packages/content/scripts/build-knowledge.mjs   (两次)
+讲义 7 篇 / 86 节 / 正文 59.3k 字 / 视频 0 条
+sha256 b6b0b2abd10bfb5c6f65b8ed7258d8703036e33f681930b449db7e82981b70c7  (前后一致)
+→ BYTE-IDENTICAL
+
+视频计数：0 条  |  BV 号残留：0  |  总正文：59,281 字（≥50k ✓）
+```
+
+### 8.3 红线遵守
+
+- **未回填任何视频链接**：`knowledge.json` 视频数 0，全文无 BV 号。
+- **未改 core/schema.ts**：core/src 工作区干净（`git status packages/core/` 为空）。
+- **未改其它题库文件**：唯一源码改动是 `chemistry.ts` 的四个空数组。
+- **只改 w2- 前缀报告文件**：本文件为追加。
+
+### 8.4 改动文件清单
+
+| 文件 | 改动 |
+| --- | --- |
+| `packages/content/src/banks/chemistry.ts` | +6 行：四个空数组 + 注释（在 `KNOWLEDGE.map` 内） |
+| `docs/reports/w2-content-check.md` | 追加本节（§8） |
+
+### 8.5 遗留问题
+
+1. **W1 契约源与 content 分支 src 未同步**：`core/src/schema.ts`（content 分支）缺讲义契约扩展（goals/sections/videos/resources/parseMediaSource/validateKnowledgeModules），这些在 `feat/s7e8-core-contract`。本轮 dist 由 W1 契约源临时构建后还原 src，**T-4 INT 串行合并 W1 后 src/dist 即自然对齐**。
+2. `core/dist/media.js` 有一个 sourcemap 指向缺失源文件的警告（临时构建的副作用），不影响编译与测试；W1 合并后重建 dist 自然消失。

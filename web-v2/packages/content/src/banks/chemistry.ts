@@ -279,5 +279,11 @@ export const chemistryBank: BankContent = {
     ...m,
     items: m.items.map((i) => ({ ...i })),
     pitfalls: [...m.pitfalls],
+    // W1 契约 Zod 输出类型为必填（.default([]) 只作用于解析输入），
+    // 直接构造类型对象必须显式给出；化学题库暂无讲义正文/视频/拓展位，留空数组。
+    goals: [],
+    sections: [],
+    videos: [],
+    resources: [],
   })),
 };
