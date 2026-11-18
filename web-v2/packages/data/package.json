@@ -14,8 +14,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
-    "dryrun": "node scripts/dryrun-legacy.mjs"
+    "test": "vitest run"
   },
   "dependencies": {
     "@quiz/core": "workspace:*",

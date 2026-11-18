@@ -17,7 +17,8 @@ import { LearnPage } from "./features/learn/LearnPage";
 import { MePage } from "./features/me/MePage";
 import { PracticePage } from "./features/practice/PracticePage";
 import { ReviewPage } from "./features/review/ReviewPage";
-import { PlatformProvider } from "./platform/PlatformProvider";
+import { EmptyState } from "./features/welcome/EmptyState";
+import { PlatformProvider, usePlatform } from "./platform/PlatformProvider";
 import { navigate, parseRoute, type Route } from "./router";
 import { AppShell } from "./ui/AppShell";
 
@@ -40,6 +41,7 @@ function renderRoute(route: Route): React.ReactElement {
 }
 
 function Shell(): React.ReactElement {
+  const { banks } = usePlatform();
   const [route, setRoute] = useState<Route>(() => parseRoute(globalThis.location.hash));
 
   useEffect(() => {
@@ -47,6 +49,10 @@ function Shell(): React.ReactElement {
     globalThis.addEventListener("hashchange", onHashChange);
     return () => globalThis.removeEventListener("hashchange", onHashChange);
   }, []);
+
+  // 空壳守卫：没有任何题库时只显示导入引导，不进入任何依赖 activeBank 的功能页。
+  // 导入成功后 reloadBanks 会更新 banks，这里自动切到正常界面。
+  if (banks.length === 0) return <EmptyState />;
 
   return (
     <AppShell

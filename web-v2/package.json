@@ -9,13 +9,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "check:extension": "node scripts/check-extension-point.mjs",
-    "check:codeblanks": "node scripts/verify-code-blanks.mjs",
-    "check:parity": "node scripts/verify-legacy-parity.mjs",
-    "migrate": "pnpm --filter @quiz/content migrate",
-    "knowledge": "node packages/content/scripts/extract-knowledge.mjs",
-    "dryrun": "pnpm --filter @quiz/data dryrun",
-    "verify": "pnpm check:boundaries && pnpm check:extension && pnpm build && pnpm check:codeblanks && pnpm check:parity && pnpm test",
-    "knowledge:build": "node packages/content/scripts/build-knowledge.mjs"
+    "verify": "pnpm check:boundaries && pnpm check:extension && pnpm build && pnpm test"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

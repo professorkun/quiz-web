@@ -13,13 +13,13 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { chemistryBank } from "@quiz/content";
 import type { BankContent } from "@quiz/core";
 import type { Clock } from "@quiz/platform";
 import { createPlatform, MemoryKeyValueStore } from "@quiz/platform-web";
 
 import { App } from "./App";
 import { ROUTE_LABEL, type Route } from "./router";
+import { chemistryBank } from "./test-fixtures/chemistry-fixture";
 
 const clock: Clock = { now: () => new Date("2026-11-16T09:00:00.000Z") };
 
@@ -469,5 +469,19 @@ describe("W4 一致性", () => {
     await screen.findByText(/第 1 \/ 1 题/);
     // 第一题已掌握 → 不在会话里；会话里是下一道未掌握的题
     expect(screen.queryByText(/下列物质中属于纯净物的是/)).toBeNull();
+  });
+});
+
+/** 空壳态：无任何题库时显示导入引导，不进入功能页、不崩溃 */
+describe("空壳态", () => {
+  it("没有题库时显示导入引导页", async () => {
+    const kv = new MemoryKeyValueStore();
+    const platform = createPlatform({ kv, builtinBanks: [], clock });
+    render(<App platform={platform} />);
+    expect(await screen.findByText(/欢迎使用通用刷题/)).toBeTruthy();
+    expect(screen.getByText(/没有预置题库/)).toBeTruthy();
+    expect(screen.getByText("选择题库包文件")).toBeTruthy();
+    // 功能页不应渲染
+    expect(screen.queryByRole("heading", { name: "高中化学基础", level: 1 })).toBeNull();
   });
 });

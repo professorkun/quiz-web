@@ -16,7 +16,7 @@ import type { Platform } from "@quiz/platform";
 import { createWebPlatform } from "@quiz/platform-web";
 
 import { cloudAuth, createCloudAuthAdapter } from "../cloud/auth";
-import { BUILTIN_BANKS } from "../data/banks";
+import { BUILTIN_BANKS, EMPTY_BANK_PLACEHOLDER } from "../data/banks";
 
 export interface PendingSession {
   readonly questionIds: readonly string[];
@@ -115,11 +115,12 @@ export function PlatformProvider(props: {
         // 注入平台时允许调用方带入"存储不可用"的说明（测试、S6 云同步失败都走这条）
         const degraded = storageWarning ?? created.degraded;
         const banks = await loadBanks(platform);
-        if (banks.length === 0) throw new Error("没有可用题库：内置题库加载失败");
+        // 空壳态：无内置题库时正常启动，由 App 守卫显示导入引导页。
+        // 没有题库也算合法状态——用户导入题库后会自动进入功能界面。
 
         const settings = await platform.settings.getApp();
         const known = banks.some((b) => b.manifest.bankId === settings.activeBankId);
-        const activeBankId = known ? settings.activeBankId! : banks[0]!.manifest.bankId;
+        const activeBankId = known ? settings.activeBankId! : (banks[0]?.manifest.bankId ?? "");
 
         if (!known) {
           await platform.settings.saveApp({
@@ -174,7 +175,9 @@ export function PlatformProvider(props: {
   const value = useMemo<ContextValue | null>(() => {
     if (state === null) return null;
     const activeBank =
-      state.banks.find((b) => b.manifest.bankId === state.activeBankId) ?? state.banks[0]!;
+      state.banks.find((b) => b.manifest.bankId === state.activeBankId) ??
+      state.banks[0] ??
+      EMPTY_BANK_PLACEHOLDER;
     return {
       platform: state.platform,
       degraded: state.degraded,

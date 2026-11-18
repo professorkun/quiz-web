@@ -232,7 +232,7 @@ describe("旧版 hlCode 空位编号与新版结构解析", () => {
   });
 });
 
-describe("真实题库样例（与 scripts/verify-legacy-parity.mjs 同口径）", () => {
+describe("旧版判分口径对账样例（内联夹具，空壳化后不再依赖题库文件）", () => {
   it("27 道填空题的关键样例：标准答案原样输入，新旧都判对", () => {
     // 从题库包抽样的 6 个真实答案，覆盖标签、方法名、全大写、含空格
     const samples: readonly [string, string][] = [

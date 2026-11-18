@@ -1,6 +1,6 @@
 /**
  * 旧云 → V2 迁移转换器的行为证据（S6 · T6-5）。
- * 真实数据演练见 scripts/rehearse-migration.mjs；本测试用合成小样本进 CI。
+ * 空壳化后演练脚本已退役；本测试用合成小样本验证转换逻辑，进 CI。
  */
 
 import { describe, expect, it } from "vitest";
