@@ -14,7 +14,8 @@
     "migrate": "pnpm --filter @quiz/content migrate",
     "knowledge": "node packages/content/scripts/extract-knowledge.mjs",
     "dryrun": "pnpm --filter @quiz/data dryrun",
-    "verify": "pnpm check:boundaries && pnpm check:extension && pnpm build && pnpm check:codeblanks && pnpm check:parity && pnpm test"
+    "verify": "pnpm check:boundaries && pnpm check:extension && pnpm build && pnpm check:codeblanks && pnpm check:parity && pnpm test",
+    "knowledge:build": "node packages/content/scripts/build-knowledge.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3",
