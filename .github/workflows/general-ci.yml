@@ -1,0 +1,68 @@
+name: general-ci
+
+# 通用版（web-v2/）专用检查轨：TypeScript、边界与扩展点、构建、Vitest。
+# 与 legacy-ci.yml 双轨互不阻塞——legacy 管旧版根目录（_build/、*.html、题库网页/），
+# general 只管 web-v2/。G6-7「双绿」要求两者同时通过。
+#
+# 步骤拆分而非直接调 `pnpm verify`，是为了让每一步的失败在 Actions 上一眼可辨；
+# 下列步骤合起来等价于 web-v2 的 `pnpm verify`（check:boundaries → check:extension →
+# build → check:codeblanks → check:parity → test）。
+#
+# lint：方案 §5.5 列了 lint，但 web-v2 目前没有 lint 脚本/配置，故未接入——
+# 等 W4 统一工具链时补，避免现在加一个必然红的步骤。当前静态检查由 `typecheck` 承担。
+
+on:
+  push:
+    branches: [main, general-dev, integrate/s7-e8, chore/s6-closeout]
+  pull_request:
+    branches: [main, general-dev, integrate/s7-e8]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  general:
+    name: general
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: web-v2
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 准备 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript 检查
+        run: pnpm typecheck
+
+      - name: 边界与扩展点检查
+        run: |
+          pnpm check:boundaries
+          pnpm check:extension
+
+      - name: 代码空白与旧版对等检查
+        run: |
+          pnpm check:codeblanks
+          pnpm check:parity
+
+      - name: 构建
+        run: pnpm build
+
+      - name: 单元测试
+        run: pnpm test

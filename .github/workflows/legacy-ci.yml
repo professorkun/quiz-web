@@ -1,0 +1,52 @@
+name: legacy-ci
+
+# 旧版（JavaWeb 题库）专用检查轨：只做确定性检查，不碰新版 web-v2/。
+# 详见 通用刷题Web改造方案与执行计划.md §5.5 与 项目规划/01-S0 §5（T0-6）。
+
+on:
+  push:
+    branches: [main, general-dev]
+  pull_request:
+    branches: [main, general-dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  legacy:
+    name: legacy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 从源文件重建（Markdown → JSON → HTML）
+        run: |
+          python _build/build_json.py
+          python _build/build_html.py
+
+      - name: 生成物必须与提交物一致
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::生成物与提交物不一致：请本地重跑构建脚本，并把产物一起提交"
+            git status --porcelain
+            git --no-pager diff --stat
+            exit 1
+          fi
+          echo "生成物与提交物一致（重建后工作树无改动）"
+
+      - name: 旧版自检（题量 / 空位 / 结构 / 密钥 / JS 语法）
+        run: python _build/ci_check.py
