@@ -38,7 +38,9 @@ jobs:
       - name: 准备 Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # jsdom@31 → undici@8 声明 engines: node >=22.19.0，
+          # Node 20 上 zstd 解压 API 缺失，测试会以 undefined.bind 崩溃。
+          node-version: "22"
 
       - name: 准备 pnpm
         uses: pnpm/action-setup@v4
