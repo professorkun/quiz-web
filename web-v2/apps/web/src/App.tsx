@@ -50,9 +50,20 @@ function Shell(): React.ReactElement {
     return () => globalThis.removeEventListener("hashchange", onHashChange);
   }, []);
 
-  // 空壳守卫：没有任何题库时只显示导入引导，不进入任何依赖 activeBank 的功能页。
-  // 导入成功后 reloadBanks 会更新 banks，这里自动切到正常界面。
-  if (banks.length === 0) return <EmptyState />;
+  // 没有题库时也进入主界面：首页内提供导入入口，「我的」仍可登录与导入，
+  // 其余入口提示先导入。导入成功后 reloadBanks 会更新 banks，自动切到正常首页。
+  const content =
+    banks.length === 0 ? (
+      route === "me" ? (
+        <MePage />
+      ) : route === "learn" ? (
+        <EmptyState />
+      ) : (
+        <NoBankState />
+      )
+    ) : (
+      renderRoute(route)
+    );
 
   return (
     <AppShell
@@ -62,8 +73,23 @@ function Shell(): React.ReactElement {
         setRoute(next);
       }}
     >
-      {renderRoute(route)}
+      {content}
     </AppShell>
+  );
+}
+
+/** 无题库时访问非首页入口：引导回首页导入，而不是渲染半残的功能页 */
+function NoBankState(): React.ReactElement {
+  return (
+    <div className="page">
+      <section className="card">
+        <h2>还没有题库</h2>
+        <p className="muted">先回首页导入一份题库包，再使用这个入口。</p>
+        <button type="button" className="btn" onClick={() => navigate("learn")}>
+          去首页导入题库
+        </button>
+      </section>
+    </div>
   );
 }
 

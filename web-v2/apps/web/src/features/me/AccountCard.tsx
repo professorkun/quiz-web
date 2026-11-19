@@ -1,23 +1,34 @@
 /**
- * 账号卡片（S6 · T6-3）：登录 / 已登录态 + 云同步入口。
+ * 账号卡片（S6 · T6-3）：登录 / 已登录态。
  *
- * 页面只经 `platform.auth`（登录态）与 `cloudAuth`（登录动作）交互，不直连 SDK。
- * 手机验证码可本机试；微信 / WorkBuddy OAuth 只能在已发布 HTTPS 域名完成回调
- * （localhost 被 Relay 拒），卡片上有明确提示。
+ * 按运行域名选择登录方式：
+ * - WorkBuddy 正式发布域名：沿用应用云登录（手机验证码 / 微信）与云同步；
+ * - 其他静态部署域名（如 Trae）：使用本机账号（账号 + 密码），不依赖后端。
+ *
+ * 页面只经 `platform.auth`（登录态）与动作封装交互，不直连 SDK / localStorage。
  */
 
 import { useEffect, useState } from "react";
 
 import type { AuthUser } from "@quiz/platform";
 
+import { loginLocalAccount, registerLocalAccount } from "../../account/localAuth";
 import { cloudAuth } from "../../cloud/auth";
+import {
+  CLOUD_PUBLIC_CONFIG,
+  isCloudOrigin,
+  probeCloudLoginOrigin,
+  resetCloudLoginOriginProbe,
+} from "../../cloud/config";
 import { syncAll } from "../../cloud/sync";
 import { createCloudTransport } from "../../cloud/transport";
 import { usePlatform } from "../../platform/PlatformProvider";
 
 const PHONE_RE = /^1\d{10}$/;
 
-export function AccountCard(): React.ReactElement {
+type LoginMethod = "phone" | "wechat";
+
+function CloudAccountCard(): React.ReactElement {
   const { platform, showToast, bump } = usePlatform();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [ready, setReady] = useState(false);
@@ -30,6 +41,9 @@ export function AccountCard(): React.ReactElement {
   const [countdown, setCountdown] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState("");
+  const [method, setMethod] = useState<LoginMethod>("phone");
+  const [wechatBlocked, setWechatBlocked] = useState<boolean | null>(null);
+  const [checkingWechat, setCheckingWechat] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -118,6 +132,33 @@ export function AccountCard(): React.ReactElement {
     }
   };
 
+  const checkWechat = async (reset = false): Promise<void> => {
+    if (reset) resetCloudLoginOriginProbe();
+    // 微信 OAuth 只接受正式发布域名，localhost 等地址即使 CORS 放行也不可用
+    if (globalThis.location.origin !== CLOUD_PUBLIC_CONFIG.endpoint) {
+      setWechatBlocked(true);
+      setCheckingWechat(false);
+      return;
+    }
+    setCheckingWechat(true);
+    try {
+      setWechatBlocked(!(await probeCloudLoginOrigin()));
+    } catch {
+      setWechatBlocked(true);
+    } finally {
+      setCheckingWechat(false);
+    }
+  };
+
+  const copyOrigin = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(globalThis.location.origin);
+      showToast("当前地址已复制");
+    } catch {
+      showToast("复制失败，请手动选中地址");
+    }
+  };
+
   if (!ready) {
     return (
       <section className="card">
@@ -158,48 +199,330 @@ export function AccountCard(): React.ReactElement {
   return (
     <section className="card">
       <h2>账号与云同步</h2>
-      <p className="muted">当前为本地模式。登录后可把学习记录同步到云端、换设备互通。</p>
+      <p className="muted">当前为本地模式。登录后可备份题库到云、同步学习记录，换设备互通。</p>
 
-      <div className="row" style={{ marginTop: 10 }}>
-        <input
-          className="input"
-          inputMode="numeric"
-          autoComplete="tel"
-          placeholder="手机号"
-          aria-label="手机号"
-          value={phone}
-          onChange={(e) => {
-            setPhone(e.target.value.trim());
-            setError("");
-          }}
-        />
+      <div className="chips" style={{ marginTop: 12 }}>
         <button
           type="button"
-          className="btn gray"
-          disabled={sending || countdown > 0}
-          onClick={() => void sendCode()}
+          className={method === "phone" ? "chip on" : "chip"}
+          onClick={() => {
+            setMethod("phone");
+            setError("");
+          }}
         >
-          {countdown > 0 ? `${countdown}s` : sending ? "发送中…" : "获取验证码"}
+          手机号验证码
+        </button>
+        <button
+          type="button"
+          className={method === "wechat" ? "chip on" : "chip"}
+          onClick={() => {
+            setMethod("wechat");
+            setError("");
+            setWechatBlocked(null);
+            void checkWechat();
+          }}
+        >
+          微信扫码登录
         </button>
       </div>
 
-      <div className="row" style={{ marginTop: 8 }}>
-        <input
-          className="input"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          placeholder="验证码"
-          aria-label="验证码"
-          value={code}
-          onChange={(e) => {
-            setCode(e.target.value.trim());
-            setError("");
-          }}
-        />
-        <button type="button" className="btn" disabled={verifying} onClick={() => void login()}>
-          {verifying ? "登录中…" : "登录"}
+      {method === "phone" ? (
+        <>
+          <div className="row" style={{ marginTop: 10 }}>
+            <input
+              className="input"
+              inputMode="numeric"
+              autoComplete="tel"
+              placeholder="手机号"
+              aria-label="手机号"
+              value={phone}
+              onChange={(e) => {
+                setPhone(e.target.value.trim());
+                setError("");
+              }}
+            />
+            <button
+              type="button"
+              className="btn gray"
+              disabled={sending || countdown > 0}
+              onClick={() => void sendCode()}
+            >
+              {countdown > 0 ? `${countdown}s` : sending ? "发送中…" : "获取验证码"}
+            </button>
+          </div>
+
+          <div className="row" style={{ marginTop: 8 }}>
+            <input
+              className="input"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="验证码"
+              aria-label="验证码"
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value.trim());
+                setError("");
+              }}
+            />
+            <button type="button" className="btn" disabled={verifying} onClick={() => void login()}>
+              {verifying ? "登录中…" : "登录"}
+            </button>
+          </div>
+          <p className="muted" style={{ marginTop: 6 }}>
+            使用中国大陆 11 位手机号，验证码通过短信发送。
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="muted" style={{ marginTop: 10 }}>
+            使用微信扫描授权页二维码即可登录，首次登录会自动创建账号；本页不会收集微信密码。
+          </p>
+
+          {checkingWechat ? (
+            <p className="muted">正在检查当前地址是否支持微信登录…</p>
+          ) : wechatBlocked ? (
+            <div className="notice small" style={{ marginTop: 8 }}>
+              <strong>当前地址暂不能发起微信扫码登录。</strong>
+              <div style={{ marginTop: 4 }}>
+                微信扫码登录只支持 WorkBuddy 正式发布域名；本机 localhost 只能使用手机号验证码。当前地址：
+              </div>
+              <code style={{ display: "block", marginTop: 4, wordBreak: "break-all" }}>
+                {globalThis.location.origin}
+              </code>
+              <div className="row" style={{ marginTop: 6 }}>
+                <button type="button" className="btn gray" onClick={() => void copyOrigin()}>
+                  复制地址
+                </button>
+                <button type="button" className="btn ghost" onClick={() => void checkWechat(true)}>
+                  重新检测
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn"
+              style={{ marginTop: 8 }}
+              onClick={() =>
+                void cloudAuth
+                  .startWechat()
+                  .then(() => setWechatBlocked(false))
+                  .catch((e) => {
+                    const msg = e instanceof Error ? e.message : "微信登录失败";
+                    if (msg.includes("只支持") || msg.includes("未被应用云放行")) {
+                      setWechatBlocked(true);
+                      setError("");
+                    } else {
+                      setError(msg);
+                    }
+                  })
+              }
+            >
+              打开微信扫码登录
+            </button>
+          )}
+        </>
+      )}
+
+      {error === "" ? null : (
+        <div className="notice small" style={{ marginTop: 8 }}>
+          {error}
+          {error.includes("未被应用云放行") ? (
+            <div style={{ marginTop: 6 }}>
+              <button type="button" className="btn gray" onClick={() => void copyOrigin()}>
+                复制当前地址
+              </button>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      <p className="muted" style={{ marginTop: 12 }}>
+        登录与云同步由应用云提供；未登录时所有刷题功能仍可在本机正常使用。
+      </p>
+    </section>
+  );
+}
+
+type LocalMode = "login" | "register";
+
+/** 本机账号：注册 / 登录 / 退出，全部在浏览器内完成，静态部署域名可用 */
+function LocalAccountCard(): React.ReactElement {
+  const { platform, showToast, bump } = usePlatform();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [ready, setReady] = useState(false);
+  const [mode, setMode] = useState<LocalMode>("login");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    void platform.auth.getUser().then((u) => {
+      if (alive) {
+        setUser(u);
+        setReady(true);
+      }
+    });
+    const unsub = platform.auth.onAuthStateChange((u) => {
+      if (alive) setUser(u);
+    });
+    return () => {
+      alive = false;
+      unsub();
+    };
+  }, [platform]);
+
+  const switchMode = (next: LocalMode): void => {
+    setMode(next);
+    setError("");
+    setPassword("");
+    setConfirm("");
+  };
+
+  const submit = async (): Promise<void> => {
+    if (busy) return;
+    if (mode === "register" && password !== confirm) {
+      setError("两次输入的密码不一致");
+      return;
+    }
+    setError("");
+    setBusy(true);
+    try {
+      const next =
+        mode === "register"
+          ? await registerLocalAccount(username, password)
+          : await loginLocalAccount(username, password);
+      setUser(next);
+      setPassword("");
+      setConfirm("");
+      showToast(mode === "register" ? "注册成功，已登录" : "已登录");
+      bump();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "登录失败");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const signOut = async (): Promise<void> => {
+    await platform.auth.signOut();
+    setUser(null);
+    showToast("已退出登录");
+  };
+
+  if (!ready) {
+    return (
+      <section className="card">
+        <h2>账号与登录</h2>
+        <p className="muted">正在读取登录状态…</p>
+      </section>
+    );
+  }
+
+  if (user !== null && !user.isAnonymous) {
+    return (
+      <section className="card">
+        <h2>账号与登录</h2>
+        <div className="row">
+          <span className="badge correct">已登录</span>
+          <span>{user.displayName ?? `用户 ${user.userId.slice(0, 8)}`}</span>
+        </div>
+        <p className="muted" style={{ marginTop: 8 }}>
+          刷题进度、错题、收藏与导入的题库都保存在当前账号自己的本地数据库里，切换账号互不影响。
+          换设备或清除站点数据后需要重新登录。
+        </p>
+        <div className="row" style={{ marginTop: 10 }}>
+          <button type="button" className="btn gray" onClick={() => void signOut()}>
+            退出登录
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="card">
+      <h2>账号与登录</h2>
+      <p className="muted">
+        当前站点为静态部署，使用本机账号：注册后自动登录，无需联网验证。
+        账号、刷题进度与导入的题库都保存在本机数据库，并按账号隔离。
+      </p>
+
+      <div className="chips" style={{ marginTop: 12 }}>
+        <button
+          type="button"
+          className={mode === "login" ? "chip on" : "chip"}
+          onClick={() => switchMode("login")}
+        >
+          登录
+        </button>
+        <button
+          type="button"
+          className={mode === "register" ? "chip on" : "chip"}
+          onClick={() => switchMode("register")}
+        >
+          注册
         </button>
       </div>
+
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          void submit();
+        }}
+      >
+        <div className="row" style={{ marginTop: 10 }}>
+          <input
+            className="input"
+            autoComplete="username"
+            placeholder="账号（2-20 位字母 / 数字 / 中文）"
+            aria-label="账号"
+            value={username}
+            onChange={(event) => {
+              setUsername(event.target.value);
+              setError("");
+            }}
+          />
+        </div>
+        <div className="row" style={{ marginTop: 8 }}>
+          <input
+            className="input"
+            type="password"
+            autoComplete={mode === "register" ? "new-password" : "current-password"}
+            placeholder="密码（至少 6 位）"
+            aria-label="密码"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setError("");
+            }}
+          />
+        </div>
+        {mode === "register" ? (
+          <div className="row" style={{ marginTop: 8 }}>
+            <input
+              className="input"
+              type="password"
+              autoComplete="new-password"
+              placeholder="再次输入密码"
+              aria-label="确认密码"
+              value={confirm}
+              onChange={(event) => {
+                setConfirm(event.target.value);
+                setError("");
+              }}
+            />
+          </div>
+        ) : null}
+        <div className="row" style={{ marginTop: 10 }}>
+          <button type="submit" className="btn" disabled={busy}>
+            {busy ? "处理中…" : mode === "register" ? "注册并登录" : "登录"}
+          </button>
+        </div>
+      </form>
 
       {error === "" ? null : (
         <div className="notice small" style={{ marginTop: 8 }}>
@@ -207,26 +530,14 @@ export function AccountCard(): React.ReactElement {
         </div>
       )}
 
-      <div className="row" style={{ marginTop: 10 }}>
-        <button
-          type="button"
-          className="btn ghost"
-          onClick={() => void cloudAuth.startWechat().catch((e) => setError(e instanceof Error ? e.message : "微信登录失败"))}
-        >
-          微信登录
-        </button>
-        <button
-          type="button"
-          className="btn ghost"
-          onClick={() => void cloudAuth.startWorkbuddy().catch((e) => setError(e instanceof Error ? e.message : "WorkBuddy 登录失败"))}
-        >
-          使用 WorkBuddy 登录
-        </button>
-      </div>
-
-      <p className="muted" style={{ marginTop: 8 }}>
-        微信 / WorkBuddy 登录需在已发布的 HTTPS 域名下完成（本地 localhost 会被拒）；手机验证码可先在本机试。
+      <p className="muted" style={{ marginTop: 12 }}>
+        账号与数据只保存在当前浏览器；未登录时使用游客数据。清除站点数据或更换设备后需要重新注册。
       </p>
     </section>
   );
+}
+
+/** 按运行域名选择登录面板：正式发布域名走应用云，其他静态部署走本机账号 */
+export function AccountCard(): React.ReactElement {
+  return isCloudOrigin() ? <CloudAccountCard /> : <LocalAccountCard />;
 }

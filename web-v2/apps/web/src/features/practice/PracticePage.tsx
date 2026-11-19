@@ -1,5 +1,5 @@
 /**
- * 刷题页（S3 · T3-6）：练习设置 + 当前会话 + 作答落库。
+ * 刷题页（S3 · T3-6 / 美化 C-05）：练习设置 + 当前会话 + 作答落库。
  *
  * 与 S2 版本的差别只有三处，但每一处都对应一条验收：
  * 1. 设置从本地存储读写（进页面恢复上次的范围/题量），不再只活在内存里；
@@ -42,6 +42,14 @@ import { RichText } from "../../components/RichText";
 import { usePlatform } from "../../platform/PlatformProvider";
 import { getRenderer } from "../../renderers";
 import { navigate } from "../../router";
+import {
+  IconCheckCircle,
+  IconClock,
+  IconClose,
+  IconPencil,
+  IconStar,
+  IconXCircle,
+} from "../../ui/icons";
 
 const nowIso = (): string => new Date().toISOString();
 
@@ -313,7 +321,18 @@ export function PracticePage(): React.ReactElement {
   if (!ready || settings === null) {
     return (
       <div className="page">
-        <p className="muted">正在准备练习…</p>
+        <header className="page-head">
+          <div>
+            <h1>刷题</h1>
+            <div className="skeleton w-60" />
+          </div>
+        </header>
+        <div className="card">
+          <div className="skeleton w-80" />
+          <div className="skeleton w-60" />
+          <div className="skeleton w-80" />
+          <div className="skeleton w-60" />
+        </div>
       </div>
     );
   }
@@ -321,7 +340,7 @@ export function PracticePage(): React.ReactElement {
   if (session === null) {
     const types = settings.types;
     return (
-      <div className="page">
+      <div className="page practice-page">
         <header className="page-head">
           <div>
             <h1>刷题 · {activeBank.manifest.title}</h1>
@@ -338,106 +357,6 @@ export function PracticePage(): React.ReactElement {
         ) : null}
 
         <section className="card">
-          <h2>知识点</h2>
-          <div className="chips">
-            <button
-              type="button"
-              className={chip(settings.topicIds.length === 0)}
-              onClick={() => void saveSettings({ ...settings, topicIds: [] })}
-            >
-              全部
-            </button>
-            {activeBank.manifest.topics.map((topic) => {
-              const on = settings.topicIds.includes(topic.topicId);
-              return (
-                <button
-                  key={topic.topicId}
-                  type="button"
-                  className={chip(on)}
-                  onClick={() =>
-                    void saveSettings({
-                      ...settings,
-                      topicIds: on
-                        ? settings.topicIds.filter((id) => id !== topic.topicId)
-                        : [...settings.topicIds, topic.topicId],
-                    })
-                  }
-                >
-                  {topic.name}
-                </button>
-              );
-            })}
-          </div>
-
-          <h2>题型</h2>
-          <div className="chips">
-            <button
-              type="button"
-              className={chip(types.length === 0)}
-              onClick={() => void saveSettings({ ...settings, types: [] })}
-            >
-              全部
-            </button>
-            {Array.from(new Set(activeBank.questions.map((q) => q.type))).map((key) => {
-              const count = selectQuestions(activeBank.questions, {
-                bankId,
-                order: "sequential",
-                seed: 0,
-                types: [key as QuestionType],
-              }).length;
-              const on = types.includes(key as QuestionType);
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  className={chip(on)}
-                  onClick={() =>
-                    void saveSettings({
-                      ...settings,
-                      types: on
-                        ? types.filter((t) => t !== key)
-                        : [...types, key as QuestionType],
-                    })
-                  }
-                >
-                  {getQuestionType(key).label}（{count}）
-                </button>
-              );
-            })}
-          </div>
-
-          <h2>顺序</h2>
-          <div className="chips">
-            <button
-              type="button"
-              className={chip(settings.order === "random")}
-              onClick={() => void saveSettings({ ...settings, order: "random" })}
-            >
-              随机（可复现种子）
-            </button>
-            <button
-              type="button"
-              className={chip(settings.order === "sequential")}
-              onClick={() => void saveSettings({ ...settings, order: "sequential" })}
-            >
-              题库原序
-            </button>
-          </div>
-
-          <h2>本轮题量</h2>
-          <div className="chips">
-            {[10, 20, 0].map((value) => (
-              <button
-                key={value}
-                type="button"
-                className={chip(settings.limit === value)}
-                onClick={() => void saveSettings({ ...settings, limit: value })}
-              >
-                {value === 0 ? "全部" : `${value} 题`}
-              </button>
-            ))}
-          </div>
-
           <h2>范围</h2>
           <div className="chips">
             <button
@@ -465,7 +384,111 @@ export function PracticePage(): React.ReactElement {
             </button>
           </div>
 
-          <h2>模式</h2>
+          <h2 className="mt-4">本轮题量</h2>
+          <div className="chips seg">
+            {[10, 20, 0].map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={chip(settings.limit === value)}
+                onClick={() => void saveSettings({ ...settings, limit: value })}
+              >
+                {value === 0 ? "全部" : `${value} 题`}
+              </button>
+            ))}
+          </div>
+
+          <h2 className="mt-4">顺序</h2>
+          <div className="chips seg">
+            <button
+              type="button"
+              className={chip(settings.order === "random")}
+              onClick={() => void saveSettings({ ...settings, order: "random" })}
+            >
+              随机（可复现种子）
+            </button>
+            <button
+              type="button"
+              className={chip(settings.order === "sequential")}
+              onClick={() => void saveSettings({ ...settings, order: "sequential" })}
+            >
+              题库原序
+            </button>
+          </div>
+
+          <details className="stat-details">
+            <summary>
+              知识点（{settings.topicIds.length === 0 ? "全部" : settings.topicIds.length}）
+            </summary>
+            <div className="chips">
+              <button
+                type="button"
+                className={chip(settings.topicIds.length === 0)}
+                onClick={() => void saveSettings({ ...settings, topicIds: [] })}
+              >
+                全部
+              </button>
+              {activeBank.manifest.topics.map((topic) => {
+                const on = settings.topicIds.includes(topic.topicId);
+                return (
+                  <button
+                    key={topic.topicId}
+                    type="button"
+                    className={chip(on)}
+                    onClick={() =>
+                      void saveSettings({
+                        ...settings,
+                        topicIds: on
+                          ? settings.topicIds.filter((id) => id !== topic.topicId)
+                          : [...settings.topicIds, topic.topicId],
+                      })
+                    }
+                  >
+                    {topic.name}
+                  </button>
+                );
+              })}
+            </div>
+          </details>
+
+          <details className="stat-details">
+            <summary>题型（{types.length === 0 ? "全部" : types.length}）</summary>
+            <div className="chips">
+              <button
+                type="button"
+                className={chip(types.length === 0)}
+                onClick={() => void saveSettings({ ...settings, types: [] })}
+              >
+                全部
+              </button>
+              {Array.from(new Set(activeBank.questions.map((q) => q.type))).map((key) => {
+                const count = selectQuestions(activeBank.questions, {
+                  bankId,
+                  order: "sequential",
+                  seed: 0,
+                  types: [key as QuestionType],
+                }).length;
+                const on = types.includes(key as QuestionType);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={chip(on)}
+                    onClick={() =>
+                      void saveSettings({
+                        ...settings,
+                        types: on ? types.filter((t) => t !== key) : [...types, key as QuestionType],
+                      })
+                    }
+                  >
+                    {getQuestionType(key).label}（{count}）
+                  </button>
+                );
+              })}
+            </div>
+          </details>
+
+          <h2 className="mt-4">模式</h2>
           <div className="chips">
             <button type="button" className={chip(true)} onClick={() => undefined}>
               练习
@@ -477,16 +500,17 @@ export function PracticePage(): React.ReactElement {
               模考（去模考页）
             </button>
           </div>
+        </section>
 
-          <div className="row" style={{ marginTop: 14 }}>
-            <button type="button" className="btn" onClick={start}>
-              开始练习
-            </button>
-          </div>
-          <p className="muted" style={{ marginTop: 10 }}>
+        <div className="setup-bar">
+          <button type="button" className="btn lg block" onClick={start}>
+            <IconPencil size={16} />
+            开始练习
+          </button>
+          <p className="muted mt-2">
             选完立刻可提交；刷新页面会回到同一题、同一选项顺序。作答记录只追加，不会被覆盖。
           </p>
-        </section>
+        </div>
       </div>
     );
   }
@@ -514,11 +538,12 @@ export function PracticePage(): React.ReactElement {
   const Renderer = getRenderer(question.type);
   const stemInRenderer = getQuestionType(question.type).stemInRenderer;
   const done = counts.unseen === 0 && counts.right + counts.wrong + counts.self > 0;
+  const progressPercent = ((session.cursor + 1) / session.questionIds.length) * 100;
 
   return (
-    <div className="page">
-      <header className="card">
-        <div className="row">
+    <div className="page practice-page">
+      <header className="practice-head">
+        <div className="practice-head-row">
           <h1>
             {MODE_LABEL[mode]} · {activeBank.manifest.title}
           </h1>
@@ -526,15 +551,32 @@ export function PracticePage(): React.ReactElement {
           <span className="muted">
             第 {session.cursor + 1} / {session.questionIds.length} 题
           </span>
-          <button type="button" className="chip" onClick={() => void toggleFavorite()}>
-            {favorite ? "★ 已收藏" : "☆ 收藏"}
+          <button type="button" className="chip" aria-pressed={favorite} onClick={() => void toggleFavorite()}>
+            <IconStar size={16} filled={favorite} />
+            {favorite ? "已收藏" : "收藏"}
+          </button>
+          <button type="button" className="btn ghost sm" onClick={() => void restart()}>
+            <IconClose size={16} />
+            结束本轮
           </button>
         </div>
-        <div className="progress">
-          <i style={{ width: `${((session.cursor + 1) / session.questionIds.length) * 100}%` }} />
+        <div className="progress-row mt-2">
+          <div
+            className="progress"
+            role="progressbar"
+            aria-label="练习进度"
+            aria-valuemin={0}
+            aria-valuemax={session.questionIds.length}
+            aria-valuenow={session.cursor + 1}
+          >
+            <i style={{ width: `${progressPercent}%` }} />
+          </div>
+          <span className="progress-value">
+            {session.cursor + 1} / {session.questionIds.length}
+          </span>
         </div>
         {notices.length > 0 ? (
-          <div className="notice" style={{ marginTop: 10 }}>
+          <div className="notice mt-2">
             {notices.map((text, index) => (
               <div key={index}>{text}</div>
             ))}
@@ -564,59 +606,70 @@ export function PracticePage(): React.ReactElement {
           }
         />
 
-        {grade === undefined ? null : (
-          <div className={`feedback ${grade.correct === null ? "self" : grade.correct ? "ok" : "no"}`}>
-            {grade.correct === null
-              ? "主观题：请对照参考答案自评"
-              : `${grade.correct ? "✔ 答对了" : "✘ 答错了"} · ${round(grade.score)} / ${grade.maxScore} 分`}
-          </div>
-        )}
+        <div className="feedback-slot practice-feedback" aria-live="polite">
+          {grade === undefined ? null : (
+            <div className={`feedback ${grade.correct === null ? "self" : grade.correct ? "ok" : "no"}`}>
+              {grade.correct === null ? (
+                <>
+                  <IconClock size={16} />
+                  主观题：请对照参考答案自评
+                </>
+              ) : grade.correct ? (
+                <>
+                  <IconCheckCircle size={16} />
+                  答对了 · {round(grade.score)} / {grade.maxScore} 分
+                </>
+              ) : (
+                <>
+                  <IconXCircle size={16} />
+                  答错了 · {round(grade.score)} / {grade.maxScore} 分
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         {grade !== undefined && grade.correct !== null && question.explanation !== undefined ? (
-          <div className="muted" style={{ marginTop: 8 }}>
+          <div className="muted mt-1">
             <RichText text={question.explanation} />
           </div>
         ) : null}
-
-        <div className="row" style={{ marginTop: 14 }}>
-          <button
-            type="button"
-            className="btn gray"
-            disabled={session.cursor === 0}
-            onClick={() => setSession(goPrev(session, nowIso()))}
-          >
-            上一题
-          </button>
-          <button
-            type="button"
-            className="btn"
-            disabled={grade !== undefined || session.answers[questionId] === undefined}
-            onClick={() => void submit()}
-          >
-            提交答案
-          </button>
-          <button
-            type="button"
-            className="btn gray"
-            disabled={session.cursor >= session.questionIds.length - 1}
-            onClick={() => setSession(goNext(session, nowIso()))}
-          >
-            下一题
-          </button>
-          <span className="spacer" />
-          <button type="button" className="btn ghost" onClick={() => void restart()}>
-            结束本轮
-          </button>
-        </div>
       </section>
 
+      <div className="practice-actions">
+        <button
+          type="button"
+          className="btn gray"
+          disabled={session.cursor === 0}
+          onClick={() => setSession(goPrev(session, nowIso()))}
+        >
+          上一题
+        </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={grade !== undefined || session.answers[questionId] === undefined}
+          onClick={() => void submit()}
+        >
+          提交答案
+        </button>
+        <button
+          type="button"
+          className={grade === undefined ? "btn gray" : "btn"}
+          disabled={session.cursor >= session.questionIds.length - 1}
+          onClick={() => setSession(goNext(session, nowIso()))}
+        >
+          下一题
+        </button>
+      </div>
+
       {done ? (
-        <section className="card">
+        <section className="card mt-4">
           <h2>本轮完成</h2>
           <div className="row muted">
             答对 {counts.right} · 答错 {counts.wrong} · 待自评 {counts.self} · 未答 {counts.unseen}
           </div>
-          <div className="row" style={{ marginTop: 12 }}>
+          <div className="row mt-3">
             <button type="button" className="btn gray" onClick={() => void restart()}>
               再来一轮
             </button>

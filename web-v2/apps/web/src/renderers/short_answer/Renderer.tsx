@@ -38,7 +38,7 @@ export default function ShortAnswerRenderer(props: RendererProps): React.ReactEl
         onChange={(event) => props.onChange(event.target.value)}
       />
 
-      {props.locked ? (
+      {props.locked && props.preview !== true ? (
         <>
           <div className="ref-answer">
             <div className="ref-head">

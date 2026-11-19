@@ -1,9 +1,8 @@
 /**
- * 空壳态引导页：产品不含内置题库时显示，引导用户导入第一份题库。
+ * 首页（尚未导入题库时）：应用始终进入主界面，这里在首页内引导导入第一份题库。
  *
- * 只做一件事——导入题库包（data 的 parseBankJson → platform.banks.saveImportedBank）。
- * 导入成功后 Provider.reloadBanks 会加载出新题库，App 守卫随即切到正常功能界面，
- * 并自动选中刚导入的题库。这里刻意不提供"导出"能力（空态无内容可导出）。
+ * 美化 C-02：几何线稿 + 三段式说明（发生了什么 → 为什么 → 现在做什么）+
+ * 三步预期（导入 → 选题 → 开刷），导入卡是唯一主视觉。
  */
 
 import { useState } from "react";
@@ -12,6 +11,7 @@ import type { BankContent } from "@quiz/core";
 import { parseBankJson } from "@quiz/data";
 
 import { usePlatform } from "../../platform/PlatformProvider";
+import { EmptyArt, IconUpload } from "../../ui/icons";
 
 export function EmptyState(): React.ReactElement {
   const { platform, reloadBanks, selectBank } = usePlatform();
@@ -46,20 +46,31 @@ export function EmptyState(): React.ReactElement {
   };
 
   return (
-    <div className="wrap">
-      <div className="card" style={{ maxWidth: 620, margin: "48px auto" }}>
-        <h1>欢迎使用通用刷题</h1>
-        <p className="muted">
-          这是一个通用刷题应用，没有预置题库。导入一份题库包（JSON）即可开始练习、模考与复习。
-        </p>
+    <div className="page">
+      <header className="page-head">
+        <div>
+          <h1>通用刷题</h1>
+          <p className="muted">导入题库包后，就能按知识点刷题、模考与复习。</p>
+        </div>
+      </header>
 
-        <div className="row" style={{ marginTop: 16 }}>
-          <label className="btn" style={{ display: "inline-block" }}>
-            选择题库包文件
+      <section className="card">
+        <div className="empty-state">
+          <EmptyArt />
+          <h2>还没有题库</h2>
+          <p className="muted">
+            这是一套不预置题库的通用刷题应用。选择一份题库包（JSON）导入，即可开始练习。
+          </p>
+        </div>
+
+        <div className="import-drop">
+          <label className="btn lg">
+            <IconUpload size={16} />
+            导入题库包
             <input
               type="file"
               accept="application/json,.json"
-              style={{ display: "none" }}
+              className="file-input"
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 event.target.value = "";
@@ -71,23 +82,23 @@ export function EmptyState(): React.ReactElement {
         </div>
 
         {issues.length > 0 ? (
-          <div className="notice" style={{ marginTop: 12 }}>
+          <div className="notice mt-3">
             <strong>文件被拒绝（{issues.length} 处问题）</strong>
-            <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+            <ul>
               {issues.slice(0, 12).map((issue, index) => (
                 <li key={index}>{issue}</li>
               ))}
             </ul>
-            <div className="muted" style={{ marginTop: 6 }}>没有写入任何数据。修好后重新选择。</div>
+            <div className="muted mt-1">没有写入任何数据。修好后重新选择。</div>
           </div>
         ) : null}
 
         {pending !== null ? (
-          <div className="previewbox" style={{ marginTop: 12 }}>
+          <div className="previewbox mt-3">
             <strong>
               题库包：{pending.manifest.title}（{pending.questions.length} 题）
             </strong>
-            <div className="row" style={{ marginTop: 8 }}>
+            <div className="row mt-2">
               <button type="button" className="btn" disabled={busy} onClick={() => void confirm()}>
                 {busy ? "导入中…" : "确认导入并开始"}
               </button>
@@ -97,7 +108,38 @@ export function EmptyState(): React.ReactElement {
             </div>
           </div>
         ) : null}
-      </div>
+
+        <div className="steps">
+          <div className="step">
+            <span className="step-no">1</span>
+            <b>选择题库包</b>
+            <span>选择一份 JSON，先预览题数与知识点，再确认写入。</span>
+          </div>
+          <div className="step">
+            <span className="step-no">2</span>
+            <b>选题与范围</b>
+            <span>按题型、知识点或错题状态筛选，决定本轮练什么。</span>
+          </div>
+          <div className="step">
+            <span className="step-no">3</span>
+            <b>开始刷题</b>
+            <span>六种题型即时判分，错题自动进入 1/3/7 天复习计划。</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="card">
+        <h2>导入后可以做什么</h2>
+        <ul className="muted">
+          <li>学习：看总体进度，继续上次练习。</li>
+          <li>题库：按题型、知识点、状态筛选与搜索。</li>
+          <li>刷题 / 模考：六种题型，限时组卷、自动判分。</li>
+          <li>复习：错题、收藏、到期重做与掌握度。</li>
+        </ul>
+        <p className="muted mt-2">
+          没有现成题库包？把讲义或大纲整理成题目，再按「导出题库包」的 JSON 结构导入即可。
+        </p>
+      </section>
     </div>
   );
 }

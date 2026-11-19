@@ -1,12 +1,15 @@
 /**
- * 题库页（S3 · T3-4）：切换题库、筛选、搜索、预览、知识讲义。
+ * 题库页（S3 · T3-4 / 美化 D-03）：切换题库、筛选、搜索、预览、知识讲义。
  *
  * 筛选逻辑刻意**留在这个页面里**，不下沉到存储层：
  * 存储只管"取本库全部"，口径属于业务（ADR-0005 的"筛选放上层"）。
  * 这样 Web/小程序/云端的筛选语义只有一份，不会各写一套。
+ *
+ * 移动端：筛选收进底部抽屉，列表全屏，点题进入全屏预览层；
+ * 筛选条件与列表滚动位置按题库记在会话存储里（不写学习记录）。
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   getQuestionType,
@@ -22,6 +25,7 @@ import { applyTopicPractice } from "../knowledge/practiceLink";
 import { usePlatform } from "../../platform/PlatformProvider";
 import { navigate } from "../../router";
 import { getRenderer } from "../../renderers";
+import { IconBack, IconFilter, IconSearch, IconStar } from "../../ui/icons";
 
 type StatusFilter = "all" | "unseen" | "wrong" | "correct";
 
@@ -31,6 +35,33 @@ const STATUS_LABEL: Record<StatusFilter, string> = {
   wrong: "答错",
   correct: "答对过",
 };
+
+const FILTER_KEY = "quiz:banks:filters";
+
+interface SavedFilters {
+  readonly keyword: string;
+  readonly type: QuestionType | "all";
+  readonly topicId: string;
+  readonly status: StatusFilter;
+  readonly scrollTop: number;
+}
+
+function readFilters(bankId: string): SavedFilters | null {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(`${FILTER_KEY}:${bankId}`);
+    return raw === null || raw === undefined ? null : (JSON.parse(raw) as SavedFilters);
+  } catch {
+    return null;
+  }
+}
+
+function writeFilters(bankId: string, value: SavedFilters): void {
+  try {
+    globalThis.sessionStorage?.setItem(`${FILTER_KEY}:${bankId}`, JSON.stringify(value));
+  } catch {
+    /* 隐私模式存不了就只保留页面内状态 */
+  }
+}
 
 function statusOf(progress: QuestionProgress | undefined): StatusFilter {
   if (progress === undefined || progress.attemptsCount === 0) return "unseen";
@@ -47,13 +78,18 @@ export function BanksPage(): React.ReactElement {
   const { platform, activeBank, banks, selectBank, version, bump, showToast } = usePlatform();
   const bankId = activeBank.manifest.bankId;
 
+  const saved = useMemo(() => readFilters(bankId), [bankId]);
+
   const [progress, setProgress] = useState<readonly QuestionProgress[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<ReadonlySet<string>>(new Set());
-  const [keyword, setKeyword] = useState("");
-  const [type, setType] = useState<QuestionType | "all">("all");
-  const [topicId, setTopicId] = useState<string>("all");
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const [keyword, setKeyword] = useState(saved?.keyword ?? "");
+  const [type, setType] = useState<QuestionType | "all">(saved?.type ?? "all");
+  const [topicId, setTopicId] = useState<string>(saved?.topicId ?? "all");
+  const [status, setStatus] = useState<StatusFilter>(saved?.status ?? "all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
+  const listRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +107,28 @@ export function BanksPage(): React.ReactElement {
       cancelled = true;
     };
   }, [platform, bankId, version]);
+
+  // 切换题库时按该库自己的会话状态重置筛选（每个库各记一份）
+  useEffect(() => {
+    const next = readFilters(bankId);
+    setKeyword(next?.keyword ?? "");
+    setType(next?.type ?? "all");
+    setTopicId(next?.topicId ?? "all");
+    setStatus(next?.status ?? "all");
+  }, [bankId]);
+
+  // 记住筛选与滚动位置：从预览层返回 / 去练习再回来都接着看
+  useEffect(() => {
+    writeFilters(bankId, { keyword, type, topicId, status, scrollTop: listRef.current?.scrollTop ?? 0 });
+  }, [bankId, keyword, type, topicId, status]);
+
+  useEffect(() => {
+    if (saved === null) return;
+    const node = listRef.current;
+    if (node !== null) node.scrollTop = saved.scrollTop;
+    // 只在进页面时恢复一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const progressMap = useMemo(() => {
     const map = new Map<string, QuestionProgress>();
@@ -124,11 +182,11 @@ export function BanksPage(): React.ReactElement {
    * 这样"学完一节就练这一节"不需要新入口，复用既有刷题页即可。
    */
   const startTopicPractice = useCallback(
-    async (topicId: string): Promise<void> => {
+    async (topicIdValue: string): Promise<void> => {
       try {
         const current = await platform.settings.getPractice(bankId);
         // 只改 topicIds 与 onlyUnseen，其余偏好原样保留（不变式见 practiceLink.ts）
-        await platform.settings.savePractice(bankId, applyTopicPractice(current, topicId));
+        await platform.settings.savePractice(bankId, applyTopicPractice(current, topicIdValue));
         navigate("practice");
       } catch (cause) {
         showToast(cause instanceof Error ? cause.message : "无法进入练习");
@@ -145,6 +203,26 @@ export function BanksPage(): React.ReactElement {
     return counts;
   }, [activeBank.questions]);
 
+  const activeFilterCount =
+    (type === "all" ? 0 : 1) +
+    (topicId === "all" ? 0 : 1) +
+    (status === "all" ? 0 : 1) +
+    (keyword.trim() === "" ? 0 : 1);
+
+  const clearFilters = (): void => {
+    setKeyword("");
+    setType("all");
+    setTopicId("all");
+    setStatus("all");
+  };
+
+  const selectedTopicLabel = topicId === "all" ? "" : topicName.get(topicId) ?? topicId;
+
+  const openQuestion = (questionId: string): void => {
+    setSelectedId(questionId);
+    setMobilePreviewOpen(true);
+  };
+
   return (
     <div className="page">
       <header className="page-head">
@@ -152,7 +230,143 @@ export function BanksPage(): React.ReactElement {
           <h1>题库</h1>
           <p className="muted">切换题库、按题型/知识点/状态筛选，或直接搜题干。</p>
         </div>
+        <div className="page-actions">
+          <button
+            type="button"
+            className="btn ghost sm"
+            onClick={() => document.getElementById("lectures")?.scrollIntoView({ behavior: "smooth" })}
+          >
+            跳到知识讲义
+          </button>
+        </div>
       </header>
+
+      <section className="card filter-card">
+        <div className="toolbar">
+          <span className="muted filter-toolbar-hint">
+            <IconSearch size={16} />
+          </span>
+          <input
+            className="input"
+            type="search"
+            placeholder="搜索题干关键词"
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+            aria-label="搜索题干"
+          />
+          <span className="muted">命中 {filtered.length} 题</span>
+          <button
+            type="button"
+            className="btn gray filter-toggle"
+            onClick={() => setFiltersOpen(true)}
+          >
+            <IconFilter size={16} />
+            筛选{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ""}
+          </button>
+        </div>
+
+        {activeFilterCount > 0 ? (
+          <div className="filter-summary">
+            {type === "all" ? null : (
+              <span className="chip tag" data-active>
+                {getQuestionType(type).label}
+              </span>
+            )}
+            {selectedTopicLabel === "" ? null : (
+              <span className="chip tag" data-active>
+                {selectedTopicLabel}
+              </span>
+            )}
+            {status === "all" ? null : (
+              <span className="chip tag" data-active>
+                {STATUS_LABEL[status]}
+              </span>
+            )}
+            {keyword.trim() === "" ? null : (
+              <span className="chip tag" data-active>
+                “{keyword.trim()}”
+              </span>
+            )}
+          </div>
+        ) : null}
+
+        <div className="filter-panel" data-open={filtersOpen}>
+          <div className="drawer-head">
+            <h2>筛选</h2>
+            <button type="button" className="btn gray sm" onClick={() => setFiltersOpen(false)}>
+              收起
+            </button>
+          </div>
+
+          <div className="chips">
+            <button
+              type="button"
+              className={type === "all" ? "chip on" : "chip"}
+              onClick={() => setType("all")}
+            >
+              全部题型
+            </button>
+            {listQuestionTypes().map((def) => {
+              const count = typeCounts.get(def.type) ?? 0;
+              return (
+                <button
+                  key={def.type}
+                  type="button"
+                  disabled={count === 0}
+                  className={type === def.type ? "chip on" : "chip"}
+                  onClick={() => setType(def.type as QuestionType)}
+                >
+                  {def.label}（{count}）
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="chips">
+            <button
+              type="button"
+              className={topicId === "all" ? "chip on" : "chip"}
+              onClick={() => setTopicId("all")}
+            >
+              全部知识点
+            </button>
+            {activeBank.manifest.topics.map((topic) => (
+              <button
+                key={topic.topicId}
+                type="button"
+                className={topicId === topic.topicId ? "chip on" : "chip"}
+                onClick={() => setTopicId(topic.topicId)}
+              >
+                {topic.name}
+              </button>
+            ))}
+          </div>
+
+          <div className="chips">
+            {(Object.keys(STATUS_LABEL) as StatusFilter[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                className={status === key ? "chip on" : "chip"}
+                onClick={() => setStatus(key)}
+              >
+                {STATUS_LABEL[key]}
+              </button>
+            ))}
+          </div>
+
+          <div className="drawer-foot">
+            <button type="button" className="btn gray" onClick={clearFilters}>
+              重置全部
+            </button>
+            <button type="button" className="btn" onClick={() => setFiltersOpen(false)}>
+              查看 {filtered.length} 题
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div className="filter-backdrop" data-open={filtersOpen} onClick={() => setFiltersOpen(false)} />
 
       <section className="card">
         <h2>题库切换</h2>
@@ -173,93 +387,13 @@ export function BanksPage(): React.ReactElement {
         ) : null}
       </section>
 
-      <section className="card">
-        <div className="toolbar">
-          <input
-            className="input"
-            type="search"
-            placeholder="搜索题干关键词"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            aria-label="搜索题干"
-          />
-          <span className="muted">命中 {filtered.length} 题</span>
-        </div>
-
-        <div className="chips">
-          <button
-            type="button"
-            className={type === "all" ? "chip on" : "chip"}
-            onClick={() => setType("all")}
-          >
-            全部题型
-          </button>
-          {listQuestionTypes().map((def) => {
-            const count = typeCounts.get(def.type) ?? 0;
-            return (
-              <button
-                key={def.type}
-                type="button"
-                disabled={count === 0}
-                className={type === def.type ? "chip on" : "chip"}
-                onClick={() => setType(def.type as QuestionType)}
-              >
-                {def.label}（{count}）
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="chips">
-          <button
-            type="button"
-            className={topicId === "all" ? "chip on" : "chip"}
-            onClick={() => setTopicId("all")}
-          >
-            全部知识点
-          </button>
-          {activeBank.manifest.topics.map((topic) => (
-            <button
-              key={topic.topicId}
-              type="button"
-              className={topicId === topic.topicId ? "chip on" : "chip"}
-              onClick={() => setTopicId(topic.topicId)}
-            >
-              {topic.name}
-            </button>
-          ))}
-        </div>
-
-        <div className="chips">
-          {(Object.keys(STATUS_LABEL) as StatusFilter[]).map((key) => (
-            <button
-              key={key}
-              type="button"
-              className={status === key ? "chip on" : "chip"}
-              onClick={() => setStatus(key)}
-            >
-              {STATUS_LABEL[key]}
-            </button>
-          ))}
-        </div>
-      </section>
-
       <div className="split">
-        <section className="card listpane">
+        <section className="card listpane" ref={listRef}>
           {filtered.length === 0 ? (
             <div className="empty">
               <p>没有符合条件的题目。</p>
               <p className="muted">放宽题型或状态筛选试试；搜索只匹配题干文字。</p>
-              <button
-                type="button"
-                className="btn gray"
-                onClick={() => {
-                  setKeyword("");
-                  setType("all");
-                  setTopicId("all");
-                  setStatus("all");
-                }}
-              >
+              <button type="button" className="btn gray" onClick={clearFilters}>
                 清空筛选
               </button>
             </div>
@@ -272,10 +406,8 @@ export function BanksPage(): React.ReactElement {
                   <li key={question.questionId}>
                     <button
                       type="button"
-                      className={
-                        question.questionId === selected?.questionId ? "qrow on" : "qrow"
-                      }
-                      onClick={() => setSelectedId(question.questionId)}
+                      className={question.questionId === selected?.questionId ? "qrow on" : "qrow"}
+                      onClick={() => openQuestion(question.questionId)}
                       data-question-id={question.questionId}
                     >
                       <span className="qrow-seq">{index + 1}</span>
@@ -287,7 +419,11 @@ export function BanksPage(): React.ReactElement {
                         </span>
                       </span>
                       <span className={`badge ${state}`}>{STATUS_LABEL[state]}</span>
-                      {isFavorite ? <span className="badge fav">★</span> : null}
+                      {isFavorite ? (
+                        <span className="badge fav">
+                          <IconStar size={16} filled />
+                        </span>
+                      ) : null}
                     </button>
                   </li>
                 );
@@ -304,26 +440,49 @@ export function BanksPage(): React.ReactElement {
           ) : (
             <>
               <div className="row">
-                <h2 style={{ margin: 0 }}>{getQuestionType(selected.type).label}</h2>
+                <h2 className="mb-0">{getQuestionType(selected.type).label}</h2>
                 <span className="spacer" />
                 <button
                   type="button"
                   className="chip"
                   onClick={() => void toggleFavorite(selected.questionId)}
                 >
-                  {favoriteIds.has(selected.questionId) ? "★ 已收藏" : "☆ 收藏"}
+                  <IconStar size={16} filled={favoriteIds.has(selected.questionId)} />
+                  {favoriteIds.has(selected.questionId) ? "已收藏" : "收藏"}
                 </button>
               </div>
               <QuestionPreview question={selected} />
-              <p className="muted" style={{ marginTop: 10 }}>
-                答案与解析在作答后显示。
-              </p>
+              <p className="muted mt-2">答案与解析在作答后显示。</p>
             </>
           )}
         </section>
       </div>
 
-      <section className="card">
+      {selected === undefined ? null : (
+        <div className="mobile-preview" data-open={mobilePreviewOpen}>
+          <div className="mobile-preview-head">
+            <button type="button" className="btn ghost sm" onClick={() => setMobilePreviewOpen(false)}>
+              <IconBack size={16} />
+              返回列表
+            </button>
+            <span className="badge">{getQuestionType(selected.type).label}</span>
+            <button
+              type="button"
+              className="chip"
+              onClick={() => void toggleFavorite(selected.questionId)}
+            >
+              <IconStar size={16} filled={favoriteIds.has(selected.questionId)} />
+              {favoriteIds.has(selected.questionId) ? "已收藏" : "收藏"}
+            </button>
+          </div>
+          <div className="mobile-preview-body">
+            <QuestionPreview question={selected} />
+            <p className="muted mt-3">答案与解析在作答后显示。</p>
+          </div>
+        </div>
+      )}
+
+      <section className="card" id="lectures">
         <h2>知识讲义</h2>
         <p className="muted">
           左边选一节精读，右边是正文、配套视频与易错点；读完可以直接去练这一节。
@@ -332,7 +491,7 @@ export function BanksPage(): React.ReactElement {
           modules={activeBank.knowledge}
           topics={activeBank.manifest.topics}
           storageKey={bankId}
-          onPractice={(topicId) => void startTopicPractice(topicId)}
+          onPractice={(topicIdValue) => void startTopicPractice(topicIdValue)}
         />
       </section>
     </div>
@@ -348,7 +507,7 @@ export function BanksPage(): React.ReactElement {
 function QuestionPreview(props: { readonly question: Question }): React.ReactElement {
   const Renderer = getRenderer(props.question.type);
   return (
-    <div style={{ marginTop: 10 }}>
+    <div className="mt-2 q-preview">
       <Renderer
         question={props.question}
         answer={undefined}
@@ -356,6 +515,7 @@ function QuestionPreview(props: { readonly question: Question }): React.ReactEle
         grade={undefined}
         selfRating={undefined}
         locked
+        preview
         onChange={() => undefined}
         onSelfRating={() => undefined}
       />

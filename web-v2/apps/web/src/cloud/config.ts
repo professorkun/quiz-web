@@ -18,3 +18,49 @@ export const CLOUD_PUBLIC_CONFIG: CloudPublicConfig = {
   oauthRelayBaseUrl: "https://www.workbuddy.cn/v2/as/genie-baas/oauth",
   publishableKey: "wbpk_g64vX7uZdYwdm0BJTVINDk_v5mWNfJXxHCaMjhaajDTlkCHUj6HHScF",
 };
+
+/**
+ * 当前是否运行在应用云的正式发布域名上。
+ *
+ * 应用云按 Origin 放行，只有这个域名能使用手机验证码 / 微信登录与云同步；
+ * 其他静态托管地址（如 Trae 部署域名）一律使用本机账号登录。
+ */
+export function isCloudOrigin(): boolean {
+  return globalThis.location.origin === CLOUD_PUBLIC_CONFIG.endpoint;
+}
+
+/**
+ * 云端鉴权按 Origin 放行：仅本机 loopback 与应用正式发布域名可用，
+ * 其他部署地址（如 traesite.cn）会被 403 `origin is not allowed` 拒绝。
+ */
+let originProbe: Promise<boolean> | null = null;
+
+/**
+ * 运行时探测当前 Origin 是否被云端放行。
+ *
+ * 云端只对放行的 Origin 返回 CORS 头；未放行时 fetch 会直接失败。
+ * 平台侧放行后无需改代码，重新探测即可用。
+ */
+export function probeCloudLoginOrigin(): Promise<boolean> {
+  if (originProbe !== null) return originProbe;
+  originProbe = (async () => {
+    try {
+      const res = await fetch(`${CLOUD_PUBLIC_CONFIG.endpoint}/.cloud/auth/v1/session`, {
+        method: "GET",
+        headers: { "x-wb-webapp-access-key": CLOUD_PUBLIC_CONFIG.publishableKey },
+        credentials: "omit",
+        cache: "no-store",
+      });
+      // 放行的 Origin 会正常返回 4xx（如 404）；未放行会因 CORS 被浏览器拒绝
+      return res.status !== 403;
+    } catch {
+      return false;
+    }
+  })();
+  return originProbe;
+}
+
+/** 清除探测缓存，供平台侧调整后手动重试 */
+export function resetCloudLoginOriginProbe(): void {
+  originProbe = null;
+}

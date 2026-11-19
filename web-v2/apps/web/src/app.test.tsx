@@ -83,6 +83,8 @@ async function go(route: Route): Promise<void> {
 
 beforeEach(() => {
   globalThis.location.hash = "#/learn";
+  // 题库页会把筛选条件写进 sessionStorage（会话级状态）；用例之间清空，避免相互影响
+  globalThis.sessionStorage.clear();
 });
 
 afterEach(() => {
@@ -153,8 +155,8 @@ describe("游客闭环", () => {
     });
 
     // 收藏当前题
-    fireEvent.click(screen.getByRole("button", { name: "☆ 收藏" }));
-    expect(await screen.findByRole("button", { name: "★ 已收藏" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "收藏" }));
+    expect(await screen.findByRole("button", { name: "已收藏" })).toBeTruthy();
 
     await go("review");
     expect(await screen.findByRole("tab", { name: /错题（1）/ })).toBeTruthy();
@@ -472,16 +474,27 @@ describe("W4 一致性", () => {
   });
 });
 
-/** 空壳态：无任何题库时显示导入引导，不进入功能页、不崩溃 */
+/** 空壳态：无任何题库时先进入主页，由首页提供导入入口 */
 describe("空壳态", () => {
-  it("没有题库时显示导入引导页", async () => {
+  it("没有题库时进入刷题主页，导航可用且首页内有导入入口", async () => {
     const kv = new MemoryKeyValueStore();
     const platform = createPlatform({ kv, builtinBanks: [], clock });
     render(<App platform={platform} />);
-    expect(await screen.findByText(/欢迎使用通用刷题/)).toBeTruthy();
-    expect(screen.getByText(/没有预置题库/)).toBeTruthy();
-    expect(screen.getByText("选择题库包文件")).toBeTruthy();
-    // 功能页不应渲染
-    expect(screen.queryByRole("heading", { name: "高中化学基础", level: 1 })).toBeNull();
+
+    // 初始就是应用主界面，而不是独立的导入页
+    expect(await screen.findByRole("heading", { name: "通用刷题", level: 1 })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "还没有题库" })).toBeTruthy();
+    expect(screen.getByText("导入题库包")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "学习" }).length).toBeGreaterThan(0);
+
+    // 无题库时其它入口给出返回首页导入的引导
+    await go("practice");
+    expect(await screen.findByText(/先回首页导入一份题库包/)).toBeTruthy();
+
+    // 「我的」始终可达：没有题库也能先登录
+    await go("me");
+    expect(await screen.findByRole("heading", { name: "我的", level: 1 })).toBeTruthy();
+    expect(screen.getByText("账号与登录")).toBeTruthy();
+    expect(screen.getByText(/还没有导入题库/)).toBeTruthy();
   });
 });

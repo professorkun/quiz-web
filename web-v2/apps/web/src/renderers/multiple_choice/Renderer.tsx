@@ -23,7 +23,8 @@ export default function MultipleChoiceRenderer(props: RendererProps): React.Reac
       multiple
       selected={selected}
       locked={props.locked}
-      correctIds={q.answer}
+      readOnly={props.preview === true}
+      correctIds={props.preview === true ? [] : q.answer}
       onToggle={toggle}
     />
   );

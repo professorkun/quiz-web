@@ -12,10 +12,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import type { BankContent } from "@quiz/core";
-import type { Platform } from "@quiz/platform";
+import type { AuthAdapter, Platform } from "@quiz/platform";
 import { createWebPlatform } from "@quiz/platform-web";
 
+import { createLocalAuthAdapter } from "../account/localAuth";
+import { accountDbName, copyGuestDataIfEmpty } from "../account/userStorage";
 import { cloudAuth, createCloudAuthAdapter } from "../cloud/auth";
+import { isCloudOrigin } from "../cloud/config";
 import { BUILTIN_BANKS, EMPTY_BANK_PLACEHOLDER } from "../data/banks";
 
 export interface PendingSession {
@@ -85,11 +88,19 @@ export function PlatformProvider(props: {
   const injected = props.platform;
   const builtinBanks = props.builtinBanks ?? BUILTIN_BANKS;
   const storageWarning = props.storageWarning;
+  // 认证适配器只创建一次：本机账号（静态部署）或应用云账号（正式发布域名）
+  const auth = useMemo<AuthAdapter>(
+    () => (isCloudOrigin() ? createCloudAuthAdapter() : createLocalAuthAdapter()),
+    [],
+  );
   const [state, setState] = useState<State | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
   const [pendingSession, setPendingSession] = useState<PendingSession | null>(null);
+  /** 登录账号变化时 +1，触发按账号重新装配数据库 */
+  const [bootToken, setBootToken] = useState(0);
+  const currentUserId = useRef<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback((message: string) => {
@@ -104,20 +115,33 @@ export function PlatformProvider(props: {
 
     const boot = async (): Promise<void> => {
       try {
+        setFailure(null);
         // OAuth 回调要在任何守卫之前处理；失败不阻塞启动（退回本地游客模式）
-        if (injected === undefined) {
+        if (injected === undefined && isCloudOrigin()) {
           await cloudAuth.handleCallback().catch(() => null);
+        }
+        // 先确定当前账号：每个账号使用独立数据库，游客用默认库
+        const user = injected === undefined ? await auth.getUser() : null;
+        const userId = user?.userId ?? null;
+        currentUserId.current = userId;
+        if (injected === undefined && userId !== null) {
+          // 账号库首次使用且为空时，把游客数据搬进来，避免登录后题库"消失"
+          await copyGuestDataIfEmpty(userId);
         }
         const created =
           injected === undefined
-            ? await createWebPlatform({ builtinBanks, auth: createCloudAuthAdapter() })
+            ? await createWebPlatform({
+                builtinBanks,
+                auth,
+                ...(userId === null ? {} : { dbName: accountDbName(userId) }),
+              })
             : { platform: injected, degraded: null as string | null };
         const platform = created.platform;
         // 注入平台时允许调用方带入"存储不可用"的说明（测试、S6 云同步失败都走这条）
         const degraded = storageWarning ?? created.degraded;
         const banks = await loadBanks(platform);
-        // 空壳态：无内置题库时正常启动，由 App 守卫显示导入引导页。
-        // 没有题库也算合法状态——用户导入题库后会自动进入功能界面。
+        // 无题库也算合法状态：主界面照常进入，由首页提供导入入口。
+        // 用户导入题库后，reloadBanks 会把新题库带进界面。
 
         const settings = await platform.settings.getApp();
         const known = banks.some((b) => b.manifest.bankId === settings.activeBankId);
@@ -125,7 +149,8 @@ export function PlatformProvider(props: {
         // 写 "" 会让下一次启动读设置直接判「结构不符合契约」，整个应用卡死在无法启动。
         const activeBankId = known ? settings.activeBankId : (banks[0]?.manifest.bankId ?? null);
 
-        if (!known) {
+        if (!known && banks.length > 0) {
+          // 没有题库时不写 activeBankId（空字符串不是合法值），等首次导入后再落库
           await platform.settings.saveApp({
             ...settings,
             activeBankId,
@@ -146,7 +171,21 @@ export function PlatformProvider(props: {
       cancelled = true;
       if (toastTimer.current !== null) clearTimeout(toastTimer.current);
     };
-  }, [showToast, injected, builtinBanks, storageWarning]);
+  }, [showToast, injected, builtinBanks, storageWarning, auth, bootToken]);
+
+  // 登录 / 退出后按新账号重新装配存储；游客与各账号之间的数据互不影响
+  useEffect(() => {
+    if (injected !== undefined) return;
+    return auth.onAuthStateChange((user) => {
+      const next = user?.userId ?? null;
+      if (next === currentUserId.current) return;
+      currentUserId.current = next;
+      setState(null);
+      setFailure(null);
+      setPendingSession(null);
+      setBootToken((token) => token + 1);
+    });
+  }, [auth, injected]);
 
   const selectBank = useCallback(
     async (bankId: string) => {

@@ -268,9 +268,9 @@ describe("交卷与判分", () => {
     await screen.findByTestId("exam-total");
     // 4（单选对）+ 2.5（代码填空 1/2）= 6.5；简答待自评
     expect(screen.getByTestId("exam-total").textContent).toContain("6.5");
-    // 逐空明细：b1 ✓ / b2 ✗
-    expect(screen.getByText("b1 ✓")).toBeTruthy();
-    expect(screen.getByText("b2 ✗")).toBeTruthy();
+    // 逐空明细：b1 正确 / b2 错误（图标替代 ✓/✗，语义由 aria-label 承担）
+    expect(screen.getByLabelText("b1 正确")).toBeTruthy();
+    expect(screen.getByLabelText("b2 错误")).toBeTruthy();
   });
 
   it("超时自动交卷并提示（T5-3）", async () => {

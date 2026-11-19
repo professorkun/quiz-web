@@ -21,6 +21,8 @@ export interface RendererProps {
   readonly optionOrder: readonly string[] | undefined;
   /** 已提交后禁止再改 */
   readonly locked: boolean;
+  /** 只读预览：禁止作答，但不展示正确答案/解析（题库页预览用） */
+  readonly preview?: boolean;
   /** 已提交时的判分结果（由 core 算出，页面不自己算） */
   readonly grade: GradeResult | undefined;
   readonly selfRating: SelfRating | undefined;

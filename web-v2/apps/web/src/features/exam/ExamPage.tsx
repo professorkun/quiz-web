@@ -1,5 +1,5 @@
 /**
- * 模考页（S5 · T5-3 / T5-5 / T5-7）：组卷 → 计时作答 → 交卷 → 成绩明细。
+ * 模考页（S5 · T5-3 / T5-5 / T5-7 / 美化 D-05）：组卷 → 计时作答 → 交卷 → 成绩明细。
  *
  * 与旧版的对等点：
  * - 「还有 N 题未作答，确定交卷？」的交卷确认（冒烟 #3）；
@@ -14,6 +14,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 
 import {
   PaperAssemblyError,
@@ -49,6 +50,7 @@ import { RichText } from "../../components/RichText";
 import { usePlatform } from "../../platform/PlatformProvider";
 import { getRenderer } from "../../renderers";
 import { navigate } from "../../router";
+import { IconCheck, IconCheckCircle, IconClock, IconClose, IconExam, IconXCircle } from "../../ui/icons";
 
 const round = (value: number): number => Math.round(value * 100) / 100;
 
@@ -66,19 +68,26 @@ function newId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
 
-const VERDICT: Record<"right" | "wrong" | "unanswered" | "self", string> = {
-  right: "✔ 答对了",
-  wrong: "✘ 答错了",
-  unanswered: "— 未作答",
+type Verdict = "right" | "wrong" | "unanswered" | "self";
+
+const VERDICT_LABEL: Record<Verdict, string> = {
+  right: "答对了",
+  wrong: "答错了",
+  unanswered: "未作答",
   self: "主观题 · 对照参考答案自评",
 };
-
-type Verdict = keyof typeof VERDICT;
 
 function verdictOf(item: ExamRecord["items"][number]): Verdict {
   if (!item.answered && item.correct !== null) return "unanswered";
   if (item.correct === null) return "self";
   return item.correct ? "right" : "wrong";
+}
+
+function VerdictIcon(props: { readonly verdict: Verdict }): React.ReactElement {
+  if (props.verdict === "right") return <IconCheckCircle size={16} />;
+  if (props.verdict === "wrong") return <IconXCircle size={16} />;
+  if (props.verdict === "unanswered") return <IconClock size={16} />;
+  return <IconExam size={16} />;
 }
 
 export function ExamPage(): React.ReactElement {
@@ -291,7 +300,17 @@ export function ExamPage(): React.ReactElement {
   if (!ready) {
     return (
       <div className="page">
-        <p className="muted">正在准备模考…</p>
+        <header className="page-head">
+          <div>
+            <h1>模考</h1>
+            <div className="skeleton w-60" />
+          </div>
+        </header>
+        <div className="card">
+          <div className="skeleton w-80" />
+          <div className="skeleton w-60" />
+          <div className="skeleton w-80" />
+        </div>
       </div>
     );
   }
@@ -336,19 +355,21 @@ export function ExamPage(): React.ReactElement {
 
     const Renderer = getRenderer(question.type);
     const stemInRenderer = getQuestionType(question.type).stemInRenderer;
+    const urgent = remaining !== null && remaining <= 5 * 60 * 1000;
 
     return (
-      <div className="page">
-        <header className="card">
+      <div className="page practice-page">
+        <header className="card exam-head">
           <div className="row">
             <h1>{session.title}</h1>
             <span className="spacer" />
             <span
-              className="muted"
+              className={urgent ? "exam-timer urgent" : "exam-timer"}
               data-testid="exam-timer"
               title={remaining === null ? "不限时，累计用时" : "剩余时间，到点自动交卷"}
             >
-              ⏱ {remaining === null ? fmtTime(Date.parse(nowTick) - Date.parse(session.startedAt)) : fmtTime(remaining)}
+              <IconClock size={16} />
+              {remaining === null ? fmtTime(Date.parse(nowTick) - Date.parse(session.startedAt)) : fmtTime(remaining)}
             </span>
             <button
               type="button"
@@ -368,27 +389,38 @@ export function ExamPage(): React.ReactElement {
               交 卷
             </button>
           </div>
-          <div className="row muted" style={{ marginTop: 6 }}>
+          <div className="row muted mt-1">
             {`第 ${session.cursor + 1} / ${session.items.length} 题 · 已答 ${session.items.length - unanswered.length} · 未答 ${unanswered.length}`}
           </div>
-          <div className="chips" style={{ marginTop: 8 }}>
-            {session.items.map((item, index) => {
-              const answered = session.answers[item.questionId] !== undefined;
-              return (
-                <button
-                  key={item.questionId}
-                  type="button"
-                  className={index === session.cursor ? "chip on" : answered ? "chip" : "chip"}
-                  style={answered ? { fontWeight: 600 } : { opacity: 0.55 }}
-                  onClick={() => setSession(moveExamTo(session, index, platform.clock.now().toISOString()))}
-                >
-                  {index + 1}
-                </button>
-              );
-            })}
-          </div>
+          <details className="qpanel" open>
+            <summary>题号 · {session.cursor + 1}/{session.items.length}</summary>
+            <div className="qgrid">
+              {session.items.map((item, index) => {
+                const answered = session.answers[item.questionId] !== undefined;
+                const cls = [
+                  "qnum",
+                  index === session.cursor ? "current" : "",
+                  answered ? "answered" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+                return (
+                  <button
+                    key={item.questionId}
+                    type="button"
+                    className={cls}
+                    aria-label={`第 ${index + 1} 题${answered ? "，已作答" : "，未作答"}`}
+                    aria-current={index === session.cursor ? "true" : undefined}
+                    onClick={() => setSession(moveExamTo(session, index, platform.clock.now().toISOString()))}
+                  >
+                    {index + 1}
+                  </button>
+                );
+              })}
+            </div>
+          </details>
           {notices.length > 0 ? (
-            <div className="notice" style={{ marginTop: 10 }}>
+            <div className="notice mt-2">
               {notices.map((text, index) => (
                 <div key={index}>{text}</div>
               ))}
@@ -416,7 +448,7 @@ export function ExamPage(): React.ReactElement {
             onSelfRating={undefined}
           />
 
-          <div className="row" style={{ marginTop: 14 }}>
+          <div className="practice-actions">
             <button
               type="button"
               className="btn gray"
@@ -435,12 +467,13 @@ export function ExamPage(): React.ReactElement {
             </button>
             <span className="spacer" />
             <button type="button" className="btn ghost" onClick={() => void abandonExam()}>
+              <IconClose size={16} />
               放弃考试
             </button>
           </div>
         </section>
 
-        <p className="muted">
+        <p className="muted mt-2">
           交卷后显示得分、逐空明细与解析；简答题对照参考答案自评。刷新页面会回到本题，倒计时按绝对截止时间继续走。
         </p>
       </div>
@@ -475,27 +508,28 @@ export function ExamPage(): React.ReactElement {
         activeBank.manifest.examTemplates.map((template) => {
           const count = template.sections.reduce((a, s) => a + s.count, 0);
           return (
-            <section className="card" key={template.templateId}>
+            <section className="card clickable" key={template.templateId}>
               <h2>{template.title}</h2>
               <div className="row muted">
                 {`共 ${count} 题 / ${template.totalScore} 分 · ${
                   template.durationSec === undefined ? "不限时" : `限时 ${fmtTime(template.durationSec * 1000)}`
                 }`}
               </div>
-              <div className="chips" style={{ marginTop: 8 }}>
+              <div className="chips mt-2">
                 {template.sections.map((s) => (
-                  <span key={s.sectionId} className="chip">
+                  <span key={s.sectionId} className="chip tag">
                     {`${s.title} ${s.count} 题 × ${s.scoreEach} 分`}
                   </span>
                 ))}
               </div>
-              <div className="row" style={{ marginTop: 12 }}>
+              <div className="row mt-3">
                 <button
                   type="button"
                   className="btn"
                   data-testid={`start-${template.templateId}`}
                   onClick={() => startExam(template.templateId)}
                 >
+                  <IconExam size={16} />
                   开始考试
                 </button>
               </div>
@@ -509,19 +543,21 @@ export function ExamPage(): React.ReactElement {
         {records.length === 0 ? (
           <p className="muted">还没有成绩记录，做一套卷试试。</p>
         ) : (
-          records.map((row) => (
-            <div className="row" key={row.recordId} style={{ marginTop: 8 }}>
-              <span>
-                {`${row.submittedAt.slice(0, 10)} · ${round(row.totalScore)} / ${row.totalMax} 分${
-                  row.timedOut ? " · 超时交卷" : ""
-                }`}
-              </span>
-              <span className="spacer" />
-              <button type="button" className="chip" onClick={() => setRecord(row)}>
-                查看
-              </button>
-            </div>
-          ))
+          <ul className="rlist">
+            {records.map((row) => (
+              <li className="ritem" key={row.recordId}>
+                <div className="ritem-main">
+                  <div className="ritem-stem">
+                    {`${row.submittedAt.slice(0, 10)} · ${round(row.totalScore)} / ${row.totalMax} 分`}
+                  </div>
+                  {row.timedOut ? <div className="ritem-meta">超时交卷</div> : null}
+                </div>
+                <button type="button" className="chip" onClick={() => setRecord(row)}>
+                  查看
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     </div>
@@ -546,6 +582,7 @@ function ExamScoreView(props: {
     totalMax: record.totalMax,
   });
   const total = record.objectiveScore + record.selfScore;
+  const percent = record.totalMax === 0 ? 0 : Math.round((total / record.totalMax) * 100);
   const levelText =
     total >= 90
       ? "稳了，保持手感"
@@ -557,33 +594,52 @@ function ExamScoreView(props: {
 
   return (
     <div className="page">
-      <header className="card">
+      <header className="card score-card">
         <h1>成绩 · {record.templateId}</h1>
-        <div className="row">
-          <b style={{ fontSize: 36 }} data-testid="exam-total">
-            {round(total)}
-            <small> / {record.totalMax}</small>
-          </b>
+        <div
+          className="score-ring"
+          style={{ "--pct": percent } as CSSProperties}
+          role="img"
+          aria-label={`总分 ${round(total)} / ${record.totalMax} 分`}
+        >
+          <div className="score-ring-inner">
+            <div className="score-total" data-testid="exam-total">
+              {round(total)}
+              <small> / {record.totalMax}</small>
+            </div>
+            <div className="muted">得分</div>
+          </div>
         </div>
         <div className="muted">{levelText}</div>
-        <div className="chips" style={{ marginTop: 10 }}>
-          <span className="chip">
+        <div className="chips mt-2">
+          <span className="chip tag">
             {`客观题 ${round(record.objectiveScore)} / ${record.objectiveMax}`}
           </span>
-          <span className="chip">
+          <span className="chip tag">
             {`主观题自评 ${round(record.selfScore)} / ${record.selfMax}`}
           </span>
-          <span className="chip">{`用时 ${fmtTime(record.durationSec * 1000)}`}</span>
-          {record.timedOut ? <span className="chip">超时自动交卷</span> : null}
+          <span className="chip tag">{`用时 ${fmtTime(record.durationSec * 1000)}`}</span>
+          {record.timedOut ? <span className="chip tag">超时自动交卷</span> : null}
         </div>
-        <div className="chips" style={{ marginTop: 6 }}>
-          {sections.map((s) => (
-            <span key={s.sectionId} className="chip">
-              {`${s.sectionId}：${round(s.score)} / ${s.max}（${s.count} 题）`}
-            </span>
-          ))}
+
+        <div className="score-sections">
+          {sections.map((s) => {
+            const pct = s.max === 0 ? 0 : Math.round((s.score / s.max) * 100);
+            return (
+              <div className="score-section" key={s.sectionId}>
+                <div className="score-section-head">
+                  <span>{`${s.sectionId}（${s.count} 题）`}</span>
+                  <b>{`${round(s.score)} / ${s.max}`}</b>
+                </div>
+                <div className="score-bar">
+                  <i style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <div className="row" style={{ marginTop: 12 }}>
+
+        <div className="row mt-3">
           <button type="button" className="btn gray" onClick={props.onBack}>
             返回模考
           </button>
@@ -606,35 +662,42 @@ function ExamScoreView(props: {
             <div
               className={`feedback ${verdict === "right" ? "ok" : verdict === "wrong" ? "no" : "self"}`}
             >
-              {VERDICT[verdict]}
+              <VerdictIcon verdict={verdict} />
+              {VERDICT_LABEL[verdict]}
             </div>
 
             {item.details !== undefined ? (
               // 空位题：明细逐空对错（D-4「明细显示哪两空错误」），按"有无明细"分流，不判题型
-              <div className="chips" style={{ marginTop: 8 }}>
+              <div className="chips mt-2">
                 {item.details.map((d) => {
                   const detail = itemDetailMap(item).get(d.key);
                   return (
-                    <span key={d.key} className="chip" title={`你的作答：${d.given || "（空）"}`}>
-                      {`${d.key} ${detail === true ? "✓" : "✗"}`}
+                    <span
+                      key={d.key}
+                      className="chip tag"
+                      title={`你的作答：${d.given || "（空）"}`}
+                      aria-label={`${d.key} ${detail === true ? "正确" : "错误"}`}
+                    >
+                      {d.key}
+                      {detail === true ? <IconCheck size={16} /> : <IconClose size={16} />}
                     </span>
                   );
                 })}
               </div>
             ) : question === undefined ? null : (
-              <div className="stem" style={{ marginTop: 8 }}>
+              <div className="stem mt-2">
                 <RichText text={question.stem} />
               </div>
             )}
 
             {question?.explanation === undefined ? null : (
-              <div className="muted" style={{ marginTop: 6 }}>
+              <div className="muted mt-1">
                 <RichText text={question.explanation} />
               </div>
             )}
 
             {item.correct === null ? (
-              <div className="chips" style={{ marginTop: 8 }}>
+              <div className="chips mt-2">
                 <button
                   type="button"
                   className={item.selfRating?.level === "full" ? "chip on" : "chip"}

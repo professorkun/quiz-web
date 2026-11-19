@@ -20,6 +20,7 @@ import {
 
 import { downloadText, todayStamp } from "../../lib/download";
 import { usePlatform } from "../../platform/PlatformProvider";
+import { IconDownload, IconUpload } from "../../ui/icons";
 
 interface Preview {
   readonly kind: "learning" | "bank";
@@ -47,6 +48,7 @@ function sectionTotal(bank: BankContent): number {
 
 export function ImportExport(): React.ReactElement {
   const { platform, activeBank, banks, reloadBanks, selectBank, bump, showToast } = usePlatform();
+  const hasBank = banks.length > 0;
   const [issues, setIssues] = useState<readonly ImportIssue[]>([]);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [busy, setBusy] = useState(false);
@@ -188,22 +190,24 @@ export function ImportExport(): React.ReactElement {
         导出的 JSON 就是备份：可以换浏览器、换设备重灌。题库包与学习记录分开导出，互不绑定。
       </p>
 
-      <div className="row" style={{ marginTop: 10 }}>
+      <div className="row mt-2">
         <button type="button" className="btn" onClick={() => void exportLearning()}>
+          <IconDownload size={16} />
           导出学习记录
         </button>
-        <button type="button" className="btn gray" onClick={exportBank}>
-          导出当前题库包
+        <button type="button" className="btn gray" disabled={!hasBank} onClick={exportBank}>
+          {hasBank ? "导出当前题库包" : "导出当前题库包（暂无题库）"}
         </button>
       </div>
 
-      <div className="row" style={{ marginTop: 12 }}>
-        <label className="btn gray" style={{ display: "inline-block" }}>
+      <div className="row mt-3">
+        <label className="btn gray">
+          <IconUpload size={16} />
           选择文件导入
           <input
             type="file"
             accept="application/json,.json"
-            style={{ display: "none" }}
+            className="file-input"
             onChange={(event) => {
               const file = event.target.files?.[0];
               event.target.value = "";
@@ -215,9 +219,9 @@ export function ImportExport(): React.ReactElement {
       </div>
 
       {issues.length > 0 ? (
-        <div className="notice" style={{ marginTop: 12 }}>
+        <div className="notice mt-3">
           <strong>文件被拒绝：{issues.length} 处问题</strong>
-          <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+          <ul>
             {issues.slice(0, 12).map((issue, index) => (
               <li key={index}>
                 <code>{issue.path}</code> {issue.message}
@@ -225,14 +229,12 @@ export function ImportExport(): React.ReactElement {
             ))}
           </ul>
           {issues.length > 12 ? <div>…还有 {issues.length - 12} 处</div> : null}
-          <div className="muted" style={{ marginTop: 6 }}>
-            没有写入任何数据。修好上述字段后重新导入。
-          </div>
+          <div className="muted mt-1">没有写入任何数据。修好上述字段后重新导入。</div>
         </div>
       ) : null}
 
       {preview !== null ? (
-        <div className="previewbox" style={{ marginTop: 12 }}>
+        <div className="previewbox mt-3">
           <strong>
             {preview.label}（{preview.fileName}）
           </strong>
@@ -246,7 +248,7 @@ export function ImportExport(): React.ReactElement {
               {warning}
             </div>
           ))}
-          <div className="row" style={{ marginTop: 8 }}>
+          <div className="row mt-2">
             <button type="button" className="btn" disabled={busy} onClick={() => void confirmImport()}>
               {busy ? "导入中…" : "确认导入"}
             </button>

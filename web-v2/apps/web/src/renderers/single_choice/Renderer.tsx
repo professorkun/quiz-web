@@ -17,7 +17,8 @@ export default function SingleChoiceRenderer(props: RendererProps): React.ReactE
       multiple={false}
       selected={selected}
       locked={props.locked}
-      correctIds={[q.answer]}
+      readOnly={props.preview === true}
+      correctIds={props.preview === true ? [] : [q.answer]}
       onToggle={(optionId) => props.onChange(optionId)}
     />
   );

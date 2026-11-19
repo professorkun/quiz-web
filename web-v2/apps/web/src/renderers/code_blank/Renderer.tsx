@@ -85,17 +85,19 @@ export default function CodeBlankRenderer(props: RendererProps): React.ReactElem
         })}
       </div>
 
-      <details className="solution">
-        <summary>查看完整代码（答案版）</summary>
-        {structure.files.map((file) => (
-          <div key={file.fileId}>
-            <div className="muted">{file.label}</div>
-            <pre className="code">
-              <code>{file.solutionCode ?? file.code}</code>
-            </pre>
-          </div>
-        ))}
-      </details>
+      {props.preview === true ? null : (
+        <details className="solution">
+          <summary>查看完整代码（答案版）</summary>
+          {structure.files.map((file) => (
+            <div key={file.fileId}>
+              <div className="muted">{file.label}</div>
+              <pre className="code">
+                <code>{file.solutionCode ?? file.code}</code>
+              </pre>
+            </div>
+          ))}
+        </details>
+      )}
     </div>
   );
 }

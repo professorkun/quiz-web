@@ -1,5 +1,5 @@
 /**
- * 复习页（S4 · T4-4/T4-6）：到期 / 错题 / 收藏 / 已掌握四个视图。
+ * 复习页（S4 · T4-4/T4-6 / 美化 D-06）：到期 / 错题 / 收藏 / 已掌握四个视图。
  *
  * 四条线刻意分开：
  * - 错题看"历史上错过没有"（`wrongCount > 0`），答对不自动移出；
@@ -26,6 +26,7 @@ import {
 import { RichText } from "../../components/RichText";
 import { usePlatform } from "../../platform/PlatformProvider";
 import { navigate } from "../../router";
+import { IconCalendarClock, IconCheckCircle, IconStar } from "../../ui/icons";
 
 type Tab = "due" | "wrong" | "favorite" | "mastered";
 
@@ -130,9 +131,7 @@ export function ReviewPage(): React.ReactElement {
     if (row === undefined || (row.note ?? "") === note) return;
     try {
       await platform.progress.save({ ...row, note });
-      setProgress((prev) =>
-        prev.map((p) => (p.questionId === questionId ? { ...p, note } : p)),
-      );
+      setProgress((prev) => prev.map((p) => (p.questionId === questionId ? { ...p, note } : p)));
       bump();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "备注保存失败");
@@ -148,6 +147,8 @@ export function ReviewPage(): React.ReactElement {
     );
   };
 
+  const panelId = (key: Tab): string => `review-panel-${key}`;
+
   return (
     <div className="page">
       <header className="page-head">
@@ -160,13 +161,15 @@ export function ReviewPage(): React.ReactElement {
       </header>
 
       <section className="card">
-        <div className="tabs" role="tablist">
+        <div className="tabs" role="tablist" aria-label="复习视图">
           {tabs.map((item) => (
             <button
               key={item.key}
+              id={`review-tab-${item.key}`}
               type="button"
               role="tab"
               aria-selected={tab === item.key}
+              aria-controls={panelId(item.key)}
               className={tab === item.key ? "tab on" : "tab"}
               onClick={() => setTab(item.key)}
             >
@@ -175,201 +178,225 @@ export function ReviewPage(): React.ReactElement {
           ))}
         </div>
 
-        {loading ? <p className="muted">正在读取记录…</p> : null}
-
-        {!loading && tab === "due" ? (
-          due.length === 0 ? (
-            <div className="empty">
-              <p>现在没有到期的题。</p>
-              <p className="muted">答错后 1 天、复习答对后 3 天 / 7 天会再次到期；已掌握不再排期。</p>
-              <button type="button" className="btn gray" onClick={() => navigate("practice")}>
-                去练习
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="row" style={{ marginBottom: 10 }}>
-                <button type="button" className="btn" onClick={() => redo(due.map((r) => r.questionId))}>
-                  开始本轮复习（{due.length}）
-                </button>
-                <span className="muted">按到期时间从早到晚</span>
-              </div>
-              <ul className="rlist">
-                {due.map((row) => (
-                  <li key={row.questionId} className="ritem">
-                    <div className="ritem-main">
-                      <div className="ritem-stem">{rowTitle(row.questionId)}</div>
-                      <div className="muted">
-                        {row.status === "learning" ? "首次重做" : `复习第 ${row.streak + 1} 次`} · 到期{" "}
-                        {formatTime(row.nextReviewAt)} · 错 {row.wrongCount} 次
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn gray"
-                      onClick={() => redo([row.questionId])}
-                    >
-                      重做
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )
+        {loading ? (
+          <div>
+            <div className="skeleton w-80" />
+            <div className="skeleton w-60" />
+            <div className="skeleton w-80" />
+          </div>
         ) : null}
 
-        {!loading && tab === "wrong" ? (
-          wrong.length === 0 ? (
-            <div className="empty">
-              <p>还没有错题。</p>
-              <p className="muted">答错一次就会出现在这里；重做答对只进入复习计划，不会把它悄悄移走。</p>
-              <button type="button" className="btn" onClick={() => navigate("practice")}>
-                去练习
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="row" style={{ marginBottom: 10 }}>
-                <button type="button" className="btn" onClick={() => redo(wrong.map((r) => r.questionId))}>
-                  全部重做（{wrong.length}）
+        {!loading && tab === "due" ? (
+          <div role="tabpanel" id={panelId("due")} aria-labelledby="review-tab-due">
+            {due.length === 0 ? (
+              <div className="empty">
+                <IconCalendarClock size={24} />
+                <p>现在没有到期的题。</p>
+                <p className="muted">答错后 1 天、复习答对后 3 天 / 7 天会再次到期；已掌握不再排期。</p>
+                <button type="button" className="btn gray" onClick={() => navigate("practice")}>
+                  去练习
                 </button>
-                <span className="muted">错因可随时修改或清空</span>
               </div>
-              <ul className="rlist">
-                {wrong.map((row) => {
-                  const question = questionMap.get(row.questionId);
-                  return (
+            ) : (
+              <>
+                <div className="row mb-3">
+                  <button type="button" className="btn" onClick={() => redo(due.map((r) => r.questionId))}>
+                    开始本轮复习（{due.length}）
+                  </button>
+                  <span className="muted">按到期时间从早到晚</span>
+                </div>
+                <ul className="rlist">
+                  {due.map((row) => (
                     <li key={row.questionId} className="ritem">
                       <div className="ritem-main">
                         <div className="ritem-stem">{rowTitle(row.questionId)}</div>
-                        <div className="muted">
-                          错 {row.wrongCount} 次 · 共作答 {row.attemptsCount} 次 · 最近{" "}
-                          {formatTime(row.lastAttemptAt)}
-                          {question === undefined ? "" : ` · ${getQuestionType(question.type).label}`}
-                        </div>
-                        <div className="row" style={{ marginTop: 6 }}>
-                          <label className="muted" htmlFor={`cause-${row.questionId}`}>
-                            错因
-                          </label>
-                          <select
-                            id={`cause-${row.questionId}`}
-                            className="input"
-                            style={{ flex: "0 1 210px" }}
-                            value={row.errorCause ?? ""}
-                            onChange={(event) =>
-                              void markCause(
-                                row.questionId,
-                                event.target.value === ""
-                                  ? null
-                                  : (event.target.value as ErrorCause),
-                              )
-                            }
-                          >
-                            <option value="">未标记</option>
-                            {ERROR_CAUSES.map((cause) => (
-                              <option key={cause} value={cause}>
-                                {ERROR_CAUSE_LABEL[cause]}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="badge">{row.status}</span>
-                          <input
-                            className="input"
-                            style={{ flex: "1 1 180px" }}
-                            aria-label={`备注 ${row.questionId}`}
-                            placeholder="备注（可选）"
-                            defaultValue={row.note ?? ""}
-                            onBlur={(event) => void markNote(row.questionId, event.target.value)}
-                          />
+                        <div className="ritem-meta">
+                          {row.status === "learning" ? "首次重做" : `复习第 ${row.streak + 1} 次`} · 到期{" "}
+                          {formatTime(row.nextReviewAt)} · 错 {row.wrongCount} 次
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        className="btn gray"
-                        disabled={question === undefined}
-                        onClick={() => redo([row.questionId])}
-                      >
-                        重做
-                      </button>
+                      <div className="ritem-actions">
+                        <button type="button" className="btn gray sm" onClick={() => redo([row.questionId])}>
+                          重做
+                        </button>
+                      </div>
                     </li>
-                  );
-                })}
-              </ul>
-            </>
-          )
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        ) : null}
+
+        {!loading && tab === "wrong" ? (
+          <div role="tabpanel" id={panelId("wrong")} aria-labelledby="review-tab-wrong">
+            {wrong.length === 0 ? (
+              <div className="empty">
+                <p>还没有错题。</p>
+                <p className="muted">答错一次就会出现在这里；重做答对只进入复习计划，不会把它悄悄移走。</p>
+                <button type="button" className="btn" onClick={() => navigate("practice")}>
+                  去练习
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="row mb-3">
+                  <button type="button" className="btn" onClick={() => redo(wrong.map((r) => r.questionId))}>
+                    全部重做（{wrong.length}）
+                  </button>
+                  <span className="muted">错因可随时修改或清空</span>
+                </div>
+                <ul className="rlist">
+                  {wrong.map((row) => {
+                    const question = questionMap.get(row.questionId);
+                    return (
+                      <li key={row.questionId} className="ritem">
+                        <div className="ritem-main">
+                          <div className="ritem-stem">{rowTitle(row.questionId)}</div>
+                          <div className="ritem-meta">
+                            错 {row.wrongCount} 次 · 共作答 {row.attemptsCount} 次 · 最近{" "}
+                            {formatTime(row.lastAttemptAt)}
+                            {question === undefined ? "" : ` · ${getQuestionType(question.type).label}`}
+                          </div>
+                          <details className="row-extra">
+                            <summary>标记错因 / 备注</summary>
+                            <div className="row">
+                              <label className="muted" htmlFor={`cause-${row.questionId}`}>
+                                错因
+                              </label>
+                              <select
+                                id={`cause-${row.questionId}`}
+                                className="input"
+                                value={row.errorCause ?? ""}
+                                onChange={(event) =>
+                                  void markCause(
+                                    row.questionId,
+                                    event.target.value === ""
+                                      ? null
+                                      : (event.target.value as ErrorCause),
+                                  )
+                                }
+                              >
+                                <option value="">未标记</option>
+                                {ERROR_CAUSES.map((cause) => (
+                                  <option key={cause} value={cause}>
+                                    {ERROR_CAUSE_LABEL[cause]}
+                                  </option>
+                                ))}
+                              </select>
+                              <span className="badge">{row.status}</span>
+                              <input
+                                className="input"
+                                aria-label={`备注 ${row.questionId}`}
+                                placeholder="备注（可选）"
+                                defaultValue={row.note ?? ""}
+                                onBlur={(event) => void markNote(row.questionId, event.target.value)}
+                              />
+                            </div>
+                          </details>
+                        </div>
+                        <div className="ritem-actions">
+                          <button
+                            type="button"
+                            className="btn gray sm"
+                            disabled={question === undefined}
+                            onClick={() => redo([row.questionId])}
+                          >
+                            重做
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
+          </div>
         ) : null}
 
         {!loading && tab === "favorite" ? (
-          favorites.length === 0 ? (
-            <div className="empty">
-              <p>还没有收藏。</p>
-              <p className="muted">在题库页或答题时点「☆ 收藏」，值得回看的题会留在这里。</p>
-              <button type="button" className="btn gray" onClick={() => navigate("banks")}>
-                去题库挑题
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="row" style={{ marginBottom: 10 }}>
-                <button type="button" className="btn" onClick={() => redo(favorites.map((f) => f.questionId))}>
-                  全部重做（{favorites.length}）
+          <div role="tabpanel" id={panelId("favorite")} aria-labelledby="review-tab-favorite">
+            {favorites.length === 0 ? (
+              <div className="empty">
+                <IconStar size={24} />
+                <p>还没有收藏。</p>
+                <p className="muted">在题库页或答题时点「收藏」，值得回看的题会留在这里。</p>
+                <button type="button" className="btn gray" onClick={() => navigate("banks")}>
+                  去题库挑题
                 </button>
               </div>
-              <ul className="rlist">
-                {favorites.map((entry) => (
-                  <li key={entry.questionId} className="ritem">
-                    <div className="ritem-main">
-                      <div className="ritem-stem">{rowTitle(entry.questionId)}</div>
-                      <div className="muted">收藏于 {formatTime(entry.addedAt)}</div>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn gray"
-                      disabled={!questionMap.has(entry.questionId)}
-                      onClick={() => redo([entry.questionId])}
-                    >
-                      重做
-                    </button>
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      onClick={() => void removeFavorite(entry.questionId)}
-                    >
-                      取消收藏
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )
+            ) : (
+              <>
+                <div className="row mb-3">
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => redo(favorites.map((f) => f.questionId))}
+                  >
+                    全部重做（{favorites.length}）
+                  </button>
+                </div>
+                <ul className="rlist">
+                  {favorites.map((entry) => (
+                    <li key={entry.questionId} className="ritem">
+                      <div className="ritem-main">
+                        <div className="ritem-stem">{rowTitle(entry.questionId)}</div>
+                        <div className="ritem-meta">收藏于 {formatTime(entry.addedAt)}</div>
+                      </div>
+                      <div className="ritem-actions">
+                        <button
+                          type="button"
+                          className="btn gray sm"
+                          disabled={!questionMap.has(entry.questionId)}
+                          onClick={() => redo([entry.questionId])}
+                        >
+                          重做
+                        </button>
+                        <button
+                          type="button"
+                          className="btn ghost sm"
+                          onClick={() => void removeFavorite(entry.questionId)}
+                        >
+                          取消收藏
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
         ) : null}
 
         {!loading && tab === "mastered" ? (
-          mastered.length === 0 ? (
-            <div className="empty">
-              <p>还没有已掌握的题。</p>
-              <p className="muted">答错过的题连续 3 次独立复习答对后转已掌握，之后不再进入到期列表。</p>
-            </div>
-          ) : (
-            <>
-              <p className="muted" style={{ marginBottom: 10 }}>
-                已掌握只表示"按规则退出复习排期"，历史作答仍可查；收藏也不会因此消失。
-              </p>
-              <ul className="rlist">
-                {mastered.map((row) => (
-                  <li key={row.questionId} className="ritem">
-                    <div className="ritem-main">
-                      <div className="ritem-stem">{rowTitle(row.questionId)}</div>
-                      <div className="muted">
-                        连续答对 {row.streak} 次 · 最近作答 {formatTime(row.lastAttemptAt)}
+          <div role="tabpanel" id={panelId("mastered")} aria-labelledby="review-tab-mastered">
+            {mastered.length === 0 ? (
+              <div className="empty">
+                <IconCheckCircle size={24} />
+                <p>还没有已掌握的题。</p>
+                <p className="muted">答错过的题连续 3 次独立复习答对后转已掌握，之后不再进入到期列表。</p>
+              </div>
+            ) : (
+              <>
+                <p className="muted mb-3">
+                  已掌握只表示"按规则退出复习排期"，历史作答仍可查；收藏也不会因此消失。
+                </p>
+                <ul className="rlist">
+                  {mastered.map((row) => (
+                    <li key={row.questionId} className="ritem">
+                      <div className="ritem-main">
+                        <div className="ritem-stem">{rowTitle(row.questionId)}</div>
+                        <div className="ritem-meta">
+                          连续答对 {row.streak} 次 · 最近作答 {formatTime(row.lastAttemptAt)}
+                        </div>
                       </div>
-                    </div>
-                    <span className="badge ok">已掌握</span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )
+                      <span className="badge ok">已掌握</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
         ) : null}
       </section>
     </div>
