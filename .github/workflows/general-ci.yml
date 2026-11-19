@@ -6,6 +6,10 @@ name: general-ci
 # 步骤拆分而非直接调 `pnpm verify`，是为了让每一步的失败在 Actions 上一眼可辨；
 # 下列步骤合起来等价于 web-v2 的 `pnpm verify`（check:boundaries → check:extension →
 # build → test）。静态检查由 `typecheck` 承担。
+#
+# 注意顺序：仓库内包之间通过 `dist/*.d.ts` 解析（package.json 的 types 指向 dist），
+# 所以 `build` 必须排在 `typecheck` 之前——干净的 checkout 上没有 dist，
+# 先 typecheck 会以 TS2307「找不到 @quiz/core」失败。
 
 on:
   push:
@@ -44,6 +48,9 @@ jobs:
       - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
+      - name: 构建
+        run: pnpm build
+
       - name: TypeScript 检查
         run: pnpm typecheck
 
@@ -51,9 +58,6 @@ jobs:
         run: |
           pnpm check:boundaries
           pnpm check:extension
-
-      - name: 构建
-        run: pnpm build
 
       - name: 单元测试
         run: pnpm test
