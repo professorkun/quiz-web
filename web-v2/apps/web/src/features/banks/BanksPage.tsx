@@ -87,6 +87,7 @@ export function BanksPage(): React.ReactElement {
   const [topicId, setTopicId] = useState<string>(saved?.topicId ?? "all");
   const [status, setStatus] = useState<StatusFilter>(saved?.status ?? "all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [reveal, setReveal] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
   const listRef = useRef<HTMLElement | null>(null);
@@ -157,6 +158,64 @@ export function BanksPage(): React.ReactElement {
     filtered.find((q) => q.questionId === selectedId) ??
     filtered[0] ??
     activeBank.questions.find((q) => q.questionId === selectedId);
+
+  // 连续查看（T-06）：移动范围跟着当前筛选走，不跳到被筛掉的题
+  const currentIndex =
+    selected === undefined ? -1 : filtered.findIndex((q) => q.questionId === selected.questionId);
+
+  const [navHint, setNavHint] = useState<string | null>(null);
+
+  const moveSelection = useCallback(
+    (delta: number): void => {
+      if (filtered.length === 0) return;
+      const base = currentIndex >= 0 ? currentIndex : 0;
+      const nextIndex = base + delta;
+      if (nextIndex < 0) {
+        setNavHint("已经是筛选结果的第一题");
+        return;
+      }
+      if (nextIndex >= filtered.length) {
+        setNavHint("已经是筛选结果的最后一题");
+        return;
+      }
+      setSelectedId(filtered[nextIndex]?.questionId ?? null);
+      setNavHint(null);
+    },
+    [filtered, currentIndex],
+  );
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable === true) {
+        return;
+      }
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key === "j" || event.key === "J") {
+        event.preventDefault();
+        moveSelection(1);
+        return;
+      }
+      if (event.key === "k" || event.key === "K") {
+        event.preventDefault();
+        moveSelection(-1);
+        return;
+      }
+      // 空格切换答案；焦点在按钮上时交给浏览器，避免一次按键触发两次
+      if (event.key === " " && tag !== "BUTTON") {
+        event.preventDefault();
+        setReveal((prev) => !prev);
+        return;
+      }
+      if (event.key === "Escape") {
+        if (mobilePreviewOpen) setMobilePreviewOpen(false);
+        else if (reveal) setReveal(false);
+      }
+    };
+    globalThis.addEventListener?.("keydown", onKey);
+    return () => globalThis.removeEventListener?.("keydown", onKey);
+  }, [moveSelection, mobilePreviewOpen, reveal]);
 
   const toggleFavorite = async (questionId: string): Promise<void> => {
     try {
@@ -451,8 +510,31 @@ export function BanksPage(): React.ReactElement {
                   {favoriteIds.has(selected.questionId) ? "已收藏" : "收藏"}
                 </button>
               </div>
-              <QuestionPreview question={selected} />
-              <p className="muted mt-2">答案与解析在作答后显示。</p>
+              <div className="preview-nav">
+                <span className="muted">
+                  第 {currentIndex + 1} / {filtered.length} 题
+                </span>
+                <span className="spacer" />
+                <button type="button" className="btn gray sm" onClick={() => moveSelection(-1)}>
+                  上一题 K
+                </button>
+                <button type="button" className="btn gray sm" onClick={() => moveSelection(1)}>
+                  下一题 J
+                </button>
+              </div>
+              {navHint === null ? null : (
+                <div className="notice small" role="status">
+                  {navHint}
+                </div>
+              )}
+              <QuestionPreview
+                question={selected}
+                reveal={reveal}
+                onToggleReveal={() => setReveal((prev) => !prev)}
+              />
+              <p className="muted mt-2">
+                可展开查看答案与解析；J / K 翻题，Esc 收起，查看不会产生作答记录。
+              </p>
             </>
           )}
         </section>
@@ -476,8 +558,31 @@ export function BanksPage(): React.ReactElement {
             </button>
           </div>
           <div className="mobile-preview-body">
-            <QuestionPreview question={selected} />
-            <p className="muted mt-3">答案与解析在作答后显示。</p>
+            <div className="preview-nav">
+              <span className="muted">
+                第 {currentIndex + 1} / {filtered.length} 题
+              </span>
+              <span className="spacer" />
+              <button type="button" className="btn gray sm" onClick={() => moveSelection(-1)}>
+                上一题 K
+              </button>
+              <button type="button" className="btn gray sm" onClick={() => moveSelection(1)}>
+                下一题 J
+              </button>
+            </div>
+            {navHint === null ? null : (
+              <div className="notice small" role="status">
+                {navHint}
+              </div>
+            )}
+            <QuestionPreview
+              question={selected}
+              reveal={reveal}
+              onToggleReveal={() => setReveal((prev) => !prev)}
+            />
+            <p className="muted mt-3">
+              可展开查看答案与解析；J / K 翻题，Esc 关闭，查看不会产生作答记录。
+            </p>
           </div>
         </div>
       )}
@@ -504,7 +609,11 @@ export function BanksPage(): React.ReactElement {
  * 判断题/选择题/填空/代码填空都由各自的渲染器决定形态；
  * 新增题型只要注册，这里自动就支持——这才是扩展点该有的样子（ADR-0004）。
  */
-function QuestionPreview(props: { readonly question: Question }): React.ReactElement {
+function QuestionPreview(props: {
+  readonly question: Question;
+  readonly reveal: boolean;
+  readonly onToggleReveal: () => void;
+}): React.ReactElement {
   const Renderer = getRenderer(props.question.type);
   return (
     <div className="mt-2 q-preview">
@@ -516,6 +625,8 @@ function QuestionPreview(props: { readonly question: Question }): React.ReactEle
         selfRating={undefined}
         locked
         preview
+        reveal={props.reveal}
+        onToggleReveal={props.onToggleReveal}
         onChange={() => undefined}
         onSelfRating={() => undefined}
       />

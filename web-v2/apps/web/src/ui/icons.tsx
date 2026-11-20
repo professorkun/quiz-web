@@ -191,6 +191,15 @@ export function IconDownload(props: IconProps): React.ReactElement {
   );
 }
 
+export function IconCopy(props: IconProps): React.ReactElement {
+  return (
+    <svg {...svgProps(props)}>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3" />
+    </svg>
+  );
+}
+
 export function IconSync(props: IconProps): React.ReactElement {
   return (
     <svg {...svgProps(props)}>

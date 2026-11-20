@@ -1,5 +1,6 @@
 import { blankDetailMap, buildCodeStructure, type Question } from "@quiz/core";
 
+import { Explanation, RevealBar } from "../shared";
 import type { RendererProps } from "../types";
 
 type CodeBlank = Extract<Question, { type: "code_blank" }>;
@@ -18,9 +19,13 @@ export default function CodeBlankRenderer(props: RendererProps): React.ReactElem
       ? (props.answer as Readonly<Record<string, string>>)
       : {};
   const detail = blankDetailMap(props.grade?.details);
+  const revealing = props.reveal === true;
 
   return (
     <div className="code-blank">
+      {props.preview === true ? (
+        <RevealBar open={revealing} onToggle={props.onToggleReveal} />
+      ) : null}
       {structure.files.map((file) => (
         <details key={file.fileId} open className="code-file">
           <summary>{file.label}</summary>
@@ -34,7 +39,7 @@ export default function CodeBlankRenderer(props: RendererProps): React.ReactElem
                     key={seg.index}
                     className={[
                       "slot",
-                      props.locked && detail.get(seg.blankId ?? "") === true ? "ok" : "",
+                      (props.locked && detail.get(seg.blankId ?? "") === true) || revealing ? "ok" : "",
                       props.locked && detail.get(seg.blankId ?? "") === false ? "no" : "",
                     ]
                       .filter(Boolean)
@@ -77,7 +82,7 @@ export default function CodeBlankRenderer(props: RendererProps): React.ReactElem
                   props.onChange({ ...answers, [blank.blankId]: event.target.value })
                 }
               />
-              {props.locked && correct === false ? (
+              {revealing || (props.locked && correct === false) ? (
                 <span className="mark">答案：{blank.accepted.join(" / ")}</span>
               ) : null}
             </label>
@@ -85,7 +90,7 @@ export default function CodeBlankRenderer(props: RendererProps): React.ReactElem
         })}
       </div>
 
-      {props.preview === true ? null : (
+      {props.preview === true && !revealing ? null : (
         <details className="solution">
           <summary>查看完整代码（答案版）</summary>
           {structure.files.map((file) => (
@@ -98,6 +103,8 @@ export default function CodeBlankRenderer(props: RendererProps): React.ReactElem
           ))}
         </details>
       )}
+
+      <Explanation text={q.explanation} open={revealing} />
     </div>
   );
 }

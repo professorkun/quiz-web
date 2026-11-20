@@ -1264,6 +1264,15 @@ textarea.input {
   overflow: auto;
 }
 
+/* 连续查看（R2）：题号 + 上一题 / 下一题，跟着当前筛选结果走 */
+.preview-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
 .preview-opts {
   display: grid;
   gap: var(--sp-1);
@@ -1522,6 +1531,23 @@ textarea.input {
   display: block;
   margin-top: var(--sp-1);
   color: var(--c-text-3);
+}
+
+/* 查看答案（R2）：开关贴近题目，解析区块只在显式展开时出现 */
+.reveal-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.reveal-explanation {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-10);
+  background: var(--c-surface-2);
+  color: var(--c-text-2);
 }
 
 .self-eval {

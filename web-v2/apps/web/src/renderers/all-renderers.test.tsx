@@ -49,6 +49,54 @@ describe("演示题库", () => {
   });
 });
 
+describe("六类渲染器可查看答案（R2）", () => {
+  it("单选：展开后标出正确选项，并显示解析", () => {
+    const { container } = render(
+      <SingleChoiceRenderer {...props(q(0), { preview: true, locked: true, reveal: true })} />,
+    );
+    expect(container.querySelectorAll(".optbtn.ok")).toHaveLength(1);
+    expect(container.querySelector(".reveal-explanation")).not.toBeNull();
+  });
+
+  it("多选：展开后标出全部正确选项", () => {
+    const { container } = render(
+      <MultipleChoiceRenderer {...props(q(2), { preview: true, locked: true, reveal: true })} />,
+    );
+    expect(container.querySelectorAll(".optbtn.ok").length).toBeGreaterThan(1);
+  });
+
+  it("判断：展开后给正确项打标，另一个不打", () => {
+    const { container } = render(
+      <TrueFalseRenderer {...props(q(4), { preview: true, locked: true, reveal: true })} />,
+    );
+    expect(container.querySelectorAll(".tfb.ok")).toHaveLength(1);
+  });
+
+  it("填空：展开后每个空位显示可接受答案", () => {
+    const { container } = render(
+      <FillBlankRenderer {...props(q(6), { preview: true, locked: true, reveal: true })} />,
+    );
+    expect(container.querySelectorAll(".mark").length).toBe(2);
+  });
+
+  it("代码填空：展开后标出空位并给出答案版代码", () => {
+    const { container } = render(
+      <CodeBlankRenderer {...props(q(8), { preview: true, locked: true, reveal: true })} />,
+    );
+    expect(container.querySelectorAll(".slot.ok").length).toBeGreaterThan(0);
+    expect(container.querySelector(".solution")).not.toBeNull();
+    expect(container.querySelectorAll(".blank-row .mark").length).toBeGreaterThan(0);
+  });
+
+  it("简答：展开后显示参考答案，但不出现自评按钮（不产生评分）", () => {
+    const { container } = render(
+      <ShortAnswerRenderer {...props(q(10), { preview: true, locked: true, reveal: true })} />,
+    );
+    expect(screen.getByText(/参考答案/)).toBeTruthy();
+    expect(container.querySelectorAll(".self-btn")).toHaveLength(0);
+  });
+});
+
 describe("六类渲染器可作答", () => {
   it("单选：选项数正确，点击回传 optionId", () => {
     const onChange = vi.fn();
