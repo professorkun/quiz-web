@@ -50,6 +50,7 @@ import { RichText } from "../../components/RichText";
 import { usePlatform } from "../../platform/PlatformProvider";
 import { getRenderer } from "../../renderers";
 import { navigate } from "../../router";
+import { passageForCurrent } from "./passage";
 import { IconCheck, IconCheckCircle, IconClock, IconClose, IconExam, IconXCircle } from "../../ui/icons";
 
 const round = (value: number): number => Math.round(value * 100) / 100;
@@ -358,16 +359,12 @@ export function ExamPage(): React.ReactElement {
     const urgent = remaining !== null && remaining <= 5 * 60 * 1000;
 
     // 共享材料（R4-2）：同一篇材料在整卷只渲染一次（挂在第一道引用它的题上）
-    const currentIndex = session.items.findIndex((item) => item.questionId === questionId);
-    const earlierSamePassage =
-      question.passageId !== undefined &&
-      session.items
-        .slice(0, currentIndex < 0 ? 0 : currentIndex)
-        .some((item) => questionsById.get(item.questionId)?.passageId === question.passageId);
-    const passage =
-      question.passageId === undefined || earlierSamePassage
-        ? undefined
-        : activeBank.passages?.find((item) => item.passageId === question.passageId);
+    const passage = passageForCurrent(
+      session.items,
+      questionId,
+      questionsById,
+      activeBank.passages,
+    );
 
     return (
       <div className="page practice-page">
