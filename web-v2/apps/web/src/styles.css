@@ -36,6 +36,7 @@
   --c-vermilion: #b4452f;
   --c-vermilion-soft: #f6e9e4;
   --c-vermilion-line: #ebd3cb;
+  --c-on-brand: #fcf9f2;
   --c-overlay: rgba(27, 26, 23, 0.42);
 
   /* 旧变量别名（兼容现有页面类） */
@@ -239,7 +240,7 @@ pre {
   border: 1px solid transparent;
   border-radius: var(--r-10);
   background: var(--c-brand);
-  color: #fff;
+  color: var(--c-on-brand);
   font-size: 14px;
   font-weight: 600;
   line-height: 1;
@@ -703,6 +704,7 @@ textarea.input {
   gap: var(--sp-3);
   max-width: min(720px, 92vw);
   padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--c-line-strong);
   border-radius: var(--r-10);
   background: #1b1a17;
   color: #fcf9f2;
@@ -825,6 +827,21 @@ textarea.input {
   width: 34px;
   height: 34px;
   border-radius: var(--r-8);
+}
+
+/* 深色模式用反白版，避免墨底印面与深底糊在一起 */
+.brand-mark-on-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .brand-mark-on-light {
+    display: none;
+  }
+
+  .brand-mark-on-dark {
+    display: block;
+  }
 }
 
 .brand-title {
@@ -1396,7 +1413,7 @@ textarea.input {
 
 .optbtn.sel .k {
   background: var(--c-brand);
-  color: #fff;
+  color: var(--c-on-brand);
 }
 
 .optbtn.ok {
@@ -1901,7 +1918,7 @@ textarea.input {
 
 .lecture-nav-item.on .lecture-nav-seq {
   background: var(--c-brand);
-  color: #fff;
+  color: var(--c-on-brand);
 }
 
 .lecture-nav-main {
@@ -2039,7 +2056,7 @@ textarea.input {
   height: 34px;
   border-radius: 50%;
   background: var(--c-brand);
-  color: #fff;
+  color: var(--c-on-brand);
   font-size: 14px;
 }
 
@@ -2756,5 +2773,49 @@ textarea.input {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   深色模式（V2.3 · T-12）：只换令牌，不改组件规则。
+   纸→墨、墨→纸；朱色提亮一档，保证在深底上仍可辨。
+   ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-brand: #ede7da;
+    --c-brand-dark: #ffffff;
+    --c-brand-soft: #2a261f;
+    --c-brand-line: #3f392e;
+
+    --c-bg: #14130f;
+    --c-surface: #1e1c18;
+    --c-surface-2: #24211c;
+    --c-line: #3a352c;
+    --c-line-strong: #4a4438;
+
+    --c-text: #ede7da;
+    --c-text-2: #c9c1b2;
+    --c-text-3: #9c9486;
+
+    --c-ok: #6fbf97;
+    --c-ok-bg: #16241d;
+    --c-ok-line: #2c4438;
+    --c-bad: #d98a80;
+    --c-bad-bg: #2a1a18;
+    --c-bad-line: #4a2b27;
+    --c-warn: #d9ae63;
+    --c-warn-bg: #241f14;
+    --c-warn-line: #4a3d24;
+    --c-accent: #c9a66b;
+
+    --c-vermilion: #c9634a;
+    --c-vermilion-soft: #2a1c18;
+    --c-vermilion-line: #4a2e28;
+    --c-on-brand: #14130f;
+    --c-overlay: rgba(0, 0, 0, 0.62);
+
+    --sh-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --sh-overlay: 0 12px 32px rgba(0, 0, 0, 0.55);
   }
 }
