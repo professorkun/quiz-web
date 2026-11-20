@@ -63,6 +63,8 @@ const BASE_KEYS = [
   // V2.1 · R1.5：schema 早就接受这两个可选字段，白名单漏了会把合法题库拒之门外
   "tags",
   "difficulty",
+  // R4-2：材料引用
+  "passageId",
 ] as const;
 
 const TYPE_KEYS: Readonly<Record<string, readonly string[]>> = {
@@ -72,7 +74,10 @@ const TYPE_KEYS: Readonly<Record<string, readonly string[]>> = {
   fill_blank: ["blanks"],
   code_blank: ["files", "blanks"],
   short_answer: ["rubric"],
+  cloze: ["passageId", "sharedOptions", "blanks", "reuseOptions"],
 };
+
+const PASSAGE_KEYS = ["passageId", "title", "body", "source"] as const;
 
 const MANIFEST_KEYS = [
   "schemaVersion",
@@ -299,6 +304,43 @@ export function validateBankPackage(input: unknown): ValidateResult {
         });
       } else {
         legacySeen.set(key, q.questionId);
+      }
+    }
+  }
+
+  // 材料引用：题干里写了 passageId，就必须真的有这篇材料
+  const passageRefs = (input as { passages?: unknown } | null)?.passages;
+  if (Array.isArray(passageRefs)) {
+    const ids = new Set<string>();
+    passageRefs.forEach((raw, index) => {
+      const id = (raw as { passageId?: unknown } | null)?.passageId;
+      if (typeof id === "string") ids.add(id);
+      issues.push(...collectUnknownKeys(raw, PASSAGE_KEYS, `passages[${index}]`));
+    });
+    for (const q of questions) {
+      if (q.passageId !== undefined && !ids.has(q.passageId)) {
+        issues.push({
+          code: ValidationCode.UNKNOWN_TOPIC,
+          message: `题目引用了不存在的材料：${q.passageId}`,
+          path: q.questionId,
+        });
+      }
+      if (q.type === "cloze" && q.passageId === undefined) {
+        issues.push({
+          code: ValidationCode.SCHEMA_INVALID,
+          message: "完形填空必须引用一篇材料（passageId）",
+          path: q.questionId,
+        });
+      }
+    }
+  } else {
+    for (const q of questions) {
+      if (q.type === "cloze") {
+        issues.push({
+          code: ValidationCode.SCHEMA_INVALID,
+          message: "题库缺少 passages，完形填空无法引用材料",
+          path: q.questionId,
+        });
       }
     }
   }

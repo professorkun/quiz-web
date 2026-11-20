@@ -15,6 +15,7 @@
 
 import {
   LearningSnapshotSchema,
+  PassageSchema,
   topLevelKeyHint,
   validateBankPackage,
   validateKnowledgeModules,
@@ -24,6 +25,7 @@ import {
   type ExamRecord,
   type FavoriteEntry,
   type LearningSnapshot,
+  type Passage,
   type PracticeSession,
 } from "@quiz/core";
 import type { Platform } from "@quiz/platform";
@@ -145,7 +147,7 @@ const SNAPSHOT_KEYS = [
   "examRecords",
 ] as const;
 
-const BANK_KEYS = ["kind", "manifest", "questions", "knowledge"] as const;
+const BANK_KEYS = ["kind", "manifest", "questions", "knowledge", "passages"] as const;
 
 function unknownKeyIssues(
   rows: unknown,
@@ -326,6 +328,7 @@ export function exportBankJson(bank: BankContent): string {
       manifest: bank.manifest,
       questions: bank.questions,
       knowledge: bank.knowledge,
+      passages: bank.passages ?? [],
     },
     null,
     2,
@@ -366,7 +369,38 @@ export function parseBankJson(text: string): ParseResult<BankContent> {
     return { ok: false, value: null, issues, warnings: [] };
   }
 
-  const validated = validateBankPackage({ manifest, questions });
+  const passagesRaw = record["passages"] ?? [];
+  if (!Array.isArray(passagesRaw)) {
+    return {
+      ok: false,
+      value: null,
+      issues: [...issues, { path: "$.passages", message: "passages 必须是数组" }],
+      warnings: [],
+    };
+  }
+  const passages: Passage[] = [];
+  passagesRaw.forEach((raw, index) => {
+    const parsed = PassageSchema.safeParse(raw);
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        issues.push({
+          path: `passages[${index}].${issue.path.join(".")}`,
+          message: issue.message,
+        });
+      }
+      return;
+    }
+    passages.push(parsed.data);
+  });
+  const seenPassage = new Set<string>();
+  for (const p of passages) {
+    if (seenPassage.has(p.passageId)) {
+      issues.push({ path: "$.passages", message: `材料 ID 重复：${p.passageId}` });
+    }
+    seenPassage.add(p.passageId);
+  }
+
+  const validated = validateBankPackage({ manifest, questions, passages: passagesRaw });
   for (const issue of validated.issues) {
     issues.push({ path: issue.path ?? "$", message: `[${issue.code}] ${issue.message}` });
   }
@@ -392,6 +426,7 @@ export function parseBankJson(text: string): ParseResult<BankContent> {
       manifest: manifest as BankContent["manifest"],
       questions: validated.questions,
       knowledge: validatedKnowledge.modules,
+      passages,
     },
     issues,
     warnings,
