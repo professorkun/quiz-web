@@ -15,7 +15,6 @@
 
 import {
   LearningSnapshotSchema,
-  PassageSchema,
   topLevelKeyHint,
   validateBankPackage,
   validateKnowledgeModules,
@@ -25,7 +24,6 @@ import {
   type ExamRecord,
   type FavoriteEntry,
   type LearningSnapshot,
-  type Passage,
   type PracticeSession,
 } from "@quiz/core";
 import type { Platform } from "@quiz/platform";
@@ -378,28 +376,8 @@ export function parseBankJson(text: string): ParseResult<BankContent> {
       warnings: [],
     };
   }
-  const passages: Passage[] = [];
-  passagesRaw.forEach((raw, index) => {
-    const parsed = PassageSchema.safeParse(raw);
-    if (!parsed.success) {
-      for (const issue of parsed.error.issues) {
-        issues.push({
-          path: `passages[${index}].${issue.path.join(".")}`,
-          message: issue.message,
-        });
-      }
-      return;
-    }
-    passages.push(parsed.data);
-  });
-  const seenPassage = new Set<string>();
-  for (const p of passages) {
-    if (seenPassage.has(p.passageId)) {
-      issues.push({ path: "$.passages", message: `材料 ID 重复：${p.passageId}` });
-    }
-    seenPassage.add(p.passageId);
-  }
 
+  // 材料形状、未知字段、ID 去重与引用检查全部由 core 的校验器负责（同一口径）
   const validated = validateBankPackage({ manifest, questions, passages: passagesRaw });
   for (const issue of validated.issues) {
     issues.push({ path: issue.path ?? "$", message: `[${issue.code}] ${issue.message}` });
@@ -426,7 +404,7 @@ export function parseBankJson(text: string): ParseResult<BankContent> {
       manifest: manifest as BankContent["manifest"],
       questions: validated.questions,
       knowledge: validatedKnowledge.modules,
-      passages,
+      passages: validated.passages,
     },
     issues,
     warnings,

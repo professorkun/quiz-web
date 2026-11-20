@@ -11,9 +11,11 @@ import { z } from "zod";
 import {
   BankManifestSchema,
   KnowledgeModuleSchema,
+  PassageSchema,
   QuestionSchema,
   type BankManifest,
   type KnowledgeModule,
+  type Passage,
   type Question,
 } from "./schema.js";
 
@@ -22,6 +24,9 @@ export const ValidationCode = {
   DUP_QUESTION_ID: "DUP_QUESTION_ID",
   DUP_TOPIC_ID: "DUP_TOPIC_ID",
   UNKNOWN_TOPIC: "UNKNOWN_TOPIC",
+  /** 题目引用了不存在的材料（R4-2） */
+  UNKNOWN_PASSAGE: "UNKNOWN_PASSAGE",
+  DUP_PASSAGE_ID: "DUP_PASSAGE_ID",
   DUP_LEGACY_KEY: "DUP_LEGACY_KEY",
   BANK_MISMATCH: "BANK_MISMATCH",
   QUESTION_COUNT_MISMATCH: "QUESTION_COUNT_MISMATCH",
@@ -41,6 +46,8 @@ export interface ValidationIssue {
 export interface BankPackage {
   readonly manifest: BankManifest;
   readonly questions: readonly Question[];
+  /** R4-2 起题库级共享材料；旧包没有该字段 */
+  readonly passages?: readonly Passage[];
 }
 
 export interface ValidateResult {
@@ -48,6 +55,8 @@ export interface ValidateResult {
   readonly issues: readonly ValidationIssue[];
   /** 通过 Schema 校验后的问题对象，便于调用方继续使用 */
   readonly questions: readonly Question[];
+  /** 通过 Schema 校验后的材料 */
+  readonly passages: readonly Passage[];
 }
 
 const BASE_KEYS = [
@@ -209,7 +218,7 @@ export function validateBankPackage(input: unknown): ValidateResult {
         path: `manifest.${issue.path.join(".")}`,
       });
     }
-    return { ok: false, issues, questions: [] };
+    return { ok: false, issues, questions: [], passages: [] };
   }
   const manifest = manifestParsed.data;
 
@@ -220,7 +229,7 @@ export function validateBankPackage(input: unknown): ValidateResult {
       message: "questions 必须是数组",
       path: "questions",
     });
-    return { ok: false, issues, questions: [] };
+    return { ok: false, issues, questions: [], passages: [] };
   }
 
   rawQuestions.forEach((raw, index) => {
@@ -308,40 +317,70 @@ export function validateBankPackage(input: unknown): ValidateResult {
     }
   }
 
-  // 材料引用：题干里写了 passageId，就必须真的有这篇材料
-  const passageRefs = (input as { passages?: unknown } | null)?.passages;
-  if (Array.isArray(passageRefs)) {
-    const ids = new Set<string>();
-    passageRefs.forEach((raw, index) => {
-      const id = (raw as { passageId?: unknown } | null)?.passageId;
-      if (typeof id === "string") ids.add(id);
-      issues.push(...collectUnknownKeys(raw, PASSAGE_KEYS, `passages[${index}]`));
-    });
-    for (const q of questions) {
-      if (q.passageId !== undefined && !ids.has(q.passageId)) {
-        issues.push({
-          code: ValidationCode.UNKNOWN_TOPIC,
-          message: `题目引用了不存在的材料：${q.passageId}`,
-          path: q.questionId,
-        });
-      }
-      if (q.type === "cloze" && q.passageId === undefined) {
-        issues.push({
-          code: ValidationCode.SCHEMA_INVALID,
-          message: "完形填空必须引用一篇材料（passageId）",
-          path: q.questionId,
-        });
-      }
+  // ---------------------------------------------------------------- 材料
+  const rawPassages = (input as { passages?: unknown } | null)?.passages;
+  const passages: Passage[] = [];
+  if (rawPassages !== undefined) {
+    if (!Array.isArray(rawPassages)) {
+      issues.push({
+        code: ValidationCode.SCHEMA_INVALID,
+        message: "passages 必须是数组",
+        path: "passages",
+      });
+    } else {
+      rawPassages.forEach((raw, index) => {
+        issues.push(...collectUnknownKeys(raw, PASSAGE_KEYS, `passages[${index}]`));
+        const parsed = PassageSchema.safeParse(raw, { errorMap: zhErrorMap });
+        if (!parsed.success) {
+          for (const issue of parsed.error.issues) {
+            issues.push({
+              code: ValidationCode.SCHEMA_INVALID,
+              message: issue.message,
+              path: `passages[${index}].${issue.path.join(".")}`,
+            });
+          }
+          return;
+        }
+        passages.push(parsed.data);
+      });
+
+      const seenPassage = new Set<string>();
+      passages.forEach((passage, index) => {
+        if (seenPassage.has(passage.passageId)) {
+          issues.push({
+            code: ValidationCode.DUP_PASSAGE_ID,
+            message: `材料 ID 重复：${passage.passageId}`,
+            path: `passages[${index}].passageId`,
+          });
+        }
+        seenPassage.add(passage.passageId);
+      });
     }
-  } else {
-    for (const q of questions) {
-      if (q.type === "cloze") {
-        issues.push({
-          code: ValidationCode.SCHEMA_INVALID,
-          message: "题库缺少 passages，完形填空无法引用材料",
-          path: q.questionId,
-        });
-      }
+  }
+
+  // 引用检查：写了 passageId 就必须真的有这篇材料；cloze 必须挂材料
+  const passageIds = new Set(passages.map((passage) => passage.passageId));
+  for (const q of questions) {
+    if (q.passageId !== undefined && !passageIds.has(q.passageId)) {
+      issues.push({
+        code: ValidationCode.UNKNOWN_PASSAGE,
+        message: `题目引用了不存在的材料：${q.passageId}`,
+        path: q.questionId,
+      });
+    }
+    if (q.type === "cloze" && q.passageId === undefined) {
+      issues.push({
+        code: ValidationCode.SCHEMA_INVALID,
+        message: "完形填空必须引用一篇材料（passageId）",
+        path: q.questionId,
+      });
+    }
+    if (q.type === "cloze" && passages.length === 0) {
+      issues.push({
+        code: ValidationCode.SCHEMA_INVALID,
+        message: "题库缺少 passages，完形填空无法引用材料",
+        path: q.questionId,
+      });
     }
   }
 
@@ -353,7 +392,7 @@ export function validateBankPackage(input: unknown): ValidateResult {
     });
   }
 
-  return { ok: issues.length === 0, issues, questions };
+  return { ok: issues.length === 0, issues, questions, passages };
 }
 
 export interface KnowledgeValidateResult {

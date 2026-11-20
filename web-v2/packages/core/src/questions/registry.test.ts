@@ -38,9 +38,10 @@ const q = (over: Record<string, unknown>): Question =>
   }) as Question;
 
 describe("题型注册表", () => {
-  it("六个内置题型全部注册，且与 Schema 的判别联合一一对应", () => {
+  it("七个内置题型全部注册，且与 Schema 的判别联合一一对应", () => {
     const types = listQuestionTypes().map((d) => d.type).sort();
     expect(types).toEqual([
+      "cloze",
       "code_blank",
       "fill_blank",
       "multiple_choice",
@@ -107,6 +108,26 @@ describe("题型注册表", () => {
       rubric: [{ pointId: "p1", text: "要点", score: 5 }],
     });
     expect(gradeAnswer(short, "写了点东西").correct).toBeNull();
+
+    const cloze = q({
+      type: "cloze",
+      questionId: "javaweb:cloze:001",
+      passageId: "javaweb:passage:001",
+      stem: "Tom is {{b1}} and Jerry is {{b2}}.",
+      sharedOptions: [
+        { optionId: "o1", text: "happy" },
+        { optionId: "o2", text: "sad" },
+      ],
+      blanks: [
+        { blankId: "b1", optionId: "o1" },
+        { blankId: "b2", optionId: "o2" },
+      ],
+      reuseOptions: false,
+    });
+    expect(gradeAnswer(cloze, { b1: "o1", b2: "o2" }, 2)).toMatchObject({
+      correct: true,
+      score: 2,
+    });
   });
 
   it("扩展点：注册一个契约外的假题型后，公共判分入口直接分派成功", () => {
@@ -129,7 +150,7 @@ describe("题型注册表", () => {
     const fake = { ...q({ type: "short_answer" }), type: CUSTOM_TYPE } as unknown as Question;
     expect(gradeAnswer(fake, "ok", 7)).toEqual({ correct: true, score: 7, maxScore: 7 });
     expect(gradeAnswer(fake, "no", 7).score).toBe(0);
-    expect(listQuestionTypes()).toHaveLength(7);
+    expect(listQuestionTypes()).toHaveLength(8);
   });
 
   it("拒绝用不同实现静默覆盖已有题型", () => {
