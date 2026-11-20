@@ -13,10 +13,10 @@
 
 import type { AuthAdapter, AuthUser } from "@quiz/platform";
 
-import { cloud } from "./client";
+import { getCloud, type CloudClient } from "./client";
 import { CLOUD_PUBLIC_CONFIG, probeCloudLoginOrigin } from "./config";
 
-type Session = NonNullable<Awaited<ReturnType<typeof cloud.auth.getSession>>["data"]>;
+type Session = NonNullable<Awaited<ReturnType<CloudClient["auth"]["getSession"]>>["data"]>;
 
 export interface SendOtpResult {
   readonly verificationId: string;
@@ -77,14 +77,31 @@ function unwrap<T>(result: { data: T | null; error: unknown }, fallback: string)
 export function createCloudAuthAdapter(): AuthAdapter {
   return {
     getUser: async () => {
-      const { data, error } = await cloud.auth.getSession();
+      const client = await getCloud();
+      const { data, error } = await client.auth.getSession();
       if (error) return null;
       return toAuthUser(data);
     },
-    onAuthStateChange: (listener) =>
-      cloud.auth.onAuthStateChange((_event, session) => listener(toAuthUser(session))),
+    // SDK 是懒加载的：先返回同步的取消函数，等实例就绪后再真正订阅
+    onAuthStateChange: (listener) => {
+      let unsubscribe: (() => void) | null = null;
+      let cancelled = false;
+      void getCloud()
+        .then((client) => {
+          if (cancelled) return;
+          unsubscribe = client.auth.onAuthStateChange((_event, session) =>
+            listener(toAuthUser(session)),
+          );
+        })
+        .catch(() => undefined);
+      return () => {
+        cancelled = true;
+        unsubscribe?.();
+      };
+    },
     signOut: async () => {
-      await cloud.auth.signOut();
+      const client = await getCloud();
+      await client.auth.signOut();
     },
   };
 }
@@ -94,7 +111,8 @@ export const cloudAuth = {
   /** 发送手机验证码（仅大陆 11 位；校验在 UI 层） */
   async sendPhoneOtp(phone: string): Promise<SendOtpResult> {
     await assertLoginOrigin();
-    const data = unwrap(await cloud.auth.sendOtp({ phone }), "验证码发送失败");
+    const client = await getCloud();
+    const data = unwrap(await client.auth.sendOtp({ phone }), "验证码发送失败");
     return { verificationId: data.verificationId, isExistingUser: data.isExistingUser };
   },
 
@@ -105,8 +123,9 @@ export const cloudAuth = {
     isExistingUser: boolean,
     token: string,
   ): Promise<AuthUser | null> {
+    const client = await getCloud();
     const data = unwrap(
-      await cloud.auth.verifyOtp({ phone, verificationId, isExistingUser, token }),
+      await client.auth.verifyOtp({ phone, verificationId, isExistingUser, token }),
       "验证码校验失败",
     );
     return toAuthUser(data);
@@ -116,8 +135,9 @@ export const cloudAuth = {
   async startWechat(): Promise<void> {
     await assertLoginOrigin();
     assertWechatOrigin();
+    const client = await getCloud();
     const data = unwrap(
-      await cloud.auth.signInWithOAuth({ provider: "wechat", redirectTo: globalThis.location.origin }),
+      await client.auth.signInWithOAuth({ provider: "wechat", redirectTo: globalThis.location.origin }),
       "微信登录启动失败",
     );
     globalThis.location.assign(data.url);
@@ -133,11 +153,12 @@ export const cloudAuth = {
     const provider = url.searchParams.get("provider");
     if (provider !== "workbuddy" && provider !== "wechat") return null;
 
+    const client = await getCloud();
     const handler =
-      provider === "workbuddy" ? cloud.auth.handleWorkBuddyCallback : cloud.auth.handleWechatWebCallback;
+      provider === "workbuddy" ? client.auth.handleWorkBuddyCallback : client.auth.handleWechatWebCallback;
     if (typeof handler !== "function") return null;
 
-    const { data, error } = await handler.call(cloud.auth);
+    const { data, error } = await handler.call(client.auth);
     if (error) throw new Error(messageOf(error, "登录回调处理失败"));
 
     for (const key of ["code", "state", "provider"]) url.searchParams.delete(key);
@@ -147,7 +168,8 @@ export const cloudAuth = {
 
   /** 当前登录用户（无会话返回 null） */
   async currentUser(): Promise<AuthUser | null> {
-    const { data, error } = await cloud.auth.getSession();
+    const client = await getCloud();
+    const { data, error } = await client.auth.getSession();
     if (error) return null;
     return toAuthUser(data);
   },

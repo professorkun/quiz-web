@@ -1,13 +1,17 @@
 /**
- * 富文本**唯一**渲染入口（T2-8）。
+ * 富文本**唯一**渲染入口（T2-8 / P3 体积治理）。
  *
  * 业务代码一律只用这个组件；本文件是 `apps/web` 里唯一允许使用
  * `dangerouslySetInnerHTML` 的地方，由 `scripts/check-extension-point.mjs` 强制。
- * 传给它的 HTML 已经过 `richText.ts` 的 Markdown/高亮/公式 + DOMPurify 严格清洗。
+ *
+ * 首帧只渲染 Markdown 与纯文本：KaTeX / highlight.js 都是动态 import，
+ * 检测到公式或代码块才加载，加载完成后重渲染一次（两帧），首屏不背这两个大包。
  */
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { loadHighlighter, type Highlighter } from "./highlighter";
+import { loadKatex, makeMathRenderer, type MathRenderer } from "./math";
 import { renderRichText } from "./renderRichText";
 
 export interface RichTextProps {
@@ -17,17 +21,60 @@ export interface RichTextProps {
   readonly inline?: boolean;
 }
 
+const MATH_PATTERN = /\$\$[\s\S]+?\$\$|\\\([\s\S]+?\\\)/;
+const CODE_PATTERN = /```/;
+
 export function RichText(props: RichTextProps): React.ReactElement {
+  const needsMath = useMemo(() => MATH_PATTERN.test(props.text), [props.text]);
+  const needsCode = useMemo(() => CODE_PATTERN.test(props.text), [props.text]);
+
+  const [math, setMath] = useState<MathRenderer | null>(null);
+  const [highlight, setHighlight] = useState<Highlighter | null>(null);
+
+  useEffect(() => {
+    if (!needsMath) return;
+    let cancelled = false;
+    void loadKatex()
+      .then((module) => {
+        if (!cancelled) setMath(() => makeMathRenderer(module));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [needsMath]);
+
+  useEffect(() => {
+    if (!needsCode) return;
+    let cancelled = false;
+    void loadHighlighter()
+      .then((renderer) => {
+        if (!cancelled) setHighlight(() => renderer);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [needsCode]);
+
   const html = useMemo(
-    () => renderRichText(props.text, { inline: props.inline }),
-    [props.text, props.inline],
+    () =>
+      renderRichText(props.text, {
+        inline: props.inline,
+        ...(math === null ? {} : { math }),
+        ...(highlight === null ? {} : { highlight }),
+      }),
+    [props.text, props.inline, math, highlight],
   );
+
   const className = ["rich-text", props.className].filter(Boolean).join(" ");
   const injected = { __html: html } as const;
+  // 等公式到位时先按原文占高，避免替换瞬间跳版（CLS）
+  const pending = needsMath && math === null ? { "data-math": "pending" } : {};
 
   return props.inline === true ? (
-    <span className={className} dangerouslySetInnerHTML={injected} />
+    <span className={className} {...pending} dangerouslySetInnerHTML={injected} />
   ) : (
-    <div className={className} dangerouslySetInnerHTML={injected} />
+    <div className={className} {...pending} dangerouslySetInnerHTML={injected} />
   );
 }

@@ -87,11 +87,7 @@
   --sh-card: 0 1px 2px rgba(27, 26, 23, 0.05);
   --sh-overlay: 0 12px 32px rgba(27, 26, 23, 0.18);
 
-  /* 1.6 动效 */
-  --t-hover: 100ms;
-  --t-press: 80ms;
-  --t-panel: 150ms;
-  --t-page: 200ms;
+  /* 1.6 动效：档位令牌统一在 styles/motion.css，这里只保留旧缓动别名 */
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
 
   /* 1.7 布局 */
@@ -246,9 +242,9 @@ pre {
   line-height: 1;
   white-space: nowrap;
   text-decoration: none;
-  transition: background-color var(--t-hover) var(--ease),
-    border-color var(--t-hover) var(--ease), box-shadow var(--t-hover) var(--ease),
-    transform var(--t-press) var(--ease), opacity var(--t-hover) var(--ease);
+  transition: background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease), box-shadow var(--d-fast) var(--ease),
+    transform var(--d-press) var(--ease), opacity var(--d-fast) var(--ease);
 }
 
 .btn:hover:not(:disabled) {
@@ -337,9 +333,9 @@ pre {
   font-size: var(--fs-sm);
   line-height: 1;
   white-space: nowrap;
-  transition: background-color var(--t-hover) var(--ease),
-    border-color var(--t-hover) var(--ease), color var(--t-hover) var(--ease),
-    transform var(--t-press) var(--ease), opacity var(--t-hover) var(--ease);
+  transition: background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease), color var(--d-fast) var(--ease),
+    transform var(--d-press) var(--ease), opacity var(--d-fast) var(--ease);
 }
 
 /* 视觉 36、热区 44：伪元素向外扩 4px，不改布局 */
@@ -419,8 +415,8 @@ pre {
   color: var(--c-text-2);
   font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
-  transition: background-color var(--t-hover) var(--ease),
-    border-color var(--t-hover) var(--ease);
+  transition: background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
 }
 
 .qnum.answered {
@@ -457,7 +453,7 @@ pre {
   background: var(--c-surface);
   color: var(--c-text);
   font-size: var(--fs-body);
-  transition: border-color var(--t-hover) var(--ease), box-shadow var(--t-hover) var(--ease);
+  transition: border-color var(--d-fast) var(--ease), box-shadow var(--d-fast) var(--ease);
 }
 
 .input:hover:not(:disabled) {
@@ -521,8 +517,8 @@ textarea.input {
 }
 
 .card.clickable {
-  transition: transform var(--t-panel) var(--ease), box-shadow var(--t-panel) var(--ease),
-    border-color var(--t-panel) var(--ease);
+  transition: transform var(--d-base) var(--ease), box-shadow var(--d-base) var(--ease),
+    border-color var(--d-base) var(--ease);
 }
 
 .card.clickable:hover {
@@ -576,7 +572,7 @@ textarea.input {
   color: var(--c-text-3);
   font-size: 14px;
   white-space: nowrap;
-  transition: color var(--t-hover) var(--ease), background-color var(--t-hover) var(--ease);
+  transition: color var(--d-fast) var(--ease), background-color var(--d-fast) var(--ease);
 }
 
 .tab:hover {
@@ -615,7 +611,7 @@ textarea.input {
   height: 100%;
   border-radius: var(--r-full);
   background: var(--c-brand);
-  transition: width var(--t-panel) var(--ease);
+  transition: width var(--d-base) var(--ease);
 }
 
 .progress-row {
@@ -650,7 +646,7 @@ textarea.input {
   background: var(--c-surface-2);
   color: var(--c-text-2);
   font-size: 14px;
-  animation: feedback-in var(--t-panel) var(--ease);
+  animation: feedback-in var(--d-base) var(--ease);
 }
 
 .feedback.ok { border-left-color: var(--c-ok); background: var(--c-ok-bg); color: var(--c-ok); }
@@ -711,7 +707,7 @@ textarea.input {
   box-shadow: var(--sh-overlay);
   font-size: var(--fs-sm);
   transform: translateX(-50%);
-  animation: toast-in var(--t-panel) var(--ease);
+  animation: toast-in var(--d-base) var(--ease);
 }
 
 .toast .btn.ghost {
@@ -769,7 +765,7 @@ textarea.input {
   inset: 0;
   transform: translateX(-100%);
   background: linear-gradient(90deg, transparent, rgba(255, 252, 245, 0.75), transparent);
-  animation: shimmer 1.2s infinite;
+  animation: shimmer calc(var(--d-slow) * 4) infinite;
 }
 
 .skeleton.w-60 { width: 60%; }
@@ -810,7 +806,7 @@ textarea.input {
   padding: var(--sp-4) var(--sp-3);
   border-right: 1px solid var(--c-line);
   background: var(--c-surface);
-  transition: width var(--t-panel) var(--ease);
+  transition: width var(--d-base) var(--ease);
 }
 
 .brand {
@@ -889,7 +885,7 @@ textarea.input {
   color: var(--c-text-2);
   font-size: 14px;
   text-align: left;
-  transition: background-color var(--t-hover) var(--ease), color var(--t-hover) var(--ease);
+  transition: background-color var(--d-fast) var(--ease), color var(--d-fast) var(--ease);
 }
 
 .navitem:hover {
@@ -1250,7 +1246,7 @@ textarea.input {
   background: transparent;
   color: var(--c-text);
   text-align: left;
-  transition: background-color var(--t-hover) var(--ease), border-color var(--t-hover) var(--ease);
+  transition: background-color var(--d-fast) var(--ease), border-color var(--d-fast) var(--ease);
 }
 
 .qrow:hover {
@@ -1382,8 +1378,8 @@ textarea.input {
   background: var(--c-surface);
   color: var(--c-text);
   text-align: left;
-  transition: border-color var(--t-hover) var(--ease), background-color var(--t-hover) var(--ease),
-    transform var(--t-press) var(--ease);
+  transition: border-color var(--d-fast) var(--ease), background-color var(--d-fast) var(--ease),
+    transform var(--d-press) var(--ease);
 }
 
 .optbtn:hover:not(:disabled) {
@@ -1444,7 +1440,7 @@ textarea.input {
   border-radius: var(--r-10);
   background: var(--c-surface);
   text-align: center;
-  transition: border-color var(--t-hover) var(--ease), background-color var(--t-hover) var(--ease);
+  transition: border-color var(--d-fast) var(--ease), background-color var(--d-fast) var(--ease);
 }
 
 .tfb:hover:not(:disabled) { border-color: var(--c-brand); }
@@ -1617,7 +1613,7 @@ textarea.input {
   border-radius: var(--r-8);
   background: var(--c-surface);
   font-size: var(--fs-sm);
-  transition: border-color var(--t-hover) var(--ease), background-color var(--t-hover) var(--ease);
+  transition: border-color var(--d-fast) var(--ease), background-color var(--d-fast) var(--ease);
 }
 
 .self-btn:hover { border-color: var(--c-brand); }
@@ -1819,7 +1815,7 @@ textarea.input {
   border: 1px solid var(--c-line);
   border-radius: var(--r-10);
   background: var(--c-surface);
-  transition: border-color var(--t-hover) var(--ease), background-color var(--t-hover) var(--ease);
+  transition: border-color var(--d-fast) var(--ease), background-color var(--d-fast) var(--ease);
 }
 
 .ritem:hover {
@@ -1897,7 +1893,7 @@ textarea.input {
   background: var(--c-surface);
   color: var(--c-text);
   text-align: left;
-  transition: border-color var(--t-hover) var(--ease), background-color var(--t-hover) var(--ease);
+  transition: border-color var(--d-fast) var(--ease), background-color var(--d-fast) var(--ease);
 }
 
 .lecture-nav-item:hover { border-color: var(--c-brand); }
@@ -2043,7 +2039,7 @@ textarea.input {
   background: var(--c-surface-2);
   color: var(--c-text);
   text-align: left;
-  transition: border-color var(--t-hover) var(--ease);
+  transition: border-color var(--d-fast) var(--ease);
 }
 
 .video-placeholder:hover { border-color: var(--c-brand); }
@@ -2394,7 +2390,7 @@ textarea.input {
     color: var(--c-text-3);
     font-size: 9px;
     line-height: 1.2;
-    transition: color var(--t-hover) var(--ease);
+    transition: color var(--d-fast) var(--ease);
   }
 
   .bottomitem .icon {
@@ -2582,7 +2578,7 @@ textarea.input {
 
   .filter-card .filter-panel[data-open="true"] {
     display: block;
-    animation: drawer-in var(--t-panel) var(--ease);
+    animation: drawer-in var(--d-base) var(--ease);
   }
 
   .filter-panel .drawer-head {
@@ -2643,7 +2639,7 @@ textarea.input {
     background: var(--c-surface);
     box-shadow: var(--sh-overlay);
     overflow: auto;
-    animation: drawer-in var(--t-panel) var(--ease);
+    animation: drawer-in var(--d-base) var(--ease);
   }
 
   .drawer-head {
@@ -2673,7 +2669,7 @@ textarea.input {
     display: flex;
     flex-direction: column;
     background: var(--c-surface);
-    animation: page-in var(--t-page) var(--ease);
+    animation: page-in var(--d-emphasis) var(--ease);
   }
 
   .mobile-preview-head {

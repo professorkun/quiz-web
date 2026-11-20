@@ -1,0 +1,163 @@
+/* ==========================================================================
+   motion.css · 动效令牌与档位（V2.3 · T-11 / T-12）
+   规则：
+   1. 组件只写 var(--d-*)；不得出现裸时长。
+   2. 每个动效类上方标注档位；高频 > 160ms 一律打回。
+   3. reduce 偏好下全部关闭（见文件末尾）。
+   ========================================================================== */
+
+:root {
+  --d-press: 80ms;
+  --d-fast: 120ms;
+  --d-base: 160ms;
+  --d-emphasis: 240ms;
+  --d-slow: 320ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* 路由切页：低频（240ms），只做淡入 + 4px 上移 */
+@keyframes motion-page-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 档位：低频 */
+.motion-page {
+  animation: motion-page-in var(--d-emphasis) var(--ease-out);
+}
+
+/* 题目切换：高频（120ms），只动透明度，避免题干位移干扰阅读 */
+@keyframes motion-question-in {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+
+/* 档位：高频 */
+.motion-question {
+  animation: motion-question-in var(--d-fast) var(--ease-out);
+}
+
+/* 答案展开：高频（160ms），从上方 2px 落下 */
+@keyframes motion-answer-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 档位：高频 */
+.reveal-explanation {
+  animation: motion-answer-in var(--d-base) var(--ease-out);
+}
+
+/* hover-press：高频（80ms），按下缩 1.5%，不做上浮 */
+/* 档位：高频 */
+.btn:active:not(:disabled),
+.chip:active,
+.optbtn:active:not(:disabled),
+.tfb:active:not(:disabled),
+.navitem:active,
+.bottomitem:active,
+.lecture-nav-item:active {
+  transform: scale(0.985);
+  transition: transform var(--d-press) var(--ease-out);
+}
+
+/* 筛选抽屉 / 移动预览：中频（160ms），位移 8px */
+@keyframes motion-drawer-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 档位：中频 */
+.filter-panel[data-open="true"],
+.mobile-preview[data-open="true"] {
+  animation: motion-drawer-in var(--d-base) var(--ease-out);
+}
+
+/* 讲义切篇：高频（120ms），只换透明度，正文不滑入 */
+@keyframes motion-lecture-in {
+  from { opacity: 0.4; }
+  to { opacity: 1; }
+}
+
+/* 档位：高频 */
+.motion-lecture {
+  animation: motion-lecture-in var(--d-fast) var(--ease-out);
+}
+
+/* 导航指示条：高频（160ms），左侧竖条 scaleY 展开 */
+/* 档位：高频 */
+.navitem {
+  position: relative;
+}
+
+.navitem::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  width: 3px;
+  border-radius: var(--r-full);
+  background: var(--c-brand);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform var(--d-base) var(--ease-out);
+}
+
+.navitem.on::before {
+  transform: scaleY(1);
+}
+
+/* Toast：低频（240ms），与既有 toast-in 同形 */
+@keyframes motion-toast-in {
+  from { opacity: 0; transform: translate(-50%, 6px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* 档位：低频 */
+.toast {
+  animation: motion-toast-in var(--d-emphasis) var(--ease-out);
+}
+
+/* 骨架屏：循环（--d-slow × 4 ≈ 1.28s），只动背景位置 */
+/* 档位：循环 */
+.skeleton::after {
+  animation: shimmer calc(var(--d-slow) * 4) var(--ease-out) infinite;
+}
+
+/* Logo 首屏：一次性（320ms），轻微放大归位 */
+@keyframes motion-logo-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 档位：低频 */
+.brand-mark {
+  animation: motion-logo-in var(--d-slow) var(--ease-out) 1;
+}
+
+/* 交卷成绩：低频（240ms），整卡淡入 + 0.99 归位 */
+@keyframes motion-submit-in {
+  from { opacity: 0; transform: scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 档位：低频 */
+.score-card {
+  animation: motion-submit-in var(--d-emphasis) var(--ease-out);
+}
+
+/* 公式异步加载占位：先按原文占高，避免 KaTeX 到位时跳版 */
+.rich-text[data-math="pending"] {
+  min-height: 1.6em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

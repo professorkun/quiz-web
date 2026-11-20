@@ -584,7 +584,7 @@ export function PracticePage(): React.ReactElement {
         ) : null}
       </header>
 
-      <section className="card" data-question-id={questionId}>
+      <section className="card motion-question" key={questionId} data-question-id={questionId}>
         {stemInRenderer ? null : (
           <div className="stem">
             <RichText text={question.stem} />

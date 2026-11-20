@@ -5,7 +5,7 @@
  * 合并/LWW 在 `sync.ts` 里，便于单测。客户端不发 owner_id（RLS + DEFAULT 决定归属）。
  */
 
-import { cloud } from "./client";
+import { getCloud } from "./client";
 import type { CloudRow, SyncTransport } from "./sync";
 
 function messageOf(error: unknown, fallback: string): string {
@@ -31,13 +31,17 @@ interface LooseQuery {
     opts: { onConflict: string; ignoreDuplicates?: boolean },
   ): Promise<{ data?: unknown; error: unknown }>;
 }
-const db = cloud.database as unknown as { from(table: string): LooseQuery };
+async function getDb(): Promise<{ from(table: string): LooseQuery }> {
+  const client = await getCloud();
+  return client.database as unknown as { from(table: string): LooseQuery };
+}
 
 const PAGE = 1000;
 
 export function createCloudTransport(): SyncTransport {
   return {
     async select(table: string): Promise<CloudRow[]> {
+      const db = await getDb();
       const out: CloudRow[] = [];
       for (let from = 0; ; from += PAGE) {
         const res = await db.from(table).select("*").range(from, from + PAGE - 1);
@@ -51,12 +55,14 @@ export function createCloudTransport(): SyncTransport {
 
     async insertIgnore(table, rows, onConflict): Promise<void> {
       if (rows.length === 0) return;
+      const db = await getDb();
       const res = await db.from(table).upsert(rows, { onConflict, ignoreDuplicates: true });
       assert(res, `写入 ${table} 失败`);
     },
 
     async upsert(table, rows, onConflict): Promise<void> {
       if (rows.length === 0) return;
+      const db = await getDb();
       const res = await db.from(table).upsert(rows, { onConflict });
       assert(res, `更新 ${table} 失败`);
     },

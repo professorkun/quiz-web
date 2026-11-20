@@ -8,6 +8,8 @@
 
 import { describe, expect, it } from "vitest";
 
+import { loadHighlighter } from "./highlighter";
+import { loadKatex, makeMathRenderer } from "./math";
 import { renderRichText } from "./renderRichText";
 
 interface AttackCase {
@@ -90,18 +92,33 @@ describe("安全富文本渲染", () => {
     expect(html).toContain('href="https://example.com/a"');
   });
 
-  it("代码块高亮：生成 pre>code.hljs，且代码内容被转义", () => {
-    const html = renderRichText("```js\nconst x = \"<script>\";\n```");
+  it("代码块高亮：注入高亮器后生成 code.hljs，且代码内容被转义", async () => {
+    const highlight = await loadHighlighter();
+    const html = renderRichText("```js\nconst x = \"<script>\";\n```", { highlight });
     expect(html).toContain("<pre>");
     expect(html).toContain('class="hljs');
     expect(html).not.toContain("<script>");
   });
 
-  it("LaTeX 正确渲染：内联 \\(x^2\\) 与行间 $$E=mc^2$$", () => {
-    const inline = renderRichText("公式 \\(x^2\\) 结束", { inline: true });
+  it("未注入高亮器时先输出纯文本代码（首帧，不阻塞）", () => {
+    const html = renderRichText("```js\nconst x = 1;\n```");
+    expect(html).toContain("<pre>");
+    expect(html).toContain("const x = 1;");
+    expect(html).not.toContain('class="hljs');
+  });
+
+  it("LaTeX 正确渲染：注入 KaTeX 后内联与行间都出公式", async () => {
+    const math = makeMathRenderer(await loadKatex());
+    const inline = renderRichText("公式 \\(x^2\\) 结束", { inline: true, math });
     expect(inline).toContain("katex");
-    const display = renderRichText("$$E=mc^2$$");
+    const display = renderRichText("$$E=mc^2$$", { math });
     expect(display).toContain("katex-display");
+  });
+
+  it("未注入 KaTeX 时公式原样输出（首帧契约，不丢内容）", () => {
+    const html = renderRichText("公式 \\(x^2\\) 结束", { inline: true });
+    expect(html).toContain("x^2");
+    expect(html).not.toContain("katex");
   });
 
   it("不误伤 JSP EL 表达式 ${...}：按内容约定只认 \\(...\\) 与 $$...$$", () => {

@@ -292,8 +292,11 @@ pnpm build        # 产物在 apps/web/dist/
 - **Word 导入（Beta）**：`.docx` 经 fflate 解压后用轻量 XML 扫描器解析（段落 / 表格 / Heading1-2 / 加粗 / 换行），解析在 Worker 中运行；识别结果逐题确认，支持「全部接受高置信度」与「导出草稿 JSON」。20 题标准卷识别 20/20。
 - **体积**：解析器与 fflate 拆为独立 chunk（docx 6.73 KB、worker 81 KB gzip 前），首屏主包 gzip 增幅约 2 KB，满足 ≤5 KB 约束。
 
-### V2.3（部分，2026-11-20）
+### V2.3（2026-11-20）
 
-- **深色模式**：新增 `prefers-color-scheme: dark` 令牌层（墨底纸字、朱色提亮），侧栏字标切换为 `logo-reverse.svg`，`theme-color` 按明暗分别声明；未改任何组件规则。
+- **深色模式**：新增 `prefers-color-scheme: dark` 令牌层（墨底纸字、朱色提亮），侧栏字标切换为 `logo-reverse.svg`，`theme-color` 按明暗分别声明。
+- **动效分档**：新增 `styles/motion.css`（`--d-press/fast/base/emphasis/slow`）与 [动效规格](web-v2/docs/motion-spec.md)；11 个场景按档落地，组件只写 `var(--d-*)`，`prefers-reduced-motion` 下全部关闭。
+- **首屏体积**：五个非首页路由改 `lazy`；KaTeX、highlight.js、云 SDK 全部动态 import。首屏 `index-*.js` gzip 由 300.75 KB 降至 **73.28 KB**，主包中 `katex` 引用为 0。
+- **T-13 决策**：[ADR-0007](web-v2/docs/ADR-0007-passages-cloze.md) 判定材料复用与 cloze 暂缓，推 V2.4（抽样占比未证实，先用「一题一材质」）。
 
-**已知限制**：T-11 / T-12 的动效配方表未在本仓库内，动效条目尚未按档位落地；`.doc`、扫描件与图片型文档不支持；表格卷建议选项单元格自带 `A.` 字母；首屏 JS gzip 约 301 KB，仍高于 280 KB 预算，需在 P3 做代码分割。
+**已知限制**：`.doc`、扫描件与图片型文档不支持；表格卷建议选项单元格自带 `A.` 字母；公式与代码高亮为「先原文后渲染」的两帧，首帧会短暂看到源码。

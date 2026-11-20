@@ -1,6 +1,7 @@
 import "katex/dist/katex.min.css";
 import "highlight.js/styles/github.css";
 import "./styles.css";
+import "./styles/motion.css";
 
 import { createRoot } from "react-dom/client";
 
