@@ -28,6 +28,7 @@ import {
   type FavoriteEntry,
   type KnowledgeModule,
   type LearningSnapshot,
+  type Passage,
   type PracticeSettings,
   type Question,
   type QuestionProgress,
@@ -152,6 +153,11 @@ class BankRepositoryImpl implements BankRepository {
   async listKnowledge(bankId: string): Promise<readonly KnowledgeModule[]> {
     const bank = await this.resolve(bankId);
     return bank === null ? [] : bank.knowledge;
+  }
+
+  async listPassages(bankId: string): Promise<readonly Passage[]> {
+    const bank = await this.resolve(bankId);
+    return bank === null ? [] : (bank.passages ?? []);
   }
 
   async saveImportedBank(pkg: BankContent): Promise<void> {

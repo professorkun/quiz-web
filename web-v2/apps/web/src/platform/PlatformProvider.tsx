@@ -60,11 +60,12 @@ interface State {
 async function loadBank(platform: Platform, bankId: string): Promise<BankContent | null> {
   const manifest = await platform.banks.getManifest(bankId);
   if (manifest === null) return null;
-  const [questions, knowledge] = await Promise.all([
+  const [questions, knowledge, passages] = await Promise.all([
     platform.banks.listQuestions(bankId),
     platform.banks.listKnowledge(bankId),
+    platform.banks.listPassages(bankId),
   ]);
-  return { manifest, questions, knowledge };
+  return { manifest, questions, knowledge, passages };
 }
 
 async function loadBanks(platform: Platform): Promise<readonly BankContent[]> {

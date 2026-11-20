@@ -20,6 +20,7 @@ import type {
   ExamRecord,
   ExamSelfRating,
   KnowledgeModule,
+  Passage,
   PracticeSession,
   Question,
   QuestionProgress,
@@ -74,6 +75,8 @@ export interface BankRepository {
   listQuestions(bankId: string): Promise<readonly Question[]>;
   /** 知识讲义随题库走，换库即换内容（S3 验收 D 的最后一条） */
   listKnowledge(bankId: string): Promise<readonly KnowledgeModule[]>;
+  /** 共享材料（R4-2）：旧题库没有该字段时返回空数组 */
+  listPassages(bankId: string): Promise<readonly Passage[]>;
   /** 导入的题库落本地；同名 bankId 视为覆盖，调用方必须先确认 */
   saveImportedBank(pkg: BankContent): Promise<void>;
   /** 只删导入的题库；内置题库不可删，实现应直接忽略 */

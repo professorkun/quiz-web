@@ -254,6 +254,25 @@ describe("题库注册", () => {
     expect((await platform.banks.listKnowledge("net"))[0]?.moduleId).toBe("net:m1");
     expect(await platform.banks.listKnowledge("javaweb")).toEqual([]);
   });
+
+  it("共享材料随题库走；旧题库没有 passages 时返回空数组", async () => {
+    const { platform } = platformWith();
+    expect(await platform.banks.listPassages("javaweb")).toEqual([]);
+
+    await platform.banks.saveImportedBank({
+      ...makeBank("eng", "英语完形"),
+      passages: [
+        {
+          passageId: "eng:passage:001",
+          title: "A short story",
+          body: "Tom is happy.",
+        },
+      ],
+    });
+    const passages = await platform.banks.listPassages("eng");
+    expect(passages).toHaveLength(1);
+    expect(passages[0]?.title).toBe("A short story");
+  });
 });
 
 describe("版本与降级", () => {
