@@ -114,12 +114,15 @@ class BankRepositoryImpl implements BankRepository {
   }
 
   async listBankIds(): Promise<readonly string[]> {
+    return [...this.builtin.keys(), ...(await this.listImportedBankIds())];
+  }
+
+  async listImportedBankIds(): Promise<readonly string[]> {
     const importedKeys = await this.kv.keys(K.importedBanks);
-    const imported = importedKeys
+    return importedKeys
       .map((key) => key.slice(K.importedBanks.length))
       .filter((id) => !this.builtin.has(id))
       .sort((a, b) => a.localeCompare(b));
-    return [...this.builtin.keys(), ...imported];
   }
 
   private async loadImported(bankId: string): Promise<BankContent | null> {
@@ -579,6 +582,39 @@ export function createPlatform(options: CreatePlatformOptions): Platform {
     }
   };
 
+  /**
+   * 删除导入题库 + 级联清理（V2.2 · R3 / 默认值 Q6）。
+   *
+   * 八个键类一个都不能漏：漏一个就会留下「题库已经没了，错题列表还指着它」的悬空记录。
+   * 内置题库直接返回：既不能删内容，也不能删记录——否则下次启动题库又回来了，记录却没了。
+   */
+  const deleteImportedBank = async (bankId: string): Promise<void> => {
+    if (builtinBanks.some((bank) => bank.manifest.bankId === bankId)) return;
+
+    await banks.removeImportedBank(bankId);
+    await attempts.clearByBank(bankId);
+    await progress.clearByBank(bankId);
+    await sessions.clear(bankId);
+    await sessionSnapshots.clear(bankId);
+    await exams.clearRecords(bankId); // 成绩记录 + 模考会话快照
+    for (const key of await kv.keys(K.favorites(bankId))) await kv.delete(key);
+    await kv.delete(K.practiceSettings(bankId));
+
+    // 当前库被删时自动切到剩余的第一个库；练习偏好里也不能留下该库的键
+    const app = await settings.getApp();
+    const practice = { ...app.practice };
+    delete practice[bankId];
+    if (app.activeBankId === bankId || app.practice[bankId] !== undefined) {
+      const remaining = (await banks.listBankIds()).filter((id) => id !== bankId);
+      await settings.saveApp({
+        ...app,
+        activeBankId: app.activeBankId === bankId ? (remaining[0] ?? null) : app.activeBankId,
+        practice,
+        updatedAt: clock.now().toISOString(),
+      });
+    }
+  };
+
   return {
     clock,
     banks,
@@ -593,6 +629,7 @@ export function createPlatform(options: CreatePlatformOptions): Platform {
     info,
     exportAll,
     clearLearningData,
+    deleteImportedBank,
   };
 }
 

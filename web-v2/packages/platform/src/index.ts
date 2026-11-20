@@ -68,6 +68,8 @@ export interface StorageInfo {
 export interface BankRepository {
   /** 当前可用的题库 ID 列表（内置 + 导入），顺序稳定 */
   listBankIds(): Promise<readonly string[]>;
+  /** 只列「导入」的题库：内置题库不可删，管理面板据此决定是否显示删除 */
+  listImportedBankIds(): Promise<readonly string[]>;
   getManifest(bankId: string): Promise<BankManifest | null>;
   listQuestions(bankId: string): Promise<readonly Question[]>;
   /** 知识讲义随题库走，换库即换内容（S3 验收 D 的最后一条） */
@@ -214,4 +216,10 @@ export interface Platform {
   exportAll(): Promise<LearningSnapshot>;
   /** 清空学习记录；传 bankId 时只清该库 */
   clearLearningData(bankId?: string): Promise<void>;
+  /**
+   * 删除导入题库并**级联清理该库的全部派生键**（V2.2 · R3）：
+   * 作答 / 进度 / 会话 / 会话快照 / 收藏 / 练习设置 / 模考成绩 / 模考会话。
+   * 内置题库不可删：方法静默返回，不清理任何记录（避免"删了题却留着记录"）。
+   */
+  deleteImportedBank(bankId: string): Promise<void>;
 }

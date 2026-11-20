@@ -552,3 +552,82 @@ describe("设置行自愈与写入闸门（2026-11-18 线上「无法启动」�
     expect((await platform.settings.getPractice("javaweb")).order).toBe("random");
   });
 });
+
+/* ------------------------------------------ 删除导入题库（V2.2 · R3） */
+
+describe("删除导入题库与级联清理（R3）", () => {
+  async function seedImportedBank() {
+    const ctx = platformWith();
+    const OS = makeBank("os", "操作系统");
+    await ctx.platform.banks.saveImportedBank(OS);
+    const q = qid("os");
+
+    await ctx.platform.attempts.append(attemptOf("os", "os-1", false, "2026-11-16T01:00:00.000Z"));
+    await ctx.platform.progress.save({
+      bankId: "os",
+      questionId: q,
+      attemptsCount: 1,
+      wrongCount: 1,
+      firstCorrectAt: null,
+      lastAttemptAt: "2026-11-16T01:00:00.000Z",
+      mastered: false,
+      status: "learning",
+      streak: 0,
+      nextReviewAt: "2026-11-17T01:00:00.000Z",
+      errorCause: null,
+    });
+    await ctx.platform.sessions.save({
+      sessionId: "s-os",
+      bankId: "os",
+      mode: "practice",
+      questionIds: [q],
+      cursor: 0,
+      results: {},
+      startedAt: "2026-11-16T01:00:00.000Z",
+      updatedAt: "2026-11-16T01:00:00.000Z",
+    });
+    await ctx.platform.sessionSnapshots.save("os", "练习快照");
+    await ctx.platform.favorites.add("os", q, "2026-11-16T01:00:00.000Z");
+    await ctx.platform.settings.savePractice("os", DEFAULT_PRACTICE_SETTINGS);
+    await ctx.platform.exams.appendRecord(
+      examRecordOf("os", "r-1", "os:exam:full", "2026-11-16T02:00:00.000Z"),
+    );
+    await ctx.platform.exams.saveSessionSnapshot("os", "模考快照");
+    await ctx.platform.settings.saveApp({
+      activeBankId: "os",
+      practice: {},
+      updatedAt: "2026-11-16T02:00:00.000Z",
+    });
+    return ctx;
+  }
+
+  it("八个键类全部清空，当前库自动切到剩余题库", async () => {
+    const { kv, platform } = await seedImportedBank();
+
+    await platform.deleteImportedBank("os");
+
+    expect(await platform.banks.listBankIds()).toEqual(["javaweb", "chem"]);
+    expect(await platform.attempts.listByBank("os")).toHaveLength(0);
+    expect(await platform.progress.listByBank("os")).toHaveLength(0);
+    expect(await platform.sessions.getCurrent("os")).toBeNull();
+    expect(await platform.sessionSnapshots.load("os")).toBeNull();
+    expect(await platform.favorites.listByBank("os")).toHaveLength(0);
+    expect(await platform.exams.listRecords("os")).toHaveLength(0);
+    expect(await platform.exams.getSessionSnapshot("os")).toBeNull();
+    expect(await kv.get(STORAGE_KEYS.practiceSettings("os"))).toBeNull();
+
+    const app = await platform.settings.getApp();
+    expect(app.activeBankId).toBe("javaweb");
+    expect(app.practice["os"]).toBeUndefined();
+  });
+
+  it("内置题库不可删：调用是空操作，题库与记录都保持原样", async () => {
+    const { platform } = platformWith();
+    await platform.attempts.append(attemptOf("javaweb", "a-1", true, "2026-11-16T01:00:00.000Z"));
+
+    await platform.deleteImportedBank("javaweb");
+
+    expect(await platform.banks.listBankIds()).toContain("javaweb");
+    expect(await platform.attempts.listByBank("javaweb")).toHaveLength(1);
+  });
+});

@@ -716,6 +716,36 @@ textarea.input {
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 
+/* 3.10.1 对话框（删除题库确认）：只有遮罩 + 一张纸，不再叠卡片阴影 */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: var(--c-overlay);
+}
+
+.dialog {
+  width: 100%;
+  max-width: 460px;
+  max-height: 86vh;
+  overflow: auto;
+  padding: var(--sp-5);
+  border-radius: var(--r-14);
+  background: var(--c-surface);
+  box-shadow: var(--sh-overlay);
+}
+
+.dialog-counts {
+  margin: var(--sp-2) 0 0;
+  padding-left: var(--sp-5);
+  color: var(--c-text-2);
+  font-size: var(--fs-sm);
+}
+
 /* 3.11 骨架屏 */
 .skeleton {
   position: relative;

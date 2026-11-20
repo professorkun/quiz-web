@@ -26,6 +26,7 @@ import { usePlatform } from "../../platform/PlatformProvider";
 import { navigate } from "../../router";
 import { getRenderer } from "../../renderers";
 import { IconBack, IconFilter, IconSearch, IconStar } from "../../ui/icons";
+import { BankManagePanel } from "./BankManagePanel";
 
 type StatusFilter = "all" | "unseen" | "wrong" | "correct";
 
@@ -445,6 +446,8 @@ export function BanksPage(): React.ReactElement {
           <p className="muted">只有一份题库时切换器没有意义；可在「我的」页导入第二份题库包。</p>
         ) : null}
       </section>
+
+      <BankManagePanel />
 
       <div className="split">
         <section className="card listpane" ref={listRef}>

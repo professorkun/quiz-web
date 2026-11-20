@@ -246,6 +246,55 @@ describe("题库页", () => {
   });
 });
 
+describe("题库管理（R3）", () => {
+  it("删除导入题库：输入题库名确认后级联清空记录并切回剩余题库", async () => {
+    const kv = new MemoryKeyValueStore();
+    const platform = createPlatform({ kv, builtinBanks: [chemistryBank], clock });
+    const imported = otherBank();
+    await platform.banks.saveImportedBank(imported);
+    await platform.attempts.append({
+      attemptId: "other-1",
+      bankId: "other",
+      questionId: "other:single_choice:001",
+      questionRevision: "0000000000ff",
+      mode: "practice",
+      isFirstAttempt: true,
+      startedAt: "2026-11-16T09:00:00.000Z",
+      submittedAt: "2026-11-16T09:00:05.000Z",
+      answer: "a",
+      correct: true,
+      score: 1,
+      maxScore: 1,
+    });
+    await platform.favorites.add("other", "other:single_choice:001", "2026-11-16T09:00:06.000Z");
+    await platform.settings.saveApp({
+      activeBankId: "other",
+      practice: {},
+      updatedAt: "2026-11-16T09:00:07.000Z",
+    });
+
+    render(<App platform={platform} builtinBanks={[chemistryBank]} />);
+    await screen.findByRole("heading", { name: "对照题库", level: 1 });
+
+    await go("banks");
+    fireEvent.click(await screen.findByRole("button", { name: "删除" }));
+    expect(await screen.findByRole("dialog")).toBeTruthy();
+    expect(screen.getByText("作答记录：1 条")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("输入题库名确认删除"), {
+      target: { value: "对照题库" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "确认删除" }));
+
+    await waitFor(async () => {
+      expect(await platform.banks.listBankIds()).toEqual(["chem"]);
+    });
+    expect(await platform.attempts.listByBank("other")).toHaveLength(0);
+    expect(await platform.favorites.listByBank("other")).toHaveLength(0);
+    expect((await platform.settings.getApp()).activeBankId).toBe("chem");
+  });
+});
+
 describe("跨库隔离", () => {
   it("在化学库答错不会污染对照题库的错题数", async () => {
     const { platform } = await setup();
