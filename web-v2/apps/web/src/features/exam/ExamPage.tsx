@@ -357,6 +357,18 @@ export function ExamPage(): React.ReactElement {
     const stemInRenderer = getQuestionType(question.type).stemInRenderer;
     const urgent = remaining !== null && remaining <= 5 * 60 * 1000;
 
+    // 共享材料（R4-2）：同一篇材料在整卷只渲染一次（挂在第一道引用它的题上）
+    const currentIndex = session.items.findIndex((item) => item.questionId === questionId);
+    const earlierSamePassage =
+      question.passageId !== undefined &&
+      session.items
+        .slice(0, currentIndex < 0 ? 0 : currentIndex)
+        .some((item) => questionsById.get(item.questionId)?.passageId === question.passageId);
+    const passage =
+      question.passageId === undefined || earlierSamePassage
+        ? undefined
+        : activeBank.passages?.find((item) => item.passageId === question.passageId);
+
     return (
       <div className="page practice-page">
         <header className="card exam-head">
@@ -437,6 +449,7 @@ export function ExamPage(): React.ReactElement {
 
           <Renderer
             question={question}
+            passage={passage}
             answer={session.answers[questionId]}
             optionOrder={session.optionOrders[questionId]}
             locked={false}
