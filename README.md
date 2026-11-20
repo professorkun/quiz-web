@@ -300,3 +300,5 @@ pnpm build        # 产物在 apps/web/dist/
 - **T-13 决策**：[ADR-0007](web-v2/docs/ADR-0007-passages-cloze.md) 判定材料复用与 cloze 暂缓，推 V2.4（抽样占比未证实，先用「一题一材质」）。
 
 **已知限制**：`.doc`、扫描件与图片型文档不支持；表格卷建议选项单元格自带 `A.` 字母；公式与代码高亮为「先原文后渲染」的两帧，首帧会短暂看到源码。
+
+**验收与发布**：[验收记录](web-v2/docs/acceptance.md) · [v2.3.0 发布说明](web-v2/docs/release-notes-v2.3.0.md) · [动效规格](web-v2/docs/motion-spec.md)

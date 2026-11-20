@@ -14,6 +14,7 @@ import { marked, Renderer } from "marked";
 
 import type { Highlighter } from "./highlighter";
 import type { MathRenderer } from "./math";
+import { scanMath } from "./mathScan";
 
 export interface RichTextRenderOptions {
   /** 只渲染行内内容（填空题干片段、采分点），不产生 <p>/<pre> 块 */
@@ -105,17 +106,20 @@ function extractMath(
     const i = mathHtml.push(html) - 1;
     return `${MATH_PREFIX}${i}${MATH_SUFFIX}`;
   };
-  const render = (tex: string, displayMode: boolean): string => {
-    const rendered = math?.(tex, displayMode) ?? null;
-    if (rendered !== null) return rendered;
-    return escapeHtml(displayMode ? `$$${tex}$$` : `\\(${tex}\\)`);
-  };
-  let text = source.replace(/\$\$([\s\S]+?)\$\$/g, (_m, tex: string) =>
-    `\n\n${token(render(tex, true))}\n\n`,
-  );
-  text = text.replace(/\\\(([\s\S]+?)\\\)/g, (_m, tex: string) =>
-    token(render(tex, false)),
-  );
+
+  // 与 RichText 的「要不要加载 KaTeX」共用同一个扫描器，避免判定与渲染两套口径
+  const { spans } = scanMath(source);
+  let text = "";
+  let cursor = 0;
+  for (const span of spans) {
+    text += source.slice(cursor, span.start);
+    const rendered = math?.(span.tex, span.displayMode) ?? null;
+    // 没有渲染器时按原文（含分隔符）输出，保证首帧不丢内容
+    const html = rendered ?? escapeHtml(source.slice(span.start, span.end));
+    text += span.displayMode ? `\n\n${token(html)}\n\n` : token(html);
+    cursor = span.end;
+  }
+  text += source.slice(cursor);
   return { text, math: mathHtml };
 }
 

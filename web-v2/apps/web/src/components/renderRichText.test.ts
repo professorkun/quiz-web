@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 
 import { loadHighlighter } from "./highlighter";
 import { loadKatex, makeMathRenderer } from "./math";
+import { scanMath } from "./mathScan";
 import { renderRichText } from "./renderRichText";
 
 interface AttackCase {
@@ -125,6 +126,52 @@ describe("安全富文本渲染", () => {
     const html = renderRichText("路径 ${pageContext.request.contextPath} 结束", { inline: true });
     expect(html).toContain("${pageContext.request.contextPath}");
     expect(html).not.toContain("katex");
+  });
+
+  it("行内 $x^2$：注入 KaTeX 后渲染公式", async () => {
+    const math = makeMathRenderer(await loadKatex());
+    const html = renderRichText("由 $x^2$ 可得", { inline: true, math });
+    expect(html).toContain("katex");
+    expect(scanMath("由 $x^2$ 可得").hasMath).toBe(true);
+  });
+
+  it("${pageContext.request.contextPath}：原样输出，且不触发 KaTeX 加载", () => {
+    const source = "路径 ${pageContext.request.contextPath} 结束";
+    expect(scanMath(source).hasMath).toBe(false);
+    const html = renderRichText(source, { inline: true });
+    expect(html).toContain("${pageContext.request.contextPath}");
+    expect(html).not.toContain("katex");
+  });
+
+  it("$5 and $10：结尾 $ 前是空格，守卫拦下，不当公式", () => {
+    const source = "价格 $5 and $10";
+    expect(scanMath(source).hasMath).toBe(false);
+    const html = renderRichText(source, { inline: true });
+    expect(html).toContain("$5 and $10");
+    expect(html).not.toContain("katex");
+  });
+
+  it("$$E=mc^2$$：仍按块级公式渲染", async () => {
+    const math = makeMathRenderer(await loadKatex());
+    const html = renderRichText("$$E=mc^2$$", { math });
+    expect(html).toContain("katex-display");
+    expect(scanMath("$$E=mc^2$$").spans[0]?.displayMode).toBe(true);
+  });
+
+  it("$a+b$：无空格行内公式仍渲染", async () => {
+    const math = makeMathRenderer(await loadKatex());
+    const html = renderRichText("$a+b$", { inline: true, math });
+    expect(html).toContain("katex");
+  });
+
+  it("反引号代码里的 $a$ 不渲染，也不触发加载", () => {
+    const inlineCode = "执行 `$a$` 即可";
+    expect(scanMath(inlineCode).hasMath).toBe(false);
+    expect(renderRichText(inlineCode, { inline: true })).not.toContain("katex");
+
+    const fenced = "```\nconst s = \"$a$\";\n```";
+    expect(scanMath(fenced).hasMath).toBe(false);
+    expect(renderRichText(fenced)).not.toContain("katex");
   });
 
   it("inline 模式不产生块级标签，可安全嵌在题干片段里", () => {

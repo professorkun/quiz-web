@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { loadHighlighter, type Highlighter } from "./highlighter";
 import { loadKatex, makeMathRenderer, type MathRenderer } from "./math";
+import { scanMath } from "./mathScan";
 import { renderRichText } from "./renderRichText";
 
 export interface RichTextProps {
@@ -21,11 +22,11 @@ export interface RichTextProps {
   readonly inline?: boolean;
 }
 
-const MATH_PATTERN = /\$\$[\s\S]+?\$\$|\\\([\s\S]+?\\\)/;
 const CODE_PATTERN = /```/;
 
 export function RichText(props: RichTextProps): React.ReactElement {
-  const needsMath = useMemo(() => MATH_PATTERN.test(props.text), [props.text]);
+  // 与 renderRichText 共用 scanMath：JSP EL、代码块里的 $ 不会触发 77 KB 下载
+  const needsMath = useMemo(() => scanMath(props.text).hasMath, [props.text]);
   const needsCode = useMemo(() => CODE_PATTERN.test(props.text), [props.text]);
 
   const [math, setMath] = useState<MathRenderer | null>(null);

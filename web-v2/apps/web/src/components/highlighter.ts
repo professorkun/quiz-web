@@ -11,6 +11,8 @@ let pending: Promise<Highlighter> | null = null;
 
 export function loadHighlighter(): Promise<Highlighter> {
   pending ??= (async () => {
+    // 主题样式随高亮器一起到达，首屏不为「没有代码块」的页面加载它
+    void import("highlight.js/styles/github.css").catch(() => undefined);
     const [core, java, xml, sql, json, javascript, css] = await Promise.all([
       import("highlight.js/lib/core"),
       import("highlight.js/lib/languages/java"),

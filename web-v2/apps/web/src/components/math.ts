@@ -10,7 +10,10 @@ export type MathRenderer = (tex: string, displayMode: boolean) => string | null;
 let pending: Promise<typeof import("katex")> | null = null;
 
 export function loadKatex(): Promise<typeof import("katex")> {
-  pending ??= import("katex");
+  // 样式与 JS 一起懒加载：公式没出现时，KaTeX 的字体与规则不参与首屏渲染
+  pending ??= Promise.all([import("katex"), import("katex/dist/katex.min.css")]).then(
+    ([module]) => module,
+  );
   return pending;
 }
 
