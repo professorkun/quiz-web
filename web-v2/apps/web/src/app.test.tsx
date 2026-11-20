@@ -210,6 +210,21 @@ describe("题库页", () => {
     expect(await screen.findByText(/命中 1 题/)).toBeTruthy();
   });
 
+  it("按标签筛选：只保留带该标签的题", async () => {
+    await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("banks");
+
+    fireEvent.click(await screen.findByRole("button", { name: /#basics（2）/ }));
+    expect(await screen.findByText(/命中 2 题/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /#exam（1）/ }));
+    expect(await screen.findByText(/命中 1 题/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "全部标签" }));
+    expect(await screen.findByText(/命中 14 题/)).toBeTruthy();
+  });
+
   it("查看答案不产生作答记录，J/K 在筛选结果内连续翻题", async () => {
     const { platform } = await setup();
     await screen.findByRole("heading", { name: "高中化学基础", level: 1 });

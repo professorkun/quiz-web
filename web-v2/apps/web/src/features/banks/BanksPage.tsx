@@ -43,6 +43,7 @@ interface SavedFilters {
   readonly keyword: string;
   readonly type: QuestionType | "all";
   readonly topicId: string;
+  readonly tag?: string;
   readonly status: StatusFilter;
   readonly scrollTop: number;
 }
@@ -70,6 +71,12 @@ function statusOf(progress: QuestionProgress | undefined): StatusFilter {
   return "correct";
 }
 
+/** 标签 ID 常带 <bankId>:tag: 前缀；展示时只取最后一段，导出时仍是完整 ID */
+function tagLabel(value: string): string {
+  const parts = value.split(":");
+  return parts[parts.length - 1] ?? value;
+}
+
 function stemPreview(stem: string, limit = 60): string {
   const flat = stem.replace(/\s+/g, " ").replace(/[#*`>|-]/g, "").trim();
   return flat.length <= limit ? flat : `${flat.slice(0, limit)}…`;
@@ -86,6 +93,7 @@ export function BanksPage(): React.ReactElement {
   const [keyword, setKeyword] = useState(saved?.keyword ?? "");
   const [type, setType] = useState<QuestionType | "all">(saved?.type ?? "all");
   const [topicId, setTopicId] = useState<string>(saved?.topicId ?? "all");
+  const [tag, setTag] = useState<string>(saved?.tag ?? "all");
   const [status, setStatus] = useState<StatusFilter>(saved?.status ?? "all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reveal, setReveal] = useState(false);
@@ -116,13 +124,21 @@ export function BanksPage(): React.ReactElement {
     setKeyword(next?.keyword ?? "");
     setType(next?.type ?? "all");
     setTopicId(next?.topicId ?? "all");
+    setTag(next?.tag ?? "all");
     setStatus(next?.status ?? "all");
   }, [bankId]);
 
   // 记住筛选与滚动位置：从预览层返回 / 去练习再回来都接着看
   useEffect(() => {
-    writeFilters(bankId, { keyword, type, topicId, status, scrollTop: listRef.current?.scrollTop ?? 0 });
-  }, [bankId, keyword, type, topicId, status]);
+    writeFilters(bankId, {
+      keyword,
+      type,
+      topicId,
+      tag,
+      status,
+      scrollTop: listRef.current?.scrollTop ?? 0,
+    });
+  }, [bankId, keyword, type, topicId, tag, status]);
 
   useEffect(() => {
     if (saved === null) return;
@@ -149,11 +165,13 @@ export function BanksPage(): React.ReactElement {
     return activeBank.questions.filter((question) => {
       if (type !== "all" && question.type !== type) return false;
       if (topicId !== "all" && !question.topicIds.includes(topicId)) return false;
+      // 标签是可选字段：没标的题在「全部标签」里可见，选中具体标签时不会误入
+      if (tag !== "all" && !(question.tags ?? []).includes(tag)) return false;
       if (status !== "all" && statusOf(progressMap.get(question.questionId)) !== status) return false;
       if (needle !== "" && !question.stem.toLowerCase().includes(needle)) return false;
       return true;
     });
-  }, [activeBank.questions, type, topicId, status, keyword, progressMap]);
+  }, [activeBank.questions, type, topicId, tag, status, keyword, progressMap]);
 
   const selected: Question | undefined =
     filtered.find((q) => q.questionId === selectedId) ??
@@ -263,9 +281,20 @@ export function BanksPage(): React.ReactElement {
     return counts;
   }, [activeBank.questions]);
 
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const question of activeBank.questions) {
+      for (const value of question.tags ?? []) {
+        counts.set(value, (counts.get(value) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [activeBank.questions]);
+
   const activeFilterCount =
     (type === "all" ? 0 : 1) +
     (topicId === "all" ? 0 : 1) +
+    (tag === "all" ? 0 : 1) +
     (status === "all" ? 0 : 1) +
     (keyword.trim() === "" ? 0 : 1);
 
@@ -273,6 +302,7 @@ export function BanksPage(): React.ReactElement {
     setKeyword("");
     setType("all");
     setTopicId("all");
+    setTag("all");
     setStatus("all");
   };
 
@@ -335,6 +365,11 @@ export function BanksPage(): React.ReactElement {
             {selectedTopicLabel === "" ? null : (
               <span className="chip tag" data-active>
                 {selectedTopicLabel}
+              </span>
+            )}
+            {tag === "all" ? null : (
+              <span className="chip tag" data-active>
+                #{tagLabel(tag)}
               </span>
             )}
             {status === "all" ? null : (
@@ -401,6 +436,28 @@ export function BanksPage(): React.ReactElement {
               </button>
             ))}
           </div>
+
+          {tagCounts.size === 0 ? null : (
+            <div className="chips">
+              <button
+                type="button"
+                className={tag === "all" ? "chip on" : "chip"}
+                onClick={() => setTag("all")}
+              >
+                全部标签
+              </button>
+              {[...tagCounts.entries()].map(([value, count]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={tag === value ? "chip on" : "chip"}
+                  onClick={() => setTag(value)}
+                >
+                  #{tagLabel(value)}（{count}）
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="chips">
             {(Object.keys(STATUS_LABEL) as StatusFilter[]).map((key) => (
