@@ -73,11 +73,9 @@ export function AppShell(props: AppShellProps): React.ReactElement {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand">
-          <span className="brand-mark" aria-hidden>
-            题
-          </span>
+          <img className="brand-mark" src="./brand/logo-16.svg" alt="" width={34} height={34} />
           <div>
-            <div className="brand-title">通用刷题</div>
+            <div className="brand-title">题斋</div>
             <div className="brand-sub">
               {banks.length === 0 ? "尚未导入题库" : activeBank.manifest.title}
             </div>

@@ -568,7 +568,7 @@ describe("空壳态", () => {
     render(<App platform={platform} />);
 
     // 初始就是应用主界面，而不是独立的导入页
-    expect(await screen.findByRole("heading", { name: "通用刷题", level: 1 })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "题斋", level: 1 })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "还没有题库" })).toBeTruthy();
     expect(screen.getByText("导入题库包")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "学习" }).length).toBeGreaterThan(0);

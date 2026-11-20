@@ -5,33 +5,38 @@
    ========================================================================== */
 
 :root {
-  /* 1.1 颜色：品牌蓝做明度分层，语义色分工（绿=对、红=错、琥珀=该做） */
-  --c-brand: #2563eb;
-  --c-brand-dark: #1d4ed8;
-  --c-brand-soft: #eff6ff;
-  --c-brand-line: #dbeafe;
+  /* 1.1 颜色：墨纸朱（题斋 V2.1）
+     墨 = 主按钮/链接/选中；纸 = 页面与卡片；朱 = **只用于 Logo、收藏、焦点环**。
+     朱色走单独令牌，禁止在别处直接写 var(--c-vermilion)，否则「只有三处」这条会失守。 */
+  --c-brand: #1b1a17;
+  --c-brand-dark: #000000;
+  --c-brand-soft: #f0eadb;
+  --c-brand-line: #ddd2bc;
 
-  --c-bg: #f6f7f9;
-  --c-surface: #ffffff;
-  --c-surface-2: #f9fafb;
-  --c-line: #e6e8ec;
-  --c-line-strong: #d3d8e0;
+  --c-bg: #f5f1e7;
+  --c-surface: #fcf9f2;
+  --c-surface-2: #f7f2e6;
+  --c-line: #e4dccb;
+  --c-line-strong: #d8cbb2;
 
-  --c-text: #1a2230;
-  --c-text-2: #4b5565;
-  --c-text-3: #5b6472;
+  --c-text: #1b1a17;
+  --c-text-2: #45413a;
+  --c-text-3: #726d62;
 
-  --c-ok: #0f7a3d;
-  --c-ok-bg: #eafaf1;
-  --c-ok-line: #b7e4c9;
-  --c-bad: #b42318;
-  --c-bad-bg: #fef3f2;
-  --c-bad-line: #fecdca;
+  --c-ok: #2e6b52;
+  --c-ok-bg: #edf4ef;
+  --c-ok-line: #c9ded3;
+  --c-bad: #8e2f2a;
+  --c-bad-bg: #f8edeb;
+  --c-bad-line: #e7c9c4;
   --c-warn: #8a5a00;
-  --c-warn-bg: #fffaeb;
-  --c-warn-line: #fde68a;
-  --c-accent: #b45309;
-  --c-overlay: rgba(17, 24, 39, 0.42);
+  --c-warn-bg: #fbf3e0;
+  --c-warn-line: #e8d5a8;
+  --c-accent: #8a6a2f;
+  --c-vermilion: #b4452f;
+  --c-vermilion-soft: #f6e9e4;
+  --c-vermilion-line: #ebd3cb;
+  --c-overlay: rgba(27, 26, 23, 0.42);
 
   /* 旧变量别名（兼容现有页面类） */
   --bg: var(--c-bg);
@@ -78,8 +83,8 @@
   --r-full: 999px;
 
   /* 1.5 阴影：只有卡片与浮层两档 */
-  --sh-card: 0 1px 2px rgba(16, 24, 40, 0.04);
-  --sh-overlay: 0 12px 32px rgba(16, 24, 40, 0.16);
+  --sh-card: 0 1px 2px rgba(27, 26, 23, 0.05);
+  --sh-overlay: 0 12px 32px rgba(27, 26, 23, 0.18);
 
   /* 1.6 动效 */
   --t-hover: 100ms;
@@ -91,7 +96,7 @@
   /* 1.7 布局 */
   --sidebar-w: 216px;
   --content-max: 1040px;
-  --focus-ring: 3px solid var(--c-brand);
+  --focus-ring: 3px solid var(--c-vermilion);
 }
 
 /* ==========================================================================
@@ -462,12 +467,12 @@ pre {
 .input:focus-visible {
   outline: none;
   border-color: var(--c-brand);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 0 0 3px rgba(180, 69, 47, 0.18);
 }
 
 .input[aria-invalid="true"] {
   border-color: var(--c-bad);
-  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.12);
+  box-shadow: 0 0 0 3px rgba(142, 47, 42, 0.12);
 }
 
 .input::placeholder {
@@ -522,7 +527,7 @@ textarea.input {
 .card.clickable:hover {
   transform: translateY(-1px);
   border-color: var(--c-line-strong);
-  box-shadow: 0 6px 16px rgba(16, 24, 40, 0.08);
+  box-shadow: 0 6px 16px rgba(27, 26, 23, 0.1);
 }
 
 /* 3.6 徽标 */
@@ -544,7 +549,7 @@ textarea.input {
 .badge.unseen { background: var(--c-surface-2); }
 .badge.wrong { background: var(--c-bad-bg); color: var(--c-bad); border-color: var(--c-bad-line); }
 .badge.correct { background: var(--c-ok-bg); color: var(--c-ok); border-color: var(--c-ok-line); }
-.badge.fav { background: var(--c-warn-bg); color: var(--c-warn); border-color: var(--c-warn-line); }
+.badge.fav { background: var(--c-vermilion-soft); color: var(--c-vermilion); border-color: var(--c-vermilion-line); }
 .badge.ok { background: var(--c-ok-bg); color: var(--c-ok); border-color: var(--c-ok-line); }
 
 /* 3.7 tab：桌面下划线，移动分段 */
@@ -699,8 +704,8 @@ textarea.input {
   max-width: min(720px, 92vw);
   padding: var(--sp-3) var(--sp-4);
   border-radius: var(--r-10);
-  background: #111827;
-  color: #fff;
+  background: #1b1a17;
+  color: #fcf9f2;
   box-shadow: var(--sh-overlay);
   font-size: var(--fs-sm);
   transform: translateX(-50%);
@@ -708,7 +713,7 @@ textarea.input {
 }
 
 .toast .btn.ghost {
-  color: #93c5fd;
+  color: #e6dcc6;
 }
 
 @keyframes toast-in {
@@ -761,7 +766,7 @@ textarea.input {
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 252, 245, 0.75), transparent);
   animation: shimmer 1.2s infinite;
 }
 
@@ -813,18 +818,13 @@ textarea.input {
   min-width: 0;
 }
 
+/* 字标直接用品牌资产（logo-16.svg），不再手写「题」字占位 */
 .brand-mark {
-  display: flex;
+  display: block;
   flex: none;
-  align-items: center;
-  justify-content: center;
   width: 34px;
   height: 34px;
   border-radius: var(--r-8);
-  background: var(--c-brand);
-  color: #fff;
-  font-size: 17px;
-  font-weight: 700;
 }
 
 .brand-title {
@@ -1458,7 +1458,7 @@ textarea.input {
 .blankin:focus {
   outline: none;
   border-color: var(--c-brand);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 0 0 3px rgba(180, 69, 47, 0.18);
 }
 
 .blankin.ok { border-color: var(--c-ok); background: var(--c-ok-bg); }
@@ -1536,7 +1536,7 @@ textarea.input {
 .answer-text:focus {
   outline: none;
   border-color: var(--c-brand);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 0 0 3px rgba(180, 69, 47, 0.18);
 }
 
 .ref-answer {

@@ -9,8 +9,8 @@
  *
  * 只处理同源 GET，跨域与写请求一律放行。
  */
-const CACHE = "quiz-shell-v1";
-const SHELL = ["./", "./manifest.webmanifest", "./icon.svg"];
+const CACHE = "quiz-shell-v2";
+const SHELL = ["./", "./manifest.webmanifest", "./brand/logo-16.svg", "./brand/logo.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

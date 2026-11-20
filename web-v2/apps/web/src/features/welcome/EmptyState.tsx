@@ -49,7 +49,7 @@ export function EmptyState(): React.ReactElement {
     <div className="page">
       <header className="page-head">
         <div>
-          <h1>通用刷题</h1>
+          <h1>题斋</h1>
           <p className="muted">导入题库包后，就能按知识点刷题、模考与复习。</p>
         </div>
       </header>
@@ -59,7 +59,7 @@ export function EmptyState(): React.ReactElement {
           <EmptyArt />
           <h2>还没有题库</h2>
           <p className="muted">
-            这是一套不预置题库的通用刷题应用。选择一份题库包（JSON）导入，即可开始练习。
+            题斋是一套不预置题库的刷题应用。选择一份题库包（JSON）导入，即可开始练习。
           </p>
         </div>
 
