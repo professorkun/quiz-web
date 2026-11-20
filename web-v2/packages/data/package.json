@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./docx": {
+      "types": "./dist/docx/index.d.ts",
+      "default": "./dist/docx/index.js"
     }
   },
   "scripts": {
@@ -18,7 +22,8 @@
   },
   "dependencies": {
     "@quiz/core": "workspace:*",
-    "@quiz/platform": "workspace:*"
+    "@quiz/platform": "workspace:*",
+    "fflate": "^0.8.3"
   },
   "devDependencies": {
     "@quiz/platform-web": "workspace:*",

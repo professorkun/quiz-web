@@ -10,12 +10,15 @@
 
 import { useState } from "react";
 
-import type { BankContent } from "@quiz/core";
+import { getQuestionType, type BankContent } from "@quiz/core";
 import { parseBankJson, type ImportIssue } from "@quiz/data";
+import type { DocxDraft } from "@quiz/data/docx";
 import { importPromptText } from "@quiz/content";
 
+import { downloadText, todayStamp } from "../../lib/download";
 import { usePlatform } from "../../platform/PlatformProvider";
 import { IconCopy, IconUpload } from "../../ui/icons";
+import { buildDocxBank, docxDraftJson, parseDocxFile } from "./docxImport";
 
 interface Preview {
   readonly bank: BankContent;
@@ -62,6 +65,10 @@ export function BankImportPanel(): React.ReactElement {
   const [warnings, setWarnings] = useState<readonly string[]>([]);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [busy, setBusy] = useState(false);
+  const [draft, setDraft] = useState<DocxDraft | null>(null);
+  const [selected, setSelected] = useState<ReadonlySet<number>>(new Set());
+  const [docxError, setDocxError] = useState<string | null>(null);
+  const [docxBusy, setDocxBusy] = useState(false);
 
   const pickJson = async (file: File): Promise<void> => {
     setIssues([]);
@@ -104,6 +111,81 @@ export function BankImportPanel(): React.ReactElement {
     showToast(ok ? "转换提示词已复制，粘贴给 AI 即可" : "浏览器未允许自动复制，请到 README 第 3 节手动复制");
   };
 
+  const pickDocx = async (file: File): Promise<void> => {
+    setIssues([]);
+    setWarnings([]);
+    setPreview(null);
+    setDraft(null);
+    setDocxError(null);
+    setDocxBusy(true);
+    try {
+      const result = await parseDocxFile(file);
+      setDraft(result);
+      // 默认只勾「高置信度且已生成成品」的题；低置信度必须人工确认
+      setSelected(
+        new Set(
+          result.questions
+            .filter((entry) => entry.confidence === "high" && entry.question !== null)
+            .map((entry) => entry.index),
+        ),
+      );
+    } catch (cause) {
+      setDocxError(cause instanceof Error ? cause.message : "Word 解析失败");
+    } finally {
+      setDocxBusy(false);
+    }
+  };
+
+  const toggleDraft = (index: number): void => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  const acceptHighConfidence = (): void => {
+    if (draft === null) return;
+    setSelected(
+      new Set(
+        draft.questions
+          .filter((entry) => entry.confidence === "high" && entry.question !== null)
+          .map((entry) => entry.index),
+      ),
+    );
+  };
+
+  const confirmDocx = async (): Promise<void> => {
+    if (draft === null) return;
+    setBusy(true);
+    try {
+      const bank = await buildDocxBank(draft, [...selected]);
+      await platform.banks.saveImportedBank(bank);
+      await reloadBanks();
+      await selectBank(bank.manifest.bankId);
+      showToast(`已导入「${bank.manifest.title}」${bank.questions.length} 题（Word Beta）`);
+      setDraft(null);
+    } catch (cause) {
+      showToast(cause instanceof Error ? cause.message : "导入失败");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const exportDraft = async (): Promise<void> => {
+    if (draft === null) return;
+    try {
+      downloadText(
+        `docx-draft-${draft.bankId}-${todayStamp()}.json`,
+        await docxDraftJson(draft, [...selected]),
+      );
+      showToast("已导出草稿：可先备份，也可用 JSON 导入复核");
+    } catch (cause) {
+      showToast(cause instanceof Error ? cause.message : "导出草稿失败");
+    }
+  };
+
   return (
     <section className="card">
       <h2>导入题库</h2>
@@ -126,15 +208,22 @@ export function BankImportPanel(): React.ReactElement {
             }}
           />
         </label>
-        <button
-          type="button"
-          className="btn gray"
-          disabled
-          title="Word（Beta）解析在 V2.2 开放；当前请用 JSON 或复制提示词让 AI 转换"
-        >
-          导入 Word
+        <label className="btn gray" title="解析 .docx 后逐题确认；.doc / 扫描件不支持">
+          <IconUpload size={16} />
+          {docxBusy ? "识别中…" : "导入 Word"}
           <span className="badge">Beta</span>
-        </button>
+          <input
+            type="file"
+            accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            className="file-input"
+            disabled={docxBusy}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file !== undefined) void pickDocx(file);
+            }}
+          />
+        </label>
         <button type="button" className="btn ghost" onClick={() => void copyPrompt()}>
           <IconCopy size={16} />
           复制转换提示词
@@ -164,6 +253,77 @@ export function BankImportPanel(): React.ReactElement {
           {warnings.slice(0, 6).map((warning) => (
             <div key={warning}>{warning}</div>
           ))}
+        </div>
+      ) : null}
+
+      {docxError === null ? null : (
+        <div className="notice mt-3">
+          <strong>Word 文件无法解析</strong>
+          <div>{docxError}</div>
+          <div className="muted mt-1">
+            支持 .docx；旧版 .doc、扫描件与图片型 PDF 需先另存/转换为可选中文字的 .docx。
+          </div>
+        </div>
+      )}
+
+      {draft !== null ? (
+        <div className="previewbox mt-3">
+          <strong>
+            Word 识别结果：{draft.title}（可导入 {draft.stats.parsed}/{draft.stats.totalQuestions} 题）
+          </strong>
+          <div className="muted">
+            高置信度 {draft.stats.highConfidence} 题 · 讲义 {draft.stats.knowledgeSections} 节 · 表格行{" "}
+            {draft.stats.tableRows}。低置信度题不会默认勾选，建议回原文档修正后重新导入。
+          </div>
+
+          <ul className="docx-list mt-2">
+            {draft.questions.map((entry) => (
+              <li key={entry.index} className="docx-row">
+                <label className="docx-check">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(entry.index)}
+                    disabled={entry.question === null}
+                    onChange={() => toggleDraft(entry.index)}
+                    aria-label={`选择第 ${entry.index} 题`}
+                  />
+                  <span className="docx-stem">
+                    {entry.index}. {entry.stem.slice(0, 70)}
+                    {entry.stem.length > 70 ? "…" : ""}
+                  </span>
+                </label>
+                <span className={`badge ${entry.confidence === "high" ? "correct" : "wrong"}`}>
+                  {entry.confidence === "high" ? "高置信度" : "需确认"}
+                </span>
+                {entry.type === null ? null : (
+                  <span className="muted">{getQuestionType(entry.type).label}</span>
+                )}
+                {entry.problems.length === 0 ? null : (
+                  <span className="muted">{entry.problems.join("；")}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+
+          <div className="row mt-2">
+            <button type="button" className="btn gray" onClick={acceptHighConfidence}>
+              全部接受高置信度
+            </button>
+            <button
+              type="button"
+              className="btn"
+              disabled={busy || selected.size === 0}
+              onClick={() => void confirmDocx()}
+            >
+              {busy ? "导入中…" : `确认导入所选（${selected.size} 题）`}
+            </button>
+            <button type="button" className="btn gray" onClick={() => void exportDraft()}>
+              导出草稿 JSON
+            </button>
+            <button type="button" className="btn ghost" onClick={() => setDraft(null)}>
+              取消
+            </button>
+          </div>
         </div>
       ) : null}
 
