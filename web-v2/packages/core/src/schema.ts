@@ -293,7 +293,12 @@ export const KnowledgeModuleSchema = z.object({
   moduleId: IdStr,
   topicId: IdStr,
   title: z.string().min(1),
-  summary: z.string().min(1),
+  /**
+   * 一句话概述：**可选**（V2.1 · R1.1）。
+   * 只挂课程链接的讲义往往没有概述，缺省时展示层直接不渲染这一行，
+   * 不伪造一句"本节介绍…"来凑版面。
+   */
+  summary: z.string().min(1).optional(),
   items: z.array(KnowledgeItemSchema).default([]),
   /** 易错点：旧版 `pits`，展示在模块末尾 */
   pitfalls: z.array(z.string().min(1)).default([]),

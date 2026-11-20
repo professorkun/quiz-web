@@ -1,0 +1,130 @@
+{
+  "$comment": "题斋品牌资产清单。唯一权威源为本目录；归档目录下的副本仅为方案附件，不再单独维护。新增或修改资产时先改这里，再同步文档。",
+  "brand": "题斋",
+  "brandEn": "Tizhai",
+  "version": "1.2.0",
+  "updatedAt": "2026-11-20",
+  "sourceOfTruth": "web-v2/apps/web/public/brand/",
+  "typeface": {
+    "glyph": "斋",
+    "source": "Microsoft YaHei Bold (msyhbd.ttc)",
+    "method": "fontTools 不可用，改为纯 Python 解析 TrueType glyf 轮廓，转 quadratic→polyline 后输出 path",
+    "why": "STSong 宋体横画仅 0.5–0.8 单位，墨底上呈断续白丝；雅黑 Bold 笔画 2–3 单位，16px 仍聚成字块",
+    "outlined": true
+  },
+  "palette": {
+    "paper": "#F5F1E7",
+    "surface": "#FCF9F2",
+    "ink": "#1B1A17",
+    "vermilion": "#B4452F",
+    "correct": "#2E6B52",
+    "wrong": "#8E2F2A",
+    "inkMuted": "#726D62",
+    "line": "#E4DCCB",
+    "darkBg": "#14130F",
+    "darkSurface": "#1E1C18",
+    "vermilionOnDark": "#C9634A"
+  },
+  "assets": [
+    {
+      "file": "logo.svg",
+      "role": "主标志（48 网格，含「斋」，已转曲）",
+      "viewBox": "0 0 48 48",
+      "useFor": [
+        "应用图标源文件",
+        "关于页",
+        "README 顶部"
+      ],
+      "minSize": 24,
+      "status": "ready",
+      "note": "折角版：翻起面 #EDE4D2 + 折痕；字高 19、朱线 y=35.5。字形已转曲。"
+    },
+    {
+      "file": "logo-16.svg",
+      "role": "16px 专用版（独立构图，含「斋」）",
+      "viewBox": "0 0 16 16",
+      "useFor": [
+        "favicon 16/32",
+        "侧栏 20–24",
+        "标签页"
+      ],
+      "minSize": 16,
+      "status": "ready",
+      "note": "印面 14、折角 3.2、字高 7.2、朱线 7×1.4；不留折痕。"
+    },
+    {
+      "file": "logo-16-plain.svg",
+      "role": "16px 应急备用（无字）",
+      "viewBox": "0 0 16 16",
+      "useFor": [
+        "16px 文字糊成一团时替换"
+      ],
+      "minSize": 16,
+      "status": "fallback",
+      "note": "默认不用；启用后需在方案文档 6.8 记录原因。"
+    },
+    {
+      "file": "logo-reverse.svg",
+      "role": "深色背景反白版",
+      "viewBox": "0 0 48 48",
+      "useFor": [
+        "深色页头",
+        "深色模式关于页"
+      ],
+      "minSize": 24,
+      "status": "ready",
+      "note": "浅印面版：翻起面 #E4D9C3、折痕 #CBBEA4；朱线提亮 #C9634A。"
+    },
+    {
+      "file": "logo-mono.svg",
+      "role": "单色 / 灰度版",
+      "viewBox": "0 0 48 48",
+      "useFor": [
+        "单色印刷",
+        "水印",
+        "邮件签名"
+      ],
+      "minSize": 24,
+      "status": "ready",
+      "note": "单色：翻起面与朱线一起挖空为白，折角退化为切口（可接受）。"
+    },
+    {
+      "file": "mark-page.svg",
+      "role": "辅助图形「朱批页」完整版",
+      "viewBox": "0 0 48 48",
+      "useFor": [
+        "空态 96–120",
+        "交卷完成 64",
+        "导入成功 64"
+      ],
+      "minSize": 64,
+      "status": "ready",
+      "note": "一屏只出现一次；不与 Logo 同框；颜色不随主题改，深色模式整体反转。"
+    },
+    {
+      "file": "mark-page-simple.svg",
+      "role": "辅助图形「朱批页」小尺寸版",
+      "viewBox": "0 0 48 48",
+      "useFor": [
+        "讲义章首 28–32",
+        "行内状态 16–20"
+      ],
+      "minSize": 16,
+      "status": "ready",
+      "note": "已去掉折角内线并加粗描边；行内使用时按语义换色（正确=#2E6B52，错题=#B4452F）。"
+    }
+  ],
+  "rules": [
+    "朱色 #B4452F 只出现在 Logo、收藏标记、键盘焦点环三处。",
+    "答案/状态的正确与错误分别用 #2E6B52 与 #8E2F2A，不借朱色。",
+    "辅助图形不做逐笔描边动效，空态入场除外。",
+    "新增资产先登记本文件，再在方案文档中引用路径，禁止在页面里手写内联 SVG 副本。",
+    "16px 只允许使用 logo-16.svg 或 logo-16-plain.svg，不得直接缩小 logo.svg。"
+  ],
+  "fold": {
+    "meaning": "右上折角 = 翻起的一页，读作「读到一半、有进度」",
+    "geometry": "8×8 直角三角形（48 网格），翻起面 #EDE4D2，折痕 #D8CBB2 0.9",
+    "whyTwoTones": "只有翻起面比页面暗一档，才会读成折起；同色会被读成裁切",
+    "smallSize": "16px 折角 3.2，不留折痕"
+  }
+}

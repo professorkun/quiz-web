@@ -15,8 +15,10 @@
 
 import {
   LearningSnapshotSchema,
+  topLevelKeyHint,
   validateBankPackage,
   validateKnowledgeModules,
+  zhErrorMap,
   type Attempt,
   type BankContent,
   type ExamRecord,
@@ -253,7 +255,7 @@ export function parseLearningJson(
     ...examItemKeyIssues(record["examRecords"]),
   );
 
-  const parsed = LearningSnapshotSchema.safeParse(raw);
+  const parsed = LearningSnapshotSchema.safeParse(raw, { errorMap: zhErrorMap });
   issues.push(...zodIssues(parsed));
   if (!parsed.success) return { ok: false, value: null, issues, warnings: [] };
 
@@ -352,7 +354,8 @@ export function parseBankJson(text: string): ParseResult<BankContent> {
   }
   for (const key of Object.keys(record)) {
     if (!(BANK_KEYS as readonly string[]).includes(key)) {
-      issues.push({ path: `$.${key}`, message: `不认识的字段「${key}」` });
+      // 顶层键名写错是最常见的手写事故：直接给出「是不是想写 X」
+      issues.push({ path: `$.${key}`, message: topLevelKeyHint(key) });
     }
   }
 
@@ -380,7 +383,8 @@ export function parseBankJson(text: string): ParseResult<BankContent> {
     issues.push({ path: issue.path ?? "$.knowledge", message: `[${issue.code}] ${issue.message}` });
   }
 
-  if (issues.length > 0) return { ok: false, value: null, issues, warnings: [] };
+  const warnings = [...validatedKnowledge.warnings];
+  if (issues.length > 0) return { ok: false, value: null, issues, warnings };
 
   return {
     ok: true,
@@ -390,7 +394,7 @@ export function parseBankJson(text: string): ParseResult<BankContent> {
       knowledge: validatedKnowledge.modules,
     },
     issues,
-    warnings: [],
+    warnings,
   };
 }
 

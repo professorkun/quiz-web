@@ -167,7 +167,13 @@ export type {
   RestoreResult,
 } from "./practice/index.js";
 
-export { ValidationCode, validateBankPackage, validateKnowledgeModules } from "./validate.js";
+export {
+  ValidationCode,
+  validateBankPackage,
+  validateKnowledgeModules,
+  topLevelKeyHint,
+  zhErrorMap,
+} from "./validate.js";
 export type {
   ValidationIssue,
   BankPackage,
