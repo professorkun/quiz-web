@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getQuestionType,
   listQuestionTypes,
+  type Passage,
   type Question,
   type QuestionProgress,
   type QuestionType,
@@ -177,6 +178,12 @@ export function BanksPage(): React.ReactElement {
     filtered.find((q) => q.questionId === selectedId) ??
     filtered[0] ??
     activeBank.questions.find((q) => q.questionId === selectedId);
+
+  // 共享材料（R4-2）：预览只展示当前题引用的那一篇
+  const selectedPassage =
+    selected?.passageId === undefined
+      ? undefined
+      : activeBank.passages?.find((passage) => passage.passageId === selected.passageId);
 
   // 连续查看（T-06）：移动范围跟着当前筛选走，不跳到被筛掉的题
   const currentIndex =
@@ -589,6 +596,7 @@ export function BanksPage(): React.ReactElement {
               )}
               <QuestionPreview
                 question={selected}
+                passage={selectedPassage}
                 reveal={reveal}
                 onToggleReveal={() => setReveal((prev) => !prev)}
               />
@@ -637,6 +645,7 @@ export function BanksPage(): React.ReactElement {
             )}
             <QuestionPreview
               question={selected}
+              passage={selectedPassage}
               reveal={reveal}
               onToggleReveal={() => setReveal((prev) => !prev)}
             />
@@ -671,6 +680,7 @@ export function BanksPage(): React.ReactElement {
  */
 function QuestionPreview(props: {
   readonly question: Question;
+  readonly passage: Passage | undefined;
   readonly reveal: boolean;
   readonly onToggleReveal: () => void;
 }): React.ReactElement {
@@ -679,6 +689,7 @@ function QuestionPreview(props: {
     <div className="mt-2 q-preview">
       <Renderer
         question={props.question}
+        passage={props.passage}
         answer={undefined}
         optionOrder={undefined}
         grade={undefined}

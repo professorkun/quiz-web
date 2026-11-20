@@ -50,6 +50,7 @@ import { RichText } from "../../components/RichText";
 import { usePlatform } from "../../platform/PlatformProvider";
 import { getRenderer } from "../../renderers";
 import { navigate } from "../../router";
+import { passageForCurrent } from "./passage";
 import { IconCheck, IconCheckCircle, IconClock, IconClose, IconExam, IconXCircle } from "../../ui/icons";
 
 const round = (value: number): number => Math.round(value * 100) / 100;
@@ -357,6 +358,14 @@ export function ExamPage(): React.ReactElement {
     const stemInRenderer = getQuestionType(question.type).stemInRenderer;
     const urgent = remaining !== null && remaining <= 5 * 60 * 1000;
 
+    // 共享材料（R4-2）：同一篇材料在整卷只渲染一次（挂在第一道引用它的题上）
+    const passage = passageForCurrent(
+      session.items,
+      questionId,
+      questionsById,
+      activeBank.passages,
+    );
+
     return (
       <div className="page practice-page">
         <header className="card exam-head">
@@ -437,6 +446,7 @@ export function ExamPage(): React.ReactElement {
 
           <Renderer
             question={question}
+            passage={passage}
             answer={session.answers[questionId]}
             optionOrder={session.optionOrders[questionId]}
             locked={false}

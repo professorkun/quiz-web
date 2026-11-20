@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   SCHEMA_VERSION,
+  computeRevision,
   topLevelKeyHint,
   validateBankPackage,
   validateKnowledgeModules,
@@ -99,6 +100,92 @@ describe("中文报错与键名提示（V2.1 · R1.1）", () => {
     expect(topLevelKeyHint("question")).toContain("questions");
     expect(topLevelKeyHint("bankManifest")).toContain("manifest");
     expect(topLevelKeyHint("whatever")).toContain("只允许");
+  });
+});
+
+describe("材料与完形（R4-2）", () => {
+  const passage = {
+    passageId: "os_final:passage:001",
+    title: "进程调度短文",
+    body: "FCFS 是最简单的调度算法，但可能出现**饥饿**。",
+    source: "课程讲义",
+  };
+
+  function clozeQuestion(over: Record<string, unknown> = {}) {
+    const content = {
+      schemaVersion: SCHEMA_VERSION,
+      type: "cloze",
+      questionId: "os_final:cloze:001",
+      bankId: "os_final",
+      topicIds: ["os_final:topic:001"],
+      passageId: "os_final:passage:001",
+      stem: "FCFS 可能造成 {{b1}}，它属于 {{b2}} 调度。",
+      sharedOptions: [
+        { optionId: "o1", text: "饥饿" },
+        { optionId: "o2", text: "非抢占式" },
+        { optionId: "o3", text: "抢占式" },
+      ],
+      blanks: [
+        { blankId: "b1", optionId: "o1" },
+        { blankId: "b2", optionId: "o2" },
+      ],
+      reuseOptions: false,
+      legacyKeys: [],
+      ...over,
+    };
+    return { ...content, revision: computeRevision(content) };
+  }
+
+  function manifestFor(count: number) {
+    return { ...manifest(), questionCount: count };
+  }
+
+  it("带 passages 的题库可导入，且材料随结果返回", () => {
+    const result = validateBankPackage({
+      manifest: manifestFor(1),
+      questions: [clozeQuestion()],
+      passages: [passage],
+    });
+    expect(result.ok).toBe(true);
+    expect(result.passages).toHaveLength(1);
+    expect(result.passages[0]?.title).toBe("进程调度短文");
+  });
+
+  it("cloze 缺少 passages 被拒，错误为中文", () => {
+    const result = validateBankPackage({
+      manifest: manifestFor(1),
+      questions: [clozeQuestion()],
+    });
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.message.includes("题库缺少 passages"))).toBe(true);
+  });
+
+  it("题目引用不存在的材料被拒并定位到题目", () => {
+    const result = validateBankPackage({
+      manifest: manifestFor(1),
+      questions: [clozeQuestion({ passageId: "os_final:passage:404" })],
+      passages: [passage],
+    });
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === "UNKNOWN_PASSAGE")).toBe(true);
+  });
+
+  it("材料未知字段与重复 ID 都被拒", () => {
+    const unknown = validateBankPackage({
+      manifest: manifestFor(1),
+      questions: [clozeQuestion()],
+      passages: [{ ...passage, remarks: "多余" }],
+    });
+    expect(unknown.ok).toBe(false);
+    expect(unknown.issues.some((issue) => issue.code === "UNKNOWN_FIELD")).toBe(true);
+
+    const duplicated = validateBankPackage({
+      manifest: manifestFor(1),
+      questions: [clozeQuestion()],
+      passages: [passage, passage],
+    });
+    expect(duplicated.ok).toBe(false);
+    expect(duplicated.issues.some((issue) => issue.code === "DUP_PASSAGE_ID")).toBe(true);
   });
 });
 

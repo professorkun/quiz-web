@@ -9,7 +9,7 @@
 import type { BankManifest, ExamTemplate, KnowledgeModule, Question, Topic } from "@quiz/core";
 
 // 题库包转换提示词（V2.1 · R1.4）：README §3 与本常量必须逐字一致，由测试守护
-export { IMPORT_PROMPT_V2, IMPORT_PROMPT_VERSION, importPromptText } from "./importPrompt.js";
+export { IMPORT_PROMPT_V3, IMPORT_PROMPT_VERSION, importPromptText } from "./importPrompt.js";
 
 /** 一份题库包在磁盘上的形状（导入/导出的结构契约） */
 export interface BankPackageFiles {

@@ -145,7 +145,7 @@ const SNAPSHOT_KEYS = [
   "examRecords",
 ] as const;
 
-const BANK_KEYS = ["kind", "manifest", "questions", "knowledge"] as const;
+const BANK_KEYS = ["kind", "manifest", "questions", "knowledge", "passages"] as const;
 
 function unknownKeyIssues(
   rows: unknown,
@@ -326,6 +326,7 @@ export function exportBankJson(bank: BankContent): string {
       manifest: bank.manifest,
       questions: bank.questions,
       knowledge: bank.knowledge,
+      passages: bank.passages ?? [],
     },
     null,
     2,
@@ -366,7 +367,18 @@ export function parseBankJson(text: string): ParseResult<BankContent> {
     return { ok: false, value: null, issues, warnings: [] };
   }
 
-  const validated = validateBankPackage({ manifest, questions });
+  const passagesRaw = record["passages"] ?? [];
+  if (!Array.isArray(passagesRaw)) {
+    return {
+      ok: false,
+      value: null,
+      issues: [...issues, { path: "$.passages", message: "passages 必须是数组" }],
+      warnings: [],
+    };
+  }
+
+  // 材料形状、未知字段、ID 去重与引用检查全部由 core 的校验器负责（同一口径）
+  const validated = validateBankPackage({ manifest, questions, passages: passagesRaw });
   for (const issue of validated.issues) {
     issues.push({ path: issue.path ?? "$", message: `[${issue.code}] ${issue.message}` });
   }
@@ -392,6 +404,7 @@ export function parseBankJson(text: string): ParseResult<BankContent> {
       manifest: manifest as BankContent["manifest"],
       questions: validated.questions,
       knowledge: validatedKnowledge.modules,
+      passages: validated.passages,
     },
     issues,
     warnings,

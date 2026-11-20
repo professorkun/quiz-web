@@ -1,11 +1,12 @@
 import type {
   AnswerValue,
   GradeResult,
+  Passage,
   Question,
   SelfRating,
   SelfRatingLevel,
 } from "@quiz/core";
-export type { AnswerValue, SelfRating, SelfRatingLevel } from "@quiz/core";
+export type { AnswerValue, Passage, SelfRating, SelfRatingLevel } from "@quiz/core";
 
 /**
  * 渲染器统一契约（ADR-0004）。
@@ -32,6 +33,11 @@ export interface RendererProps {
   readonly onToggleReveal?: () => void;
   /** 已提交时的判分结果（由 core 算出，页面不自己算） */
   readonly grade: GradeResult | undefined;
+  /**
+   * 共享材料（R4-2）：由页面按 `question.passageId` 解析后传入。
+   * 同一篇材料在整卷里只传一次，渲染器不负责去重。
+   */
+  readonly passage?: Passage;
   readonly selfRating: SelfRating | undefined;
   readonly onChange: (answer: AnswerValue) => void;
   readonly onSelfRating: ((level: SelfRatingLevel) => void) | undefined;

@@ -64,23 +64,23 @@ pnpm verify       # 边界扫描 + 扩展点扫描 + 构建 + 全量单测（提
 
 完整 schema 见 [`web-v2/packages/core/src/schema.ts`](web-v2/packages/core/src/schema.ts)，样例见 [`web-v2/apps/web/src/data/demoBank.ts`](web-v2/apps/web/src/data/demoBank.ts)。
 
-## 3. 用 AI 把文档转成题库包（转换提示词 v2）
+## 3. 用 AI 把文档转成题库包（转换提示词 v3）
 
 手写几百道题的 JSON 不现实。把下面的提示词连同你的题目文档（Word / PDF / Markdown / 纯文本均可）一起发给任意 AI 助手（WorkBuddy、ChatGPT、Claude……），让它输出可直接导入的题库包 JSON。
 
 **用法**：复制下方整块提示词 → 粘贴给 AI → 在提示词末尾附上你的文档内容 → 把 AI 返回的 JSON 保存为 `xxx.json` → 在应用「我的 → 数据导入导出」或首屏引导页导入。若被拒绝，把应用报错原样贴回给 AI 让它修复。
 
-> 提示词版本 v2：与 `web-v2/packages/content/src/importPrompt.ts` 的常量逐字一致（有测试守护）。校验规则变化时两边必须同步。
+> 提示词版本 v3：与 `web-v2/packages/content/src/importPrompt.ts` 的常量逐字一致（有测试守护）。v3 起支持 `passages` 共享材料与 `cloze`（完形 / 选词 / 七选五 / 阅读理解多小题）。校验规则变化时两边必须同步。
 
 ````text
-题斋题库包转换器 v2（契约版本 schemaVersion = 1）
+题斋题库包转换器 v3（契约版本 schemaVersion = 1）
 
 你是题库数据转换器。请把我提供的文档内容转换为「题斋」的题库包 JSON。
 只输出纯 JSON 本身：不要解释文字、不要 Markdown 代码块包裹，JSON 必须能通过下述全部校验规则。
 
 【零、输出纪律】
 1. 以文档为准：不捏造文档里没有的题目；答案、选项文字忠实于原文（可轻度规整格式，不改语义）。
-2. 顶层只允许 kind / manifest / questions / knowledge 四个字段，不多不少。
+2. 顶层只允许 kind / manifest / questions / knowledge / passages 五个字段，不多不少。
 3. 题目与 manifest 上出现契约里没有的字段会被整包拒绝；讲义上多出来的字段只警告，但也不要依赖这一点。
 4. 只输出 JSON，从 { 开始到 } 结束。
 
@@ -89,9 +89,10 @@ pnpm verify       # 边界扫描 + 扩展点扫描 + 构建 + 全量单测（提
   "kind": "quiz.bank",
   "manifest": { …见【二】… },
   "questions": [ …见【三】【四】… ],
-  "knowledge": [ …见【五】… ]
+  "knowledge": [ …见【六】… ],
+  "passages": [ …见【五】… ]
 }
-knowledge 可以为空数组；只有文档里确实有讲义/课程链接时才填写。
+knowledge 与 passages 都可以为空数组；只有文档里确实有讲义 / 共享材料时才填写。
 
 【二、manifest 题库清单】
 {
@@ -123,6 +124,7 @@ knowledge 可以为空数组；只有文档里确实有讲义/课程链接时才
   "legacyKeys": [],
   "tags": ["可选：标签，如 <bankId>:tag:高频"],
   "difficulty": "可选：easy / medium / hard",
+  "passageId": "可选：引用 passages 里的材料 ID（阅读理解等共享材料时必填）",
   "type": "题型名",
   …题型专属字段，见【四】
 }
@@ -174,17 +176,47 @@ knowledge 可以为空数组；只有文档里确实有讲义/课程链接时才
    "rubric": [ { "pointId": "r1", "text": "采分点描述", "score": 2 } ]
    规则：至少 1 个采分点，score > 0。参考答案拆成可逐条对照的采分点，不要写成一大段。
 
-英语题型映射（只映射到既有题型，不新增类型）：
+7) cloze 完形 / 选词 / 七选五（必须配合 passages）
+   "type": "cloze",
+   "passageId": "<bankId>:passage:001",
+   "stem": "Tom is {{b1}} and Jerry is {{b2}}.",
+   "sharedOptions": [ { "optionId": "o1", "text": "happy" }, { "optionId": "o2", "text": "sad" } ],
+   "blanks": [ { "blankId": "b1", "optionId": "o1" }, { "blankId": "b2", "optionId": "o2" } ],
+   "reuseOptions": false
+   规则：
+   - sharedOptions 至少 2 项；每个 blank 的 optionId 必须存在于 sharedOptions；
+   - stem 必须包含每个 {{blankId}}，且空位不重复；
+   - reuseOptions=false 表示「每个词只能用一次」（选词填空默认），
+     同一选项填两个空会被拒绝；reuseOptions=true 表示允许复用（如七选五可重复的标记）。
+   - 一道 cloze 只对应一篇材料；同一篇材料可以挂多道 cloze。
+
+英语题型映射：
 - 词汇/语法单项选择 → single_choice
-- 多项选择（七选五之外的多选）→ multiple_choice
+- 多项选择 → multiple_choice
 - 判断正误（True/False）→ true_false
-- 单句完形/选词填空/词形转换 → fill_blank（每个空一组 accepted）
+- 单句词形转换 → fill_blank（每个空一组 accepted）
+- 完形填空 / 选词填空 / 七选五 → cloze + passages（共享词库，材料只写一次）
+- 阅读理解 → passages + 多道 single_choice（每题 passageId 相同）
 - 翻译/句型转换 → short_answer（按「关键结构 + 关键词」拆采分点）
 - 书面表达/作文 → short_answer（按内容要点、结构、语言拆采分点）
-- 阅读理解与完形篇章：本期没有材料复用能力，**不要**把整篇阅读塞进题干后硬拆成多题；
-  只提取能独立成题的词汇/语法小题。听力题不导入（应用无听力入口）。
+- 听力题不导入（应用无听力入口）。
 
-【五、knowledge 讲义（v2 新增规范）】
+【五、passages 共享材料】
+材料是**题库级**内容，一篇文章只写一次，题目用 passageId 引用：
+{
+  "passageId": "<bankId>:passage:001",
+  "title": "材料标题",
+  "body": "Markdown 正文（段落、加粗、表格可用）",
+  "source": "来源（可省略）"
+}
+规则：
+- passageId 形如 <bankId>:passage:001，全包唯一；
+- 只有「多道小题共享一篇材料」时才用 passages；普通单选题不要把材料塞进题干；
+- 有 cloze 就必须至少有一篇 passages，且每道 cloze 的 passageId 都能对上；
+- 阅读理解：一篇 passages + 多道 single_choice，每道题的 passageId 相同；
+- 同一篇材料只输出一次，不要为每道小题复制一遍正文。
+
+【六、knowledge 讲义（v2 新增规范）】
 讲义数组的每一项是一篇，字段如下（summary / items / pitfalls / goals / sections / videos / resources 均可省略，省略即空）：
 {
   "moduleId": "<bankId>:kb:001",
@@ -208,13 +240,14 @@ knowledge 可以为空数组；只有文档里确实有讲义/课程链接时才
 - body 用 Markdown；不要输出 HTML。
 - 讲义上出现契约外字段只会被忽略，所以宁可省略，也不要自创字段名。
 
-【六、三向关联（必须自洽）】
+【七、三向关联（必须自洽）】
 1. manifest.topics[].topicId 是唯一的知识点权威列表；
 2. 每道题的 topicIds 只能引用上面列出的 topicId，且至少 1 个；
-3. 每篇讲义的 topicId 也必须引用上面列出的 topicId。
-三者任一悬空都会被拒绝导入。topic 名称按文档章节命名，不要用「第一章」这类无法定位的空名。
+3. 每篇讲义的 topicId 也必须引用上面列出的 topicId；
+4. 题目上的 passageId 必须能在 passages 里找到，且 cloze 必须带 passageId。
+任一悬空都会被拒绝导入。topic 名称按文档章节命名，不要用「第一章」这类无法定位的空名。
 
-【七、examTemplates 模考模板】至少输出 1 个：
+【八、examTemplates 模考模板】至少输出 1 个：
 {
   "templateId": "<bankId>:exam:full",
   "bankId": "同 manifest.bankId",
@@ -231,8 +264,8 @@ knowledge 可以为空数组；只有文档里确实有讲义/课程链接时才
 - count 不得超过该题型实际题数；只包含文档里实际存在的题型。
 - durationSec 为秒，可省略（省略 = 不限时）。
 
-【八、输出前自检清单（逐条确认）】
-□ 顶层只有 kind / manifest / questions / knowledge 四个字段；
+【九、输出前自检清单（逐条确认）】
+□ 顶层只有 kind / manifest / questions / knowledge / passages 五个字段；
 □ kind 是 "quiz.bank"；manifest.schemaVersion 与每题 schemaVersion 都是 1；
 □ questionCount 等于 questions 数组长度；
 □ 每题 questionId 唯一，且题型段与 type 一致；
@@ -241,8 +274,10 @@ knowledge 可以为空数组；只有文档里确实有讲义/课程链接时才
 □ 选择题的 answer 引用的 optionId 都存在；多选题 answer 非空；
 □ 填空题每个 {{blankId}} 都在 stem 里，code_blank 每个标记都有对应 blank；
 □ 简答题每题至少 1 个采分点，score 大于 0；
+□ 有 cloze 就有 passages，且每道 cloze 的 passageId 都能对上；
+□ cloze 的 optionId 都存在于 sharedOptions，空位不重复；
 □ examTemplates 的分值合计与 totalScore 一致；
-□ 没有输出 tags / difficulty 以外的自创字段；没有输出听力题。
+□ 没有输出 tags / difficulty / passageId 以外的自创字段；没有输出听力题。
 
 我的文档内容如下：
 （把文档内容粘贴在这里）
