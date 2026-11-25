@@ -9,8 +9,13 @@ import { IMPORT_PROMPT_V3, IMPORT_PROMPT_VERSION } from "@quiz/content";
  *
  * 提示词是「给 AI 的契约」，README 是「给人看的位置」。两份一旦漂移，
  * 用户会照着旧提示词生成被新校验器拒绝的包——这是最难自查的一类事故。
+ *
+ * 比对前统一换行符：Windows 检出时 README 是 CRLF，而模板字面量里的 CRLF
+ * 按语言规范会被规范成 LF。不统一的话，这条断言在 Windows 上必挂、在 CI 上却绿，
+ * 变成"只在本机能复现"的假故障。
  */
-const readme = readFileSync(new URL("../../../../../README.md", import.meta.url), "utf8");
+const normalize = (text: string): string => text.replace(/\r\n/g, "\n");
+const readme = normalize(readFileSync(new URL("../../../../../README.md", import.meta.url), "utf8"));
 
 describe("提示词 v3（R1.4 / R4-2）", () => {
   it("版本标注为 v3", () => {
