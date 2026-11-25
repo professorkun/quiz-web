@@ -166,16 +166,22 @@ function CloudAccountCard(): React.ReactElement {
   }
 
   if (user !== null && !user.isAnonymous) {
+    // 账号 ID 必须露出来：两端"都已登录"但数据不通时，第一步就是比对 ID 是否同一个
+    const shortId = user.userId.slice(0, 8);
+    const label = user.displayName?.trim() ? user.displayName : "微信用户";
     return (
       <section className="card">
         <h2>账号与云同步</h2>
         <div className="row">
           <span className="badge correct">已登录</span>
-          <span>{user.displayName ?? `用户 ${user.userId.slice(0, 8)}`}</span>
+          <span>{`${label} · ${shortId}`}</span>
         </div>
         <p className="muted" style={{ marginTop: 8 }}>
           登录后、打开应用、切回前台与恢复联网都会自动与云端取并集；这里也可以手动触发。
           只追加表按幂等键去重、可变项以更新更晚者为准——只增不丢。
+        </p>
+        <p className="muted" style={{ marginTop: 4 }}>
+          两端「我的」页显示的账号 ID 相同，才是同一个账号；不同就说明登成了两个账号。
         </p>
         <div className="row" style={{ marginTop: 10 }}>
           <button

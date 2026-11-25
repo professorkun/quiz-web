@@ -68,18 +68,45 @@ export async function uploadBankToCloud(userId: string, bank: BankContent): Prom
   if (result.error) throw new Error(messageOf(result.error, "上传题库失败"));
 }
 
+/**
+ * 把存储层 `list()` 的各种返回形态收敛成文件数组。
+ *
+ * 线上出现过 `[r.data ?? []].filter is not a function`：`data` 不一定是数组，
+ * 某些版本/网关会包成 `{ files: [...] }` 或返回纯路径字符串。先归一化再筛，
+ * 不要让"列不出云端题库"表现成一句看不懂的运行时错误。
+ */
+function storageFilesOf(raw: unknown): readonly StorageFile[] {
+  if (Array.isArray(raw)) {
+    return raw.flatMap((item) => {
+      if (typeof item === "string") {
+        return [{ name: item.split("/").pop() ?? item, updated_at: null }];
+      }
+      if (typeof item === "object" && item !== null && "name" in item) {
+        return [item as StorageFile];
+      }
+      return [];
+    });
+  }
+  if (typeof raw === "object" && raw !== null) {
+    for (const key of ["files", "items", "objects", "data"]) {
+      const value = (raw as Record<string, unknown>)[key];
+      if (Array.isArray(value)) return storageFilesOf(value);
+    }
+  }
+  return [];
+}
+
 /** 列出当前用户已备份的题库 */
 export async function listCloudBanks(userId: string): Promise<readonly CloudBankEntry[]> {
   const prefix = dirPrefix(userId);
   const result = await storage.from().list(prefix, { limit: 100 });
   if (result.error) throw new Error(messageOf(result.error, "读取云端题库列表失败"));
-  const files = result.data ?? [];
-  return files
-    .filter((file) => file.name.endsWith(".json"))
+  return storageFilesOf(result.data)
+    .filter((file) => typeof file.name === "string" && file.name.endsWith(".json"))
     .map((file) => ({
       name: file.name.replace(/\.json$/, ""),
       path: `${prefix}/${file.name}`,
-      updatedAt: file.updated_at,
+      updatedAt: file.updated_at ?? null,
     }));
 }
 
