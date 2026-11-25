@@ -4,8 +4,8 @@
  * 账号密码登录没有云会话，不应触发云同步。
  */
 
-import { renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, renderHook, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   syncAll: vi.fn(),
@@ -40,6 +40,10 @@ beforeEach(() => {
     return () => undefined;
   });
 });
+
+// 必须卸载：钩子把 visibilitychange / online 挂在全局上，
+// 不 cleanup 的话上一条用例的监听器还活着，一次事件会打出 N 次同步。
+afterEach(() => cleanup());
 
 describe("登录后自动同步", () => {
   it("有云会话时调用一次 syncAll", async () => {
@@ -86,5 +90,55 @@ describe("登录后自动同步", () => {
 
     await waitFor(() => expect(mocks.platform.auth.onAuthStateChange).toHaveBeenCalled());
     expect(mocks.syncAll).not.toHaveBeenCalled();
+  });
+});
+
+describe("触发时机补强", () => {
+  const loggedIn = (): void => {
+    mocks.currentUser.mockResolvedValue({ userId: "u1", displayName: null, isAnonymous: false });
+  };
+
+  it("切回前台（visible）时再同步一次", async () => {
+    loggedIn();
+    renderHook(() => useAutoSync());
+    await waitFor(() => expect(mocks.syncAll).toHaveBeenCalledTimes(1));
+
+    Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    await waitFor(() => expect(mocks.syncAll).toHaveBeenCalledTimes(2));
+  });
+
+  it("切到后台（hidden）不触发", async () => {
+    loggedIn();
+    renderHook(() => useAutoSync());
+    await waitFor(() => expect(mocks.syncAll).toHaveBeenCalledTimes(1));
+
+    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(mocks.syncAll).toHaveBeenCalledTimes(1);
+    Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+  });
+
+  it("恢复联网（online）时再同步一次", async () => {
+    loggedIn();
+    renderHook(() => useAutoSync());
+    await waitFor(() => expect(mocks.syncAll).toHaveBeenCalledTimes(1));
+
+    globalThis.dispatchEvent(new Event("online"));
+
+    await waitFor(() => expect(mocks.syncAll).toHaveBeenCalledTimes(2));
+  });
+
+  it("失败后按退避重试，第二次成功就收手", async () => {
+    loggedIn();
+    mocks.syncAll.mockRejectedValueOnce(new Error("网络抖动")).mockResolvedValue(undefined);
+    renderHook(() => useAutoSync());
+
+    await waitFor(() => expect(mocks.syncAll).toHaveBeenCalledTimes(1));
+    // 第一次退避 1s
+    await waitFor(() => expect(mocks.syncAll).toHaveBeenCalledTimes(2), { timeout: 2_000 });
   });
 });

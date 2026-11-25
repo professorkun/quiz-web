@@ -331,7 +331,8 @@ function CloudAccountCard(): React.ReactElement {
         <h2>{isRemoteUser ? "账号与登录" : "账号与云同步"}</h2>
         <div className="row">
           <span className="badge correct">已登录</span>
-          <span>{user.displayName ?? `用户 ${user.userId.slice(0, 8)}`}</span>
+          {/* 账号 ID 必须露出来：两端"都已登录"却数据不通时，第一步就是比对它是否同一个 */}
+          <span>{`${user.displayName?.trim() || "云用户"} · ${user.userId.slice(0, 8)}`}</span>
         </div>
         {isRemoteUser ? (
           <p className="muted" style={{ marginTop: 8 }}>
