@@ -76,7 +76,7 @@ export type {
   BankContent,
 } from "./schema.js";
 
-export { makeQuestionId, parseQuestionId, nextSeq, padSeq } from "./ids.js";
+export { makeQuestionId, parseQuestionId, nextSeq, padSeq, makeAttemptId } from "./ids.js";
 export type { ParsedQuestionId } from "./ids.js";
 
 // 讲义视频源解析（S7-E8）：纯函数，UI 不自己判断"这个链接该怎么播"

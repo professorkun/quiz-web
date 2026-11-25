@@ -68,6 +68,29 @@ function progress(questionId: string, count: number): QuestionProgress {
   };
 }
 
+function progressRow(
+  questionId: string,
+  count: number,
+  note: string | null,
+  updatedAt = "2026-11-18T00:00:00.000Z",
+): CloudRow {
+  return {
+    bank_id: "javaweb",
+    question_id: questionId,
+    attempts_count: count,
+    wrong_count: 0,
+    first_correct_at: null,
+    last_attempt_at: "2026-11-18T00:00:00.000Z",
+    mastered: false,
+    status: "learning",
+    streak: 0,
+    next_review_at: null,
+    error_cause: null,
+    note,
+    updated_at: updatedAt,
+  };
+}
+
 function mockTransport(initial: { attempts?: CloudRow[]; question_progress?: CloudRow[] } = {}): SyncTransport & {
   tables: Record<string, CloudRow[]>;
 } {
@@ -167,5 +190,130 @@ describe("全量快照同步", () => {
 
     const local = await platform.progress.get("javaweb", "javaweb:single_choice:001");
     expect(local?.attemptsCount).toBe(3);
+  });
+});
+
+describe("P0 修复：进度是事件的投影", () => {
+  it("备注按字段合并：次数相同，云端备注也能落到本地", async () => {
+    const platform = makePlatform();
+    await platform.progress.save({ ...progress("javaweb:single_choice:001", 1), note: "本地旧备注" });
+
+    const cloud = mockTransport({
+      question_progress: [progressRow("javaweb:single_choice:001", 1, "云端新备注")],
+    });
+    await syncAll(cloud, platform);
+
+    const local = await platform.progress.get("javaweb", "javaweb:single_choice:001");
+    expect(local?.note).toBe("云端新备注");
+  });
+
+  it("拉取后按事件重算：写坏的进度会被改回真实次数，手写备注不丢", async () => {
+    const platform = makePlatform();
+    await platform.attempts.append(attempt("a1", "javaweb:single_choice:001"));
+    // 本地进度被写成 5 次，但只有 1 条事件
+    await platform.progress.save({ ...progress("javaweb:single_choice:001", 5), note: "手写备注" });
+
+    const cloud = mockTransport({});
+    await syncAll(cloud, platform);
+
+    const local = await platform.progress.get("javaweb", "javaweb:single_choice:001");
+    expect(local?.attemptsCount).toBe(1);
+    expect(local?.note).toBe("手写备注");
+    // 推上云的也必须是重算后的值，而不是本地那份坏的
+    expect(cloud.tables.question_progress?.[0]?.attempts_count).toBe(1);
+  });
+
+  it("没有事件支撑的进度不上云（不把漂移搬给另一台设备）", async () => {
+    const platform = makePlatform();
+    await platform.attempts.append(attempt("a1", "javaweb:single_choice:001"));
+    await platform.progress.save(progress("javaweb:single_choice:001", 1));
+    // 孤儿进度：有进度、没有任何作答事件（实测云端 35 条进度只对得上 4 条事件）
+    await platform.progress.save(progress("javaweb:single_choice:009", 3));
+
+    const cloud = mockTransport({});
+    await syncAll(cloud, platform);
+
+    const pushed = (cloud.tables.question_progress ?? []).map((row) => String(row.question_id));
+    expect(pushed).toEqual(["javaweb:single_choice:001"]);
+  });
+
+  it("云端事件多于本地且没有进度行时，拉取后能按事件补出进度", async () => {
+    const platform = makePlatform();
+    const cloud = mockTransport({
+      attempts: [
+        attemptToRow(attempt("c1", "javaweb:single_choice:002")),
+        attemptToRow(attempt("c2", "javaweb:single_choice:002")),
+        attemptToRow(attempt("c3", "javaweb:single_choice:002")),
+      ],
+    });
+
+    await syncAll(cloud, platform);
+
+    const local = await platform.progress.get("javaweb", "javaweb:single_choice:002");
+    expect(local?.attemptsCount).toBe(3);
+    expect(local?.firstCorrectAt).not.toBeNull();
+  });
+});
+
+describe("P1：时间戳与墓碑", () => {
+  it("本地备注更新更晚时，不被云端旧备注覆盖", async () => {
+    const platform = makePlatform();
+    // 有事件支撑的进度才会被推上云，所以先造一条作答
+    await platform.attempts.append(attempt("a1", "javaweb:single_choice:001"));
+    // 本地这条带的是"现在"（测试时钟 2026-11-18），云端是前一天的旧备注
+    await platform.progress.save({ ...progress("javaweb:single_choice:001", 1), note: "本地新备注" });
+
+    const cloud = mockTransport({
+      question_progress: [
+        progressRow("javaweb:single_choice:001", 1, "云端旧备注", "2026-11-17T00:00:00.000Z"),
+      ],
+    });
+    await syncAll(cloud, platform);
+
+    const local = await platform.progress.get("javaweb", "javaweb:single_choice:001");
+    expect(local?.note).toBe("本地新备注");
+    // 推回云端的也得是本地这条，且时间戳不能被"推送时刻"覆盖
+    expect(cloud.tables.question_progress?.[0]?.note).toBe("本地新备注");
+    expect(cloud.tables.question_progress?.[0]?.updated_at).toBe("2026-11-18T00:00:00.000Z");
+  });
+
+  it("取消收藏以墓碑同步出去，不靠云端并集复活", async () => {
+    const platform = makePlatform();
+    await platform.favorites.add("javaweb", "javaweb:single_choice:001", "2026-11-17T00:00:00.000Z");
+    await platform.favorites.remove("javaweb", "javaweb:single_choice:001");
+
+    const cloud = mockTransport({});
+    await syncAll(cloud, platform);
+
+    const pushed = (cloud.tables.user_preferences?.[0]?.favorites ?? []) as { removedAt?: string }[];
+    expect(pushed[0]?.removedAt).toBeDefined();
+    expect(await platform.favorites.listByBank("javaweb")).toHaveLength(0);
+  });
+
+  it("云端墓碑比本地收藏更新时，本地也取消", async () => {
+    const platform = makePlatform();
+    await platform.favorites.add("javaweb", "javaweb:single_choice:001", "2026-11-17T00:00:00.000Z");
+
+    const cloud = mockTransport({});
+    cloud.tables.user_preferences = [
+      {
+        owner_id: "u-1",
+        active_bank_id: null,
+        practice: {},
+        updated_at: "2026-11-17T00:00:00.000Z",
+        favorites: [
+          {
+            bankId: "javaweb",
+            questionId: "javaweb:single_choice:001",
+            addedAt: "2026-11-17T00:00:00.000Z",
+            removedAt: "2026-11-18T00:00:00.000Z",
+          },
+        ],
+      },
+    ];
+
+    await syncAll(cloud, platform);
+
+    expect(await platform.favorites.has("javaweb", "javaweb:single_choice:001")).toBe(false);
   });
 });

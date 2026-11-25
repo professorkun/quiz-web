@@ -114,10 +114,13 @@ export function ReviewPage(): React.ReactElement {
   const markCause = async (questionId: string, cause: ErrorCause | null): Promise<void> => {
     const row = progress.find((p) => p.questionId === questionId);
     if (row === undefined) return;
+    // 变更时间必须显式刷新：`...row` 会把旧时间戳一起带过来，
+    // 同步侧据此判新旧，带旧值等于"这次修改不算数"。
+    const updatedAt = platform.clock.now().toISOString();
     try {
-      await platform.progress.save({ ...row, errorCause: cause });
+      await platform.progress.save({ ...row, errorCause: cause, updatedAt });
       setProgress((prev) =>
-        prev.map((p) => (p.questionId === questionId ? { ...p, errorCause: cause } : p)),
+        prev.map((p) => (p.questionId === questionId ? { ...p, errorCause: cause, updatedAt } : p)),
       );
       bump();
     } catch (err) {
@@ -129,9 +132,10 @@ export function ReviewPage(): React.ReactElement {
   const markNote = async (questionId: string, note: string): Promise<void> => {
     const row = progress.find((p) => p.questionId === questionId);
     if (row === undefined || (row.note ?? "") === note) return;
+    const updatedAt = platform.clock.now().toISOString();
     try {
-      await platform.progress.save({ ...row, note });
-      setProgress((prev) => prev.map((p) => (p.questionId === questionId ? { ...p, note } : p)));
+      await platform.progress.save({ ...row, note, updatedAt });
+      setProgress((prev) => prev.map((p) => (p.questionId === questionId ? { ...p, note, updatedAt } : p)));
       bump();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "备注保存失败");

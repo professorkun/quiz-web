@@ -19,6 +19,7 @@ import { createLocalAuthAdapter } from "../account/localAuth";
 import { accountDbName, copyGuestDataIfEmpty } from "../account/userStorage";
 import { cloudAuth, createCloudAuthAdapter } from "../cloud/auth";
 import { isCloudOrigin } from "../cloud/config";
+import { createSyncEngine, type SyncEngine, type SyncSnapshot } from "../cloud/syncEngine";
 import { BUILTIN_BANKS, EMPTY_BANK_PLACEHOLDER } from "../data/banks";
 
 export interface PendingSession {
@@ -45,6 +46,13 @@ interface ContextValue {
   readonly pendingSession: PendingSession | null;
   startCustomSession(questionIds: readonly string[], mode: "practice" | "review", origin?: string): void;
   consumePendingSession(): void;
+  /** 云同步状态（P0）：触发时机在引擎里，页面只读状态与手动触发 */
+  readonly sync: {
+    readonly phase: SyncSnapshot["phase"];
+    readonly lastSyncAt: string | null;
+    readonly error: string | null;
+    syncNow(reason?: string): Promise<void>;
+  };
 }
 
 const PlatformContext = createContext<ContextValue | null>(null);
@@ -55,6 +63,8 @@ interface State {
   /** null = 尚无题库可选（空壳态）。持久化时也存 null——契约禁止空字符串 ID */
   readonly activeBankId: string | null;
   readonly degraded: string | null;
+  /** 跟这个 platform 绑定的同步引擎：换账号即换库，引擎也要跟着换 */
+  readonly engine: SyncEngine;
 }
 
 async function loadBank(platform: Platform, bankId: string): Promise<BankContent | null> {
@@ -100,6 +110,11 @@ export function PlatformProvider(props: {
   const [pendingSession, setPendingSession] = useState<PendingSession | null>(null);
   /** 登录账号变化时 +1，触发按账号重新装配数据库 */
   const [bootToken, setBootToken] = useState(0);
+  const [syncSnapshot, setSyncSnapshot] = useState<SyncSnapshot>({
+    phase: "idle",
+    lastSyncAt: null,
+    error: null,
+  });
   const currentUserId = useRef<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -158,7 +173,9 @@ export function PlatformProvider(props: {
           });
         }
         if (cancelled) return;
-        setState({ platform, banks, activeBankId, degraded });
+        // 引擎跟 platform 一起创建：同步的永远是"当前账号这一份库"
+        const engine = createSyncEngine({ platform, onSynced: () => setVersion((v) => v + 1) });
+        setState({ platform, banks, activeBankId, degraded, engine });
         if (degraded !== null) showToast(degraded);
       } catch (cause) {
         if (cancelled) return;
@@ -187,6 +204,23 @@ export function PlatformProvider(props: {
     });
   }, [auth, injected]);
 
+  const engine = state?.engine;
+  const syncNow = useCallback(
+    (reason?: string) => engine?.syncNow(reason) ?? Promise.resolve(),
+    [engine],
+  );
+
+  // 引擎随库一起启动：登录后、启动、回前台、恢复联网都在这里自动同步
+  useEffect(() => {
+    if (engine === undefined) return;
+    return engine.start();
+  }, [engine]);
+
+  useEffect(() => {
+    if (engine === undefined) return;
+    return engine.subscribe(setSyncSnapshot);
+  }, [engine]);
+
   const selectBank = useCallback(
     async (bankId: string) => {
       if (state === null) return;
@@ -199,6 +233,7 @@ export function PlatformProvider(props: {
         activeBankId: bankId,
         updatedAt: new Date().toISOString(),
       });
+      state.engine.noteLocalWrite();
       setVersion((v) => v + 1);
     },
     [state],
@@ -229,15 +264,25 @@ export function PlatformProvider(props: {
       toast,
       selectBank,
       reloadBanks,
-      bump: () => setVersion((v) => v + 1),
+      // 写入后顺手约一次同步（引擎内部 15s 防抖 + 单飞，连点也只会发一次）
+      bump: () => {
+        state.engine.noteLocalWrite();
+        setVersion((v) => v + 1);
+      },
       showToast,
       dismissToast: () => setToast(null),
       pendingSession,
       startCustomSession: (questionIds, mode, origin = "复习") =>
         setPendingSession({ questionIds, mode, origin }),
       consumePendingSession: () => setPendingSession(null),
+      sync: {
+        phase: syncSnapshot.phase,
+        lastSyncAt: syncSnapshot.lastSyncAt,
+        error: syncSnapshot.error,
+        syncNow,
+      },
     };
-  }, [state, version, toast, pendingSession, selectBank, reloadBanks, showToast]);
+  }, [state, version, toast, pendingSession, selectBank, reloadBanks, showToast, syncSnapshot, syncNow]);
 
   if (failure !== null) {
     return (

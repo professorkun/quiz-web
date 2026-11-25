@@ -158,8 +158,13 @@ export interface ExamRepository {
 export interface FavoriteRepository {
   add(bankId: string, questionId: string, addedAt: string): Promise<void>;
   remove(bankId: string, questionId: string): Promise<void>;
+  /** 原样写入一条（可能带墓碑）：同步合并用，避免"删除"被重新盖章 */
+  put(entry: FavoriteEntry): Promise<void>;
   has(bankId: string, questionId: string): Promise<boolean>;
+  /** 展示用：已过滤墓碑 */
   listByBank(bankId: string): Promise<readonly FavoriteEntry[]>;
+  /** 同步用：**包含**墓碑，否则"取消收藏"永远传不到另一台设备 */
+  listForSync(bankId: string): Promise<readonly FavoriteEntry[]>;
 }
 
 export const DEFAULT_PRACTICE_SETTINGS: PracticeSettings = {

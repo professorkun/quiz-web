@@ -20,16 +20,25 @@ import {
   probeCloudLoginOrigin,
   resetCloudLoginOriginProbe,
 } from "../../cloud/config";
-import { syncAll } from "../../cloud/sync";
-import { createCloudTransport } from "../../cloud/transport";
 import { usePlatform } from "../../platform/PlatformProvider";
 
 const PHONE_RE = /^1\d{10}$/;
 
 type LoginMethod = "phone" | "wechat";
 
+/** "上次同步"要读得懂：相对时间比一串 ISO 有用 */
+function formatSyncTime(iso: string): string {
+  const ageMs = Date.now() - Date.parse(iso);
+  if (!Number.isFinite(ageMs) || ageMs < 60_000) return "刚刚";
+  const minutes = Math.floor(ageMs / 60_000);
+  if (minutes < 60) return `${minutes} 分钟前`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} 小时前`;
+  return new Date(iso).toLocaleDateString();
+}
+
 function CloudAccountCard(): React.ReactElement {
-  const { platform, showToast, bump } = usePlatform();
+  const { platform, showToast, sync, bump } = usePlatform();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [ready, setReady] = useState(false);
   const [phone, setPhone] = useState("");
@@ -39,8 +48,6 @@ function CloudAccountCard(): React.ReactElement {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState("");
   const [countdown, setCountdown] = useState(0);
-  const [syncing, setSyncing] = useState(false);
-  const [syncMsg, setSyncMsg] = useState("");
   const [method, setMethod] = useState<LoginMethod>("phone");
   const [wechatBlocked, setWechatBlocked] = useState<boolean | null>(null);
   const [checkingWechat, setCheckingWechat] = useState(false);
@@ -119,17 +126,7 @@ function CloudAccountCard(): React.ReactElement {
   };
 
   const runSync = async (): Promise<void> => {
-    setSyncing(true);
-    setSyncMsg("");
-    try {
-      await syncAll(createCloudTransport(), platform);
-      bump();
-      setSyncMsg("同步完成：本地与云端已取并集");
-    } catch (e) {
-      setSyncMsg(e instanceof Error ? e.message : "同步失败");
-    } finally {
-      setSyncing(false);
-    }
+    await sync.syncNow("manual");
   };
 
   const checkWechat = async (reset = false): Promise<void> => {
@@ -177,19 +174,25 @@ function CloudAccountCard(): React.ReactElement {
           <span>{user.displayName ?? `用户 ${user.userId.slice(0, 8)}`}</span>
         </div>
         <p className="muted" style={{ marginTop: 8 }}>
-          点「立即同步」把本地记录与云端取并集：只追加表按幂等键去重、可变项以更新更晚者为准——只增不丢。
+          登录后、打开应用、切回前台与恢复联网都会自动与云端取并集；这里也可以手动触发。
+          只追加表按幂等键去重、可变项以更新更晚者为准——只增不丢。
         </p>
         <div className="row" style={{ marginTop: 10 }}>
-          <button type="button" className="btn" disabled={syncing} onClick={() => void runSync()}>
-            {syncing ? "同步中…" : "立即同步"}
+          <button
+            type="button"
+            className="btn"
+            disabled={sync.phase === "syncing"}
+            onClick={() => void runSync()}
+          >
+            {sync.phase === "syncing" ? "同步中…" : "立即同步"}
           </button>
           <button type="button" className="btn gray" onClick={() => void signOut()}>
             退出登录
           </button>
         </div>
-        {syncMsg === "" ? null : (
+        {sync.error === null && sync.lastSyncAt === null ? null : (
           <div className="notice small" style={{ marginTop: 8 }}>
-            {syncMsg}
+            {sync.error ?? `已同步 · ${formatSyncTime(sync.lastSyncAt ?? "")}`}
           </div>
         )}
       </section>

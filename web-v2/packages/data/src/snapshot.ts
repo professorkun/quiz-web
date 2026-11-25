@@ -80,9 +80,11 @@ const PROGRESS_KEYS = [
   "nextReviewAt",
   "errorCause",
   "note",
+  // 变更时间戳：旧文件没有，新文件带它；它不是"未知字段"
+  "updatedAt",
 ] as const;
 
-const FAVORITE_KEYS = ["bankId", "questionId", "addedAt"] as const;
+const FAVORITE_KEYS = ["bankId", "questionId", "addedAt", "removedAt"] as const;
 
 const SESSION_KEYS = [
   "sessionId",

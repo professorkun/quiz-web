@@ -19,6 +19,7 @@ import {
   getQuestionType,
   goNext,
   goPrev,
+  makeAttemptId,
   restoreSession,
   selectQuestions,
   serializeSession,
@@ -242,7 +243,9 @@ export function PracticePage(): React.ReactElement {
 
       const history = await platform.attempts.listByQuestion(bankId, questionId);
       const attempt = buildAttempt({
-        attemptId: `${next.sessionId}-${history.length + 1}`,
+        // 唯一性靠随机段：会话会同步，两端续刷同一轮时"会话+第几题"会撞成同一个 ID，
+        // 云端主键冲突后先到的那条会把后到的作答静默吞掉
+        attemptId: makeAttemptId(next.sessionId),
         question,
         answer,
         grade,
@@ -256,7 +259,11 @@ export function PracticePage(): React.ReactElement {
       await platform.attempts.append(attempt);
 
       const derived = computeProgress(bankId, questionId, [...history, attempt]);
-      await platform.progress.save(derived);
+      // 备注是手写标注、事件里没有：重算进度时原样带回，否则答一次题就把备注抹了
+      const previous = await platform.progress.get(bankId, questionId);
+      await platform.progress.save(
+        previous?.note === undefined ? derived : { ...derived, note: previous.note },
+      );
 
       await platform.sessions.save({
         sessionId: next.sessionId,

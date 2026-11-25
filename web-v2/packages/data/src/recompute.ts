@@ -28,6 +28,15 @@ function keyOf(progress: QuestionProgress): string {
   return progress.questionId;
 }
 
+/**
+ * 只比较**派生字段**：备注是用户手写标注、变更时间是簿记信息，
+ * 两者都不是"由事件算出来的"，重算时既不该被抹掉，也不该算进"不一致"。
+ */
+function derivedView(progress: QuestionProgress): Omit<QuestionProgress, "note" | "updatedAt"> {
+  const { note: _note, updatedAt: _updatedAt, ...rest } = progress;
+  return rest;
+}
+
 function diffCount(
   actual: readonly QuestionProgress[],
   expected: readonly QuestionProgress[],
@@ -36,7 +45,12 @@ function diffCount(
   let changed = 0;
   for (const item of expected) {
     const current = map.get(keyOf(item));
-    if (current === undefined || JSON.stringify(current) !== JSON.stringify(item)) changed += 1;
+    if (
+      current === undefined ||
+      JSON.stringify(derivedView(current)) !== JSON.stringify(derivedView(item))
+    ) {
+      changed += 1;
+    }
     map.delete(keyOf(item));
   }
   // 多出来的派生条目也要算差异（例如题目下线后残留的旧进度）
@@ -48,10 +62,20 @@ async function calculate(
   bankId: string,
 ): Promise<{ expected: readonly QuestionProgress[]; before: readonly QuestionProgress[] }> {
   const attempts = await platform.attempts.listByBank(bankId);
-  return {
-    expected: recomputeProgress(attempts),
-    before: await platform.progress.listByBank(bankId),
-  };
+  const before = await platform.progress.listByBank(bankId);
+  const previous = new Map(before.map((p) => [keyOf(p), p]));
+
+  const expected = recomputeProgress(attempts).map((derived) => {
+    const prev = previous.get(keyOf(derived));
+    if (prev === undefined) return derived;
+    // 只补回"不是派生"的两项；数值一律以事件重算为准
+    return {
+      ...derived,
+      ...(prev.note === undefined ? {} : { note: prev.note }),
+      ...(prev.updatedAt === undefined ? {} : { updatedAt: prev.updatedAt }),
+    };
+  });
+  return { expected, before };
 }
 
 /** 只读检查：当前进度与"由 Attempt 重算的结果"差几条 */

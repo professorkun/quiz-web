@@ -105,6 +105,35 @@ export function CloudBankCard(): React.ReactElement {
     }
   };
 
+  /** 登录后能看出"云端有、本机没有"的题库，并一次补齐——换设备不必逐个点 */
+  const localIds = new Set(banks.map((bank) => bank.manifest.bankId));
+  const missing = entries.filter((entry) => !localIds.has(entry.name));
+
+  const restoreAll = async (): Promise<void> => {
+    if (missing.length === 0) return;
+    setBusy("restore-all");
+    setMessage("");
+    const done: string[] = [];
+    const failed: string[] = [];
+    for (const entry of missing) {
+      try {
+        const bank = await downloadBankFromCloud(entry.path);
+        await platform.banks.saveImportedBank(bank);
+        done.push(bank.manifest.title);
+      } catch (cause) {
+        failed.push(`${entry.name}（${cause instanceof Error ? cause.message : "失败"}）`);
+      }
+    }
+    await reloadBanks();
+    setBusy(null);
+    setMessage(
+      failed.length === 0
+        ? `已从云端恢复 ${done.length} 个题库：${done.join("、")}`
+        : `恢复 ${done.length} 个，失败 ${failed.length} 个：${failed.join("；")}`,
+    );
+    if (done.length > 0) showToast("云端题库已恢复到本机");
+  };
+
   return (
     <section className="card">
       <h2>题库云备份</h2>
@@ -116,6 +145,23 @@ export function CloudBankCard(): React.ReactElement {
         <p className="muted">正在读取登录状态…</p>
       ) : loggedIn && user !== null ? (
         <>
+          {missing.length === 0 ? null : (
+            <div className="notice small" style={{ marginTop: 10 }}>
+              <strong>云端还有 {missing.length} 个题库没在本机。</strong>
+              <div style={{ marginTop: 4 }}>{missing.map((entry) => entry.name).join("、")}</div>
+              <div className="row" style={{ marginTop: 6 }}>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={busy !== null}
+                  onClick={() => void restoreAll()}
+                >
+                  {busy === "restore-all" ? "恢复中…" : "一键恢复全部"}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="row" style={{ marginTop: 10 }}>
             <button
               type="button"

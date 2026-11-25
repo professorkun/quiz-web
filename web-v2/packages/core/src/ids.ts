@@ -49,6 +49,25 @@ export function parseQuestionId(id: string): ParsedQuestionId {
   return { bankId, type: rawType as QuestionType, seq: Number(rawSeq) };
 }
 
+/**
+ * 作答事件 ID：`sessionId` 前缀只为排查方便，唯一性由随机段保证。
+ *
+ * **不能**用「会话 + 第几题」拼：会话是跨设备同步的，两端续刷同一轮练习时
+ * 会拼出同一个 ID，云端主键冲突后 `ON CONFLICT DO NOTHING` 会把后到的那条
+ * 作答**静默吞掉**——不报错、不落日志，用户只看到"这题我明明做过"。
+ */
+export function makeAttemptId(sessionId: string): string {
+  // core 不依赖 DOM 类型：这里按最小结构取随机源，非安全上下文（局域网 http）自动退回时间戳
+  const cryptoApi = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  const uuid = cryptoApi?.randomUUID?.();
+  const tail =
+    typeof uuid === "string"
+      ? uuid
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  // 前缀只为人肉排查：同一轮练习的记录聚在一起，一眼能看出属于哪次会话
+  return `${sessionId}-${tail}`;
+}
+
 /** 分配新序号：取当前最大值 +1，**不复用已删除题目的编号** */
 export function nextSeq(existingIds: readonly string[], bankId: string, type: QuestionType): number {
   let max = 0;

@@ -497,6 +497,13 @@ export const QuestionProgressSchema = z.object({
   errorCause: ErrorCauseSchema.nullable().default(null),
   /** 可选备注 */
   note: z.string().optional(),
+  /**
+   * 最后变更时间（本地写入时落）。
+   *
+   * 同步要靠它判"谁的备注更新"：只比作答次数永远分不出「次数相同、备注被改过」。
+   * 旧数据没有这个字段，视为未知时间戳——合并时退回按次数兜底，不当作 1970 年。
+   */
+  updatedAt: z.string().min(1).optional(),
 });
 export type QuestionProgress = z.infer<typeof QuestionProgressSchema>;
 
@@ -523,6 +530,14 @@ export const FavoriteEntrySchema = z.object({
   bankId: IdStr,
   questionId: QuestionIdSchema,
   addedAt: z.string().min(1),
+  /**
+   * 取消收藏的时间戳（墓碑）。
+   *
+   * 收藏原先只做并集，"取消"这个动作没有表示形式，于是下次同步就复活。
+   * 有 `removedAt` 的行表示"删过"，用它与 `addedAt` 比新旧即可把删除也同步出去；
+   * 展示层（listByBank / has）自动过滤掉墓碑，页面无需感知。
+   */
+  removedAt: z.string().min(1).optional(),
 });
 export type FavoriteEntry = z.infer<typeof FavoriteEntrySchema>;
 

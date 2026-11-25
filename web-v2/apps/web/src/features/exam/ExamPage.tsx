@@ -181,6 +181,8 @@ export function ExamPage(): React.ReactElement {
           if (question === undefined) continue;
           const history = historyByQuestion.get(item.questionId) ?? [];
           const attempt = buildAttempt({
+            // 模考 ID 保持确定性：同一份卷子重复交卷（异常重试）要落到同一条记录上，
+            // 换成随机 ID 会让每次重试都多出一份作答。模考会话不跨设备同步，不会撞号。
             attemptId: `${session.sessionId}-${index}`,
             question,
             answer: item.answer as AnswerValue,
@@ -199,7 +201,13 @@ export function ExamPage(): React.ReactElement {
           await platform.attempts.append(attempt);
           derived.push(computeProgress(bankId, item.questionId, [...history, attempt]));
         }
-        for (const row of derived) await platform.progress.save(row);
+        for (const row of derived) {
+          // 备注是手写标注、事件里没有：重算进度时原样带回
+          const previous = await platform.progress.get(bankId, row.questionId);
+          await platform.progress.save(
+            previous?.note === undefined ? row : { ...row, note: previous.note },
+          );
+        }
 
         const durationSec = Math.max(
           0,

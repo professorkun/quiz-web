@@ -208,7 +208,10 @@ class AttemptRepositoryImpl implements AttemptRepository {
 /* ------------------------------------------------------------------ 进度 */
 
 class ProgressRepositoryImpl implements ProgressRepository {
-  constructor(private readonly kv: KeyValueStore) {}
+  constructor(
+    private readonly kv: KeyValueStore,
+    private readonly clock: Clock,
+  ) {}
 
   async get(bankId: string, questionId: string): Promise<QuestionProgress | null> {
     return parseRow<QuestionProgress>(
@@ -232,8 +235,17 @@ class ProgressRepositoryImpl implements ProgressRepository {
     return out;
   }
 
+  /**
+   * 写入时补时间戳：没带就盖当前时间（本地写入），带了就原样保留（同步回落 / 重算）。
+   * 关键在于"带了就保留"——`reprojectProgress` 会用旧时间戳回写派生值，
+   * 每次同步都重新盖章会让 LWW 永远偏向最后同步的那台设备。
+   */
   async save(progress: QuestionProgress): Promise<void> {
-    await this.kv.set(`${K.progress(progress.bankId)}${progress.questionId}`, JSON.stringify(progress));
+    const row: QuestionProgress =
+      progress.updatedAt === undefined
+        ? { ...progress, updatedAt: this.clock.now().toISOString() }
+        : progress;
+    await this.kv.set(`${K.progress(row.bankId)}${row.questionId}`, JSON.stringify(row));
   }
 
   async saveMany(progress: readonly QuestionProgress[]): Promise<void> {
@@ -270,33 +282,56 @@ class SessionRepositoryImpl implements SessionRepository {
 /* ------------------------------------------------------------------ 收藏 */
 
 class FavoriteRepositoryImpl implements FavoriteRepository {
-  constructor(private readonly kv: KeyValueStore) {}
+  constructor(
+    private readonly kv: KeyValueStore,
+    private readonly clock: Clock,
+  ) {}
 
-  async add(bankId: string, questionId: string, addedAt: string): Promise<void> {
-    const entry: FavoriteEntry = { bankId, questionId, addedAt };
-    await this.kv.set(`${K.favorites(bankId)}${questionId}`, JSON.stringify(entry));
+  private async read(bankId: string, questionId: string): Promise<FavoriteEntry | null> {
+    return parseRow<FavoriteEntry>(
+      await this.kv.get(`${K.favorites(bankId)}${questionId}`),
+      FavoriteEntrySchema,
+      "收藏记录",
+    );
   }
 
+  async put(entry: FavoriteEntry): Promise<void> {
+    await this.kv.set(`${K.favorites(entry.bankId)}${entry.questionId}`, JSON.stringify(entry));
+  }
+
+  async add(bankId: string, questionId: string, addedAt: string): Promise<void> {
+    // 重新收藏即覆盖墓碑：新行没有 removedAt
+    await this.put({ bankId, questionId, addedAt });
+  }
+
+  /** 取消收藏留墓碑而不是删行：删掉行，"取消"这个动作就无从同步 */
   async remove(bankId: string, questionId: string): Promise<void> {
-    await this.kv.delete(`${K.favorites(bankId)}${questionId}`);
+    const previous = await this.read(bankId, questionId);
+    if (previous === null) return; // 本来就没有，不必留墓碑
+    const removedAt = this.clock.now().toISOString();
+    await this.put({ bankId, questionId, addedAt: previous.addedAt, removedAt });
   }
 
   async has(bankId: string, questionId: string): Promise<boolean> {
-    return (await this.kv.get(`${K.favorites(bankId)}${questionId}`)) !== null;
+    const row = await this.read(bankId, questionId);
+    return row !== null && row.removedAt === undefined;
   }
 
   async listByBank(bankId: string): Promise<readonly FavoriteEntry[]> {
+    const rows = await this.listForSync(bankId);
+    return rows
+      .filter((row) => row.removedAt === undefined)
+      .sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+  }
+
+  async listForSync(bankId: string): Promise<readonly FavoriteEntry[]> {
     const keys = await this.kv.keys(K.favorites(bankId));
     const out: FavoriteEntry[] = [];
     for (const key of keys) {
-      const row = parseRow<FavoriteEntry>(
-        await this.kv.get(key),
-        FavoriteEntrySchema,
-        "收藏记录",
-      );
+      const row = parseRow<FavoriteEntry>(await this.kv.get(key), FavoriteEntrySchema, "收藏记录");
       if (row !== null) out.push(row);
     }
-    return out.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+    return out;
   }
 }
 
@@ -508,11 +543,11 @@ export function createPlatform(options: CreatePlatformOptions): Platform {
   const { kv, builtinBanks, clock } = options;
   const banks = new BankRepositoryImpl(kv, builtinBanks);
   const attempts = new AttemptRepositoryImpl(kv);
-  const progress = new ProgressRepositoryImpl(kv);
+  const progress = new ProgressRepositoryImpl(kv, clock);
   const sessions = new SessionRepositoryImpl(kv);
   const sessionSnapshots = new SessionSnapshotRepositoryImpl(kv);
   const exams = new ExamRepositoryImpl(kv);
-  const favorites = new FavoriteRepositoryImpl(kv);
+  const favorites = new FavoriteRepositoryImpl(kv, clock);
   const settings = new SettingsRepositoryImpl(kv, clock);
 
   const info = async (): Promise<StorageInfo> => {
