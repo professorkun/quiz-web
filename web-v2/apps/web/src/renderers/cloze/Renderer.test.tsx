@@ -75,12 +75,12 @@ describe("完形填空渲染器（R4-2）", () => {
     expect(used?.disabled).toBe(true);
   });
 
-  it("reveal 时显示每个空的正确答案", () => {
+  it("reveal 时把正确答案填进每个下拉框，不再另起答案文本", () => {
     render(<ClozeRenderer {...props({ locked: true, reveal: true, preview: true })} />);
-    expect(screen.getByText("答案：happy")).toBeTruthy();
-    expect(screen.getByText("答案：sad")).toBeTruthy();
     const selects = screen.getAllByRole("combobox") as HTMLSelectElement[];
+    expect(selects.map((select) => select.value)).toEqual(["o1", "o2"]);
     expect(selects.every((select) => select.disabled)).toBe(true);
+    expect(screen.queryByText(/答案：/)).toBeNull();
   });
 
   it("选择后回传 { blankId: optionId }", () => {

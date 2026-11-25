@@ -571,6 +571,7 @@ export function BanksPage(): React.ReactElement {
                 <button
                   type="button"
                   className="chip"
+                  aria-pressed={favoriteIds.has(selected.questionId)}
                   onClick={() => void toggleFavorite(selected.questionId)}
                 >
                   <IconStar size={16} filled={favoriteIds.has(selected.questionId)} />
@@ -595,6 +596,7 @@ export function BanksPage(): React.ReactElement {
                 </div>
               )}
               <QuestionPreview
+                key={selected.questionId}
                 question={selected}
                 passage={selectedPassage}
                 reveal={reveal}
@@ -619,6 +621,7 @@ export function BanksPage(): React.ReactElement {
             <button
               type="button"
               className="chip"
+              aria-pressed={favoriteIds.has(selected.questionId)}
               onClick={() => void toggleFavorite(selected.questionId)}
             >
               <IconStar size={16} filled={favoriteIds.has(selected.questionId)} />
@@ -644,6 +647,7 @@ export function BanksPage(): React.ReactElement {
               </div>
             )}
             <QuestionPreview
+              key={selected.questionId}
               question={selected}
               passage={selectedPassage}
               reveal={reveal}

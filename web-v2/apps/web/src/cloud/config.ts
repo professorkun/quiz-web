@@ -29,6 +29,24 @@ export function isCloudOrigin(): boolean {
   return globalThis.location.origin === CLOUD_PUBLIC_CONFIG.endpoint;
 }
 
+/** 平台显式放行的页面域名（逗号分隔，构建期注入）；不要用 *.trae.site 通配 */
+const CLOUD_ALLOWED_ORIGINS: readonly string[] = (
+  (import.meta.env.VITE_CLOUD_ALLOWED_ORIGINS as string | undefined) ?? ""
+)
+  .split(",")
+  .map((value: string) => value.trim())
+  .filter(Boolean);
+
+/**
+ * 应用云可用的页面域名：正式域 + 显式白名单域。
+ *
+ * 与 `isCloudOrigin()` 的区别：微信 OAuth 只允许正式域（见 `auth.ts`），
+ * 而手机号密码 / 验证码登录在平台放行的白名单域同样可用。
+ */
+export function isCloudHost(): boolean {
+  return isCloudOrigin() || CLOUD_ALLOWED_ORIGINS.includes(globalThis.location.origin);
+}
+
 /**
  * 云端鉴权按 Origin 放行：仅本机 loopback 与应用正式发布域名可用，
  * 其他部署地址（如 traesite.cn）会被 403 `origin is not allowed` 拒绝。

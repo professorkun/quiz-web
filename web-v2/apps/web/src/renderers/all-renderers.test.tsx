@@ -72,20 +72,43 @@ describe("六类渲染器可查看答案（R2）", () => {
     expect(container.querySelectorAll(".tfb.ok")).toHaveLength(1);
   });
 
-  it("填空：展开后每个空位显示可接受答案", () => {
-    const { container } = render(
-      <FillBlankRenderer {...props(q(6), { preview: true, locked: true, reveal: true })} />,
-    );
-    expect(container.querySelectorAll(".mark").length).toBe(2);
+  it("填空：展开后答案进入输入框，不再出现框外答案", () => {
+    render(<FillBlankRenderer {...props(q(6), { preview: true, locked: true, reveal: true })} />);
+    expect((screen.getByLabelText("空 b1") as HTMLInputElement).value).toBe("POOLED");
+    expect((screen.getByLabelText("空 b2") as HTMLInputElement).value).toBe("UNPOOLED");
+    expect(screen.queryByText(/答案：/)).toBeNull();
   });
 
-  it("代码填空：展开后标出空位并给出答案版代码", () => {
+  it("填空：练习答错时保留框旁答案对照，用户答案不被覆盖", () => {
+    render(
+      <FillBlankRenderer
+        {...props(q(6), {
+          locked: true,
+          answer: { b1: "WRONG", b2: "UNPOOLED" },
+          grade: {
+            correct: false,
+            score: 0,
+            maxScore: 2,
+            details: [
+              { key: "b1", correct: false, given: "WRONG" },
+              { key: "b2", correct: true, given: "UNPOOLED" },
+            ],
+          },
+        })}
+      />,
+    );
+    expect((screen.getByLabelText("空 b1") as HTMLInputElement).value).toBe("WRONG");
+    expect(screen.getByText("答案：POOLED")).toBeTruthy();
+  });
+
+  it("代码填空：展开后每个空位都填入答案，并给出答案版代码", () => {
     const { container } = render(
       <CodeBlankRenderer {...props(q(8), { preview: true, locked: true, reveal: true })} />,
     );
     expect(container.querySelectorAll(".slot.ok").length).toBeGreaterThan(0);
     expect(container.querySelector(".solution")).not.toBeNull();
-    expect(container.querySelectorAll(".blank-row .mark").length).toBeGreaterThan(0);
+    expect((screen.getByLabelText("空位 1-1") as HTMLInputElement).value).toBe("HttpServlet");
+    expect(screen.queryByText(/答案：/)).toBeNull();
   });
 
   it("简答：展开后显示参考答案，但不出现自评按钮（不产生评分）", () => {

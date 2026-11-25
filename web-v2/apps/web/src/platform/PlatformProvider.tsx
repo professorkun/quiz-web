@@ -16,10 +16,12 @@ import type { AuthAdapter, Platform } from "@quiz/platform";
 import { createWebPlatform } from "@quiz/platform-web";
 
 import { createLocalAuthAdapter } from "../account/localAuth";
+import { createRemoteAuthAdapter } from "../account/remoteAuth";
 import { accountDbName, copyGuestDataIfEmpty } from "../account/userStorage";
 import { cloudAuth, createCloudAuthAdapter } from "../cloud/auth";
-import { isCloudOrigin } from "../cloud/config";
+import { isCloudHost } from "../cloud/config";
 import { BUILTIN_BANKS, EMPTY_BANK_PLACEHOLDER } from "../data/banks";
+import { createCompositeAuthAdapter } from "./compositeAuth";
 
 export interface PendingSession {
   readonly questionIds: readonly string[];
@@ -89,9 +91,12 @@ export function PlatformProvider(props: {
   const injected = props.platform;
   const builtinBanks = props.builtinBanks ?? BUILTIN_BANKS;
   const storageWarning = props.storageWarning;
-  // 认证适配器只创建一次：本机账号（静态部署）或应用云账号（正式发布域名）
+  // 认证适配器只创建一次：账号密码（后端库）优先，其次应用云登录；静态域用本机账号
   const auth = useMemo<AuthAdapter>(
-    () => (isCloudOrigin() ? createCloudAuthAdapter() : createLocalAuthAdapter()),
+    () =>
+      isCloudHost()
+        ? createCompositeAuthAdapter([createRemoteAuthAdapter(), createCloudAuthAdapter()])
+        : createLocalAuthAdapter(),
     [],
   );
   const [state, setState] = useState<State | null>(null);
@@ -118,7 +123,7 @@ export function PlatformProvider(props: {
       try {
         setFailure(null);
         // OAuth 回调要在任何守卫之前处理；失败不阻塞启动（退回本地游客模式）
-        if (injected === undefined && isCloudOrigin()) {
+        if (injected === undefined && isCloudHost()) {
           await cloudAuth.handleCallback().catch(() => null);
         }
         // 先确定当前账号：每个账号使用独立数据库，游客用默认库

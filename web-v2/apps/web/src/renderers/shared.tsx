@@ -49,6 +49,11 @@ export function ChoiceOptions(props: ChoiceOptionsProps): React.ReactElement {
           >
             <span className="k">{optionLetter(index)}</span>
             <span className="txt">{option.text}</span>
+            {isSelected ? (
+              <span className="opt-tick">
+                <IconCheck size={16} />
+              </span>
+            ) : null}
             {showAnswer && isCorrect ? (
               <span className="mark">
                 <IconCheck size={16} />

@@ -13,10 +13,15 @@
 import type { AuthAdapter, AuthUser } from "@quiz/platform";
 
 import { loadAccounts, readSession, saveAccount, writeSession, type StoredAccount } from "./accountDb";
+import { createCredential, verifyPassword } from "./password";
 
 const USERNAME_RE = /^[\p{L}\p{N}_-]{2,20}$/u;
 
-export const PASSWORD_MIN_LENGTH = 6;
+export const PASSWORD_MIN_LENGTH = 8;
+
+/** 连续失败 5 次锁定 60 秒 */
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCK_MS = 60_000;
 
 const listeners = new Set<(user: AuthUser | null) => void>();
 
@@ -36,23 +41,6 @@ function randomHex(length: number): string {
   return toHex(bytes);
 }
 
-/** 优先用 SHA-256；http 局域网等非安全上下文没有 SubtleCrypto 时退回简单摘要 */
-async function hashPassword(salt: string, password: string): Promise<string> {
-  const text = `${salt}:${password}`;
-  if (typeof globalThis.crypto?.subtle?.digest === "function") {
-    const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-    return toHex(new Uint8Array(digest));
-  }
-  let h1 = 0x811c9dc5;
-  let h2 = 0x01000193;
-  for (let i = 0; i < text.length; i += 1) {
-    const code = text.charCodeAt(i);
-    h1 = Math.imul(h1 ^ code, 0x01000193) >>> 0;
-    h2 = Math.imul(h2 ^ code, 0x85ebca6b) >>> 0;
-  }
-  return `${h1.toString(16).padStart(8, "0")}${h2.toString(16).padStart(8, "0")}`;
-}
-
 function toUser(account: StoredAccount): AuthUser {
   return { userId: account.userId, displayName: account.username, isAnonymous: false };
 }
@@ -64,9 +52,9 @@ async function findAccount(username: string): Promise<StoredAccount | undefined>
 }
 
 async function currentUser(): Promise<AuthUser | null> {
-  const userId = await readSession();
-  if (userId === null) return null;
-  const account = (await loadAccounts()).find((item) => item.userId === userId);
+  const session = await readSession();
+  if (session === null) return null;
+  const account = (await loadAccounts()).find((item) => item.userId === session.userId);
   return account === undefined ? null : toUser(account);
 }
 
@@ -76,7 +64,8 @@ function notify(): void {
   });
 }
 
-function validateCredentials(username: string, password: string): void {
+/** 注册校验：账号格式 + 新密码长度；登录不校验长度，避免旧账号被拦 */
+function validateRegistration(username: string, password: string): void {
   if (!USERNAME_RE.test(username.trim())) {
     throw new Error("账号需为 2-20 位字母、数字、中文、下划线或短横线");
   }
@@ -94,19 +83,31 @@ async function startSession(account: StoredAccount): Promise<AuthUser> {
 /** 注册并自动登录；同名账号（忽略大小写）会被拒绝 */
 export async function registerLocalAccount(username: string, password: string): Promise<AuthUser> {
   const name = username.trim();
-  validateCredentials(name, password);
+  validateRegistration(name, password);
   if ((await findAccount(name)) !== undefined) throw new Error("该账号已存在，请直接登录");
 
-  const salt = randomHex(16);
+  const credential = await createCredential(password);
   const account: StoredAccount = {
     userId: `local_${Date.now().toString(36)}_${randomHex(4)}`,
     username: name,
-    salt,
-    passwordHash: await hashPassword(salt, password),
+    ...credential,
     createdAt: new Date().toISOString(),
   };
   await saveAccount(account);
   return startSession(account);
+}
+
+/** 失败计数 +1；达到上限锁 60 秒，并把计数归零，锁过期后重新计数 */
+function lockedRecord(account: StoredAccount): StoredAccount {
+  const failedAttempts = (account.failedAttempts ?? 0) + 1;
+  if (failedAttempts < MAX_FAILED_ATTEMPTS) {
+    return { ...account, failedAttempts };
+  }
+  return {
+    ...account,
+    failedAttempts: 0,
+    lockedUntil: new Date(Date.now() + LOCK_MS).toISOString(),
+  };
 }
 
 export async function loginLocalAccount(username: string, password: string): Promise<AuthUser> {
@@ -116,10 +117,30 @@ export async function loginLocalAccount(username: string, password: string): Pro
 
   const account = await findAccount(name);
   if (account === undefined) throw new Error("账号或密码不正确");
-  if ((await hashPassword(account.salt, password)) !== account.passwordHash) {
+
+  if (account.lockedUntil !== undefined) {
+    const remainMs = Date.parse(account.lockedUntil) - Date.now();
+    if (remainMs > 0) {
+      throw new Error(`尝试过多，请 ${Math.ceil(remainMs / 1000)} 秒后再试`);
+    }
+  }
+
+  const result = await verifyPassword(account, password);
+  if (!result.ok) {
+    await saveAccount(lockedRecord(account));
     throw new Error("账号或密码不正确");
   }
-  return startSession(account);
+
+  // 旧摘要校验通过后升级到 v2；记录本身也清掉失败计数与锁定
+  const upgraded: StoredAccount =
+    result.needsUpgrade
+      ? { ...account, ...(await createCredential(password)), failedAttempts: 0, lockedUntil: undefined }
+      : { ...account, failedAttempts: 0, lockedUntil: undefined };
+  if (result.needsUpgrade) await saveAccount(upgraded);
+  else if ((account.failedAttempts ?? 0) > 0 || account.lockedUntil !== undefined) {
+    await saveAccount(upgraded);
+  }
+  return startSession(upgraded);
 }
 
 export async function signOutLocalAccount(): Promise<void> {
@@ -129,6 +150,11 @@ export async function signOutLocalAccount(): Promise<void> {
 
 export function getCurrentLocalUser(): Promise<AuthUser | null> {
   return currentUser();
+}
+
+/** 本机账号列表（只读）：云端登录后用于提示迁移旧本机数据 */
+export function listLocalAccounts(): Promise<StoredAccount[]> {
+  return loadAccounts();
 }
 
 /** 注入给 Platform 的认证适配器（本机账号） */

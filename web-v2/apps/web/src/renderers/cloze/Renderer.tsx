@@ -92,10 +92,10 @@ export default function ClozeRenderer(props: RendererProps): React.ReactElement 
           return (
             <span className="cloze-blank" key={part.blankId}>
               <select
-                className="cloze-select"
+                className={["cloze-select", revealing ? "revealed" : ""].filter(Boolean).join(" ")}
                 aria-label={`空 ${part.blankId}`}
                 data-state={state}
-                value={revealing && props.locked !== true ? blank.optionId : selected}
+                value={revealing ? blank.optionId : selected}
                 disabled={props.locked || revealing}
                 onChange={(event) => change(part.blankId, event.target.value)}
               >
@@ -111,9 +111,6 @@ export default function ClozeRenderer(props: RendererProps): React.ReactElement 
                 ))}
               </select>
               {state === "no" && !revealing ? (
-                <span className="mark">答案：{optionText.get(blank.optionId) ?? blank.optionId}</span>
-              ) : null}
-              {revealing ? (
                 <span className="mark">答案：{optionText.get(blank.optionId) ?? blank.optionId}</span>
               ) : null}
             </span>

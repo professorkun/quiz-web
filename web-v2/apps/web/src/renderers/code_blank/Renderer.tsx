@@ -62,6 +62,8 @@ export default function CodeBlankRenderer(props: RendererProps): React.ReactElem
       <div className="blank-list">
         {q.blanks.map((blank) => {
           const correct = detail.get(blank.blankId);
+          // 查看答案时答案进输入框；练习答错才保留框旁对照
+          const showMark = !revealing && props.locked && correct === false;
           return (
             <label className="blank-row" key={blank.blankId}>
               <span className="blank-no">[{blank.blankId}]</span>
@@ -70,6 +72,7 @@ export default function CodeBlankRenderer(props: RendererProps): React.ReactElem
                   "blankin",
                   props.locked && correct === true ? "ok" : "",
                   props.locked && correct === false ? "no" : "",
+                  revealing ? "revealed" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
@@ -77,12 +80,12 @@ export default function CodeBlankRenderer(props: RendererProps): React.ReactElem
                 autoComplete="off"
                 spellCheck={false}
                 disabled={props.locked}
-                value={answers[blank.blankId] ?? ""}
+                value={revealing ? (blank.accepted[0] ?? "") : (answers[blank.blankId] ?? "")}
                 onChange={(event) =>
                   props.onChange({ ...answers, [blank.blankId]: event.target.value })
                 }
               />
-              {revealing || (props.locked && correct === false) ? (
+              {showMark ? (
                 <span className="mark">答案：{blank.accepted.join(" / ")}</span>
               ) : null}
             </label>

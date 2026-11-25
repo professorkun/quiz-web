@@ -34,11 +34,12 @@ export default function FillBlankRenderer(props: RendererProps): React.ReactElem
             return <RichText key={`x${index}`} text={`{{${part.blankId}}}`} inline />;
           }
           const detail = props.grade?.details?.find((d) => d.key === part.blankId);
-          // 预览态没有判分明细：查看答案时直接展示该空的全部可接受写法
-          const showAccepted = revealing || (props.locked && detail?.correct === false);
+          // 查看答案时答案直接进输入框；只有练习答错才在框旁保留对照，避免答案出现两次
+          const showAccepted = !revealing && props.locked && detail?.correct === false;
           const cls = [
             "blankin",
             props.locked && detail ? (detail.correct ? "ok" : "no") : "",
+            revealing ? "revealed" : "",
           ]
             .filter(Boolean)
             .join(" ");
@@ -50,7 +51,12 @@ export default function FillBlankRenderer(props: RendererProps): React.ReactElem
                 autoComplete="off"
                 spellCheck={false}
                 disabled={props.locked}
-                value={answers[part.blankId] ?? ""}
+                value={revealing ? (blank.accepted[0] ?? "") : (answers[part.blankId] ?? "")}
+                title={
+                  revealing && blank.accepted.length > 1
+                    ? `其他写法：${blank.accepted.slice(1).join(" / ")}`
+                    : undefined
+                }
                 onChange={(event) =>
                   props.onChange({ ...answers, [part.blankId]: event.target.value })
                 }

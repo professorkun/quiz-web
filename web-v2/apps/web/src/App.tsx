@@ -32,6 +32,7 @@ const ReviewPage = lazy(() =>
 );
 const MePage = lazy(() => import("./features/me/MePage").then((m) => ({ default: m.MePage })));
 import { PlatformProvider, usePlatform } from "./platform/PlatformProvider";
+import { useAutoSync } from "./cloud/useAutoSync";
 import { navigate, parseRoute, type Route } from "./router";
 import { AppShell } from "./ui/AppShell";
 
@@ -56,6 +57,9 @@ function renderRoute(route: Route): React.ReactElement {
 function Shell(): React.ReactElement {
   const { banks } = usePlatform();
   const [route, setRoute] = useState<Route>(() => parseRoute(globalThis.location.hash));
+
+  // 云账号登录后自动同步（匿名 / 非云域名直接跳过；失败不阻塞刷题）
+  useAutoSync();
 
   useEffect(() => {
     const onHashChange = (): void => setRoute(parseRoute(globalThis.location.hash));

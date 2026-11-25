@@ -27,6 +27,9 @@ export interface OtpError {
   readonly message: string;
 }
 
+/** 大陆 11 位手机号：密码登录按此区分 phone / email */
+const PHONE_RE = /^1\d{10}$/;
+
 /** 云端只放行本机 localhost 与应用正式发布域名；其他地址直接说明可用的登录方式 */
 function originHint(): string {
   return `当前域名未被应用云放行：${globalThis.location.origin}。云登录仅支持本机 localhost（手机号）和 WorkBuddy 正式发布域名（手机号 / 微信）。`;
@@ -116,16 +119,38 @@ export const cloudAuth = {
     return { verificationId: data.verificationId, isExistingUser: data.isExistingUser };
   },
 
-  /** 校验验证码并登录/注册 */
+  /** 手机号 / 邮箱 + 密码登录（注册只做手机号，邮箱仅用于已注册账号） */
+  async signInWithPassword(identifier: string, password: string): Promise<AuthUser | null> {
+    await assertLoginOrigin();
+    const client = await getCloud();
+    const body = PHONE_RE.test(identifier)
+      ? { phone: identifier, password }
+      : { email: identifier, password };
+    const data = unwrap(await client.auth.signInWithPassword(body), "登录失败");
+    return toAuthUser(data);
+  },
+
+  /**
+   * 校验验证码并登录/注册。
+   * 新用户注册时把 password 一起传给 `verifyOtp(isExistingUser=false)`；
+   * 已存在用户忽略 password，走登录。
+   */
   async verifyPhoneOtp(
     phone: string,
     verificationId: string,
     isExistingUser: boolean,
     token: string,
+    password?: string,
   ): Promise<AuthUser | null> {
     const client = await getCloud();
     const data = unwrap(
-      await client.auth.verifyOtp({ phone, verificationId, isExistingUser, token }),
+      await client.auth.verifyOtp({
+        phone,
+        verificationId,
+        isExistingUser,
+        token,
+        ...(password === undefined ? {} : { password }),
+      }),
       "验证码校验失败",
     );
     return toAuthUser(data);

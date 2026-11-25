@@ -580,7 +580,7 @@ describe("空壳态", () => {
     // 「我的」始终可达：没有题库也能先登录
     await go("me");
     expect(await screen.findByRole("heading", { name: "我的", level: 1 })).toBeTruthy();
-    expect(screen.getByText("账号与登录")).toBeTruthy();
+    expect(screen.getByText(/账号与登录/)).toBeTruthy();
     expect(screen.getByText(/还没有导入题库/)).toBeTruthy();
   });
 });
