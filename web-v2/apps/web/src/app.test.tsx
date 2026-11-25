@@ -210,6 +210,43 @@ describe("题库页", () => {
     expect(await screen.findByText(/命中 1 题/)).toBeTruthy();
   });
 
+  it("按标签筛选：只保留带该标签的题", async () => {
+    await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("banks");
+
+    fireEvent.click(await screen.findByRole("button", { name: /#basics（2）/ }));
+    expect(await screen.findByText(/命中 2 题/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /#exam（1）/ }));
+    expect(await screen.findByText(/命中 1 题/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "全部标签" }));
+    expect(await screen.findByText(/命中 14 题/)).toBeTruthy();
+  });
+
+  it("查看答案不产生作答记录，J/K 在筛选结果内连续翻题", async () => {
+    const { platform } = await setup();
+    await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
+    await go("banks");
+
+    expect((await screen.findAllByText(/第 1 \/ 14 题/)).length).toBeGreaterThan(0);
+    const revealButtons = await screen.findAllByRole("button", { name: "查看答案" });
+    fireEvent.click(revealButtons[0]!);
+    expect(document.querySelectorAll(".optbtn.ok").length).toBeGreaterThan(0);
+
+    // 查看答案只是视图态：不写作答事件，也不推进度
+    expect(await platform.attempts.listByBank("chem")).toHaveLength(0);
+    expect(await platform.progress.listByBank("chem")).toHaveLength(0);
+
+    // K 在第一题给出边界提示，不越界
+    fireEvent.keyDown(document.body, { key: "k" });
+    expect((await screen.findAllByText("已经是筛选结果的第一题")).length).toBeGreaterThan(0);
+
+    fireEvent.keyDown(document.body, { key: "j" });
+    expect((await screen.findAllByText(/第 2 \/ 14 题/)).length).toBeGreaterThan(0);
+  });
+
   it("切换题库后当前库有明确标识", async () => {
     await setup();
     await screen.findByRole("heading", { name: "高中化学基础", level: 1 });
@@ -221,6 +258,55 @@ describe("题库页", () => {
       expect(screen.getByRole("button", { name: /对照题库（1）/ }).className).toContain("on"),
     );
     expect(await screen.findByText(/命中 1 题/)).toBeTruthy();
+  });
+});
+
+describe("题库管理（R3）", () => {
+  it("删除导入题库：输入题库名确认后级联清空记录并切回剩余题库", async () => {
+    const kv = new MemoryKeyValueStore();
+    const platform = createPlatform({ kv, builtinBanks: [chemistryBank], clock });
+    const imported = otherBank();
+    await platform.banks.saveImportedBank(imported);
+    await platform.attempts.append({
+      attemptId: "other-1",
+      bankId: "other",
+      questionId: "other:single_choice:001",
+      questionRevision: "0000000000ff",
+      mode: "practice",
+      isFirstAttempt: true,
+      startedAt: "2026-11-16T09:00:00.000Z",
+      submittedAt: "2026-11-16T09:00:05.000Z",
+      answer: "a",
+      correct: true,
+      score: 1,
+      maxScore: 1,
+    });
+    await platform.favorites.add("other", "other:single_choice:001", "2026-11-16T09:00:06.000Z");
+    await platform.settings.saveApp({
+      activeBankId: "other",
+      practice: {},
+      updatedAt: "2026-11-16T09:00:07.000Z",
+    });
+
+    render(<App platform={platform} builtinBanks={[chemistryBank]} />);
+    await screen.findByRole("heading", { name: "对照题库", level: 1 });
+
+    await go("banks");
+    fireEvent.click(await screen.findByRole("button", { name: "删除" }));
+    expect(await screen.findByRole("dialog")).toBeTruthy();
+    expect(screen.getByText("作答记录：1 条")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("输入题库名确认删除"), {
+      target: { value: "对照题库" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "确认删除" }));
+
+    await waitFor(async () => {
+      expect(await platform.banks.listBankIds()).toEqual(["chem"]);
+    });
+    expect(await platform.attempts.listByBank("other")).toHaveLength(0);
+    expect(await platform.favorites.listByBank("other")).toHaveLength(0);
+    expect((await platform.settings.getApp()).activeBankId).toBe("chem");
   });
 });
 
@@ -482,7 +568,7 @@ describe("空壳态", () => {
     render(<App platform={platform} />);
 
     // 初始就是应用主界面，而不是独立的导入页
-    expect(await screen.findByRole("heading", { name: "通用刷题", level: 1 })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "题斋", level: 1 })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "还没有题库" })).toBeTruthy();
     expect(screen.getByText("导入题库包")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "学习" }).length).toBeGreaterThan(0);
@@ -494,7 +580,7 @@ describe("空壳态", () => {
     // 「我的」始终可达：没有题库也能先登录
     await go("me");
     expect(await screen.findByRole("heading", { name: "我的", level: 1 })).toBeTruthy();
-    expect(screen.getByText("账号与登录")).toBeTruthy();
+    expect(screen.getByText(/账号与登录/)).toBeTruthy();
     expect(screen.getByText(/还没有导入题库/)).toBeTruthy();
   });
 });

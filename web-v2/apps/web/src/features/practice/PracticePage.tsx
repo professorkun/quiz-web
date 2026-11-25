@@ -527,6 +527,11 @@ export function PracticePage(): React.ReactElement {
     questionId === undefined
       ? undefined
       : activeBank.questions.find((q) => q.questionId === questionId);
+  // 共享材料（R4-2）：练习一次只显示一题，材料随题出现
+  const passage =
+    question?.passageId === undefined
+      ? undefined
+      : activeBank.passages?.find((item) => item.passageId === question.passageId);
 
   if (questionId === undefined || question === undefined) {
     return (
@@ -591,7 +596,7 @@ export function PracticePage(): React.ReactElement {
         ) : null}
       </header>
 
-      <section className="card" data-question-id={questionId}>
+      <section className="card motion-question" key={questionId} data-question-id={questionId}>
         {stemInRenderer ? null : (
           <div className="stem">
             <RichText text={question.stem} />
@@ -600,6 +605,7 @@ export function PracticePage(): React.ReactElement {
 
         <Renderer
           question={question}
+          passage={passage}
           answer={session.answers[questionId]}
           optionOrder={session.optionOrders[questionId]}
           locked={grade !== undefined}

@@ -14,6 +14,7 @@ import { trueFalseDefinition } from "./true_false/definition.js";
 import { fillBlankDefinition } from "./fill_blank/definition.js";
 import { codeBlankDefinition } from "./code_blank/definition.js";
 import { shortAnswerDefinition } from "./short_answer/definition.js";
+import { clozeDefinition } from "./cloze/definition.js";
 
 export const BUILTIN_QUESTION_TYPES: readonly AnyQuestionTypeDefinition[] = [
   singleChoiceDefinition,
@@ -22,6 +23,7 @@ export const BUILTIN_QUESTION_TYPES: readonly AnyQuestionTypeDefinition[] = [
   fillBlankDefinition,
   codeBlankDefinition,
   shortAnswerDefinition,
+  clozeDefinition,
 ];
 
 for (const def of BUILTIN_QUESTION_TYPES) {
@@ -35,4 +37,5 @@ export {
   fillBlankDefinition,
   codeBlankDefinition,
   shortAnswerDefinition,
+  clozeDefinition,
 };

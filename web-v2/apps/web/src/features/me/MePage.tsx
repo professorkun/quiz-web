@@ -299,7 +299,7 @@ export function MePage(): React.ReactElement {
         <section className="card muted">
           <h2>关于</h2>
           <p className="muted">
-            通用刷题 V1 · 数据本地优先，六题型练习 + 模考 + 错题复习闭环。后续增强项（编辑器、AI
+            题斋 V2.1 · 数据本地优先，六题型练习 + 模考 + 错题复习闭环。后续增强项（编辑器、AI
             讲题等）见 S7 路线。
           </p>
         </section>

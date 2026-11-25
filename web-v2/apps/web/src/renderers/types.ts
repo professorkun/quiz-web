@@ -1,11 +1,12 @@
 import type {
   AnswerValue,
   GradeResult,
+  Passage,
   Question,
   SelfRating,
   SelfRatingLevel,
 } from "@quiz/core";
-export type { AnswerValue, SelfRating, SelfRatingLevel } from "@quiz/core";
+export type { AnswerValue, Passage, SelfRating, SelfRatingLevel } from "@quiz/core";
 
 /**
  * 渲染器统一契约（ADR-0004）。
@@ -21,10 +22,22 @@ export interface RendererProps {
   readonly optionOrder: readonly string[] | undefined;
   /** 已提交后禁止再改 */
   readonly locked: boolean;
-  /** 只读预览：禁止作答，但不展示正确答案/解析（题库页预览用） */
+  /** 只读预览：禁止作答，默认不展示正确答案/解析（题库页预览用） */
   readonly preview?: boolean;
+  /**
+   * 查看答案（V2.1 · R2）：在预览态下显式展开答案与解析。
+   * **不是作答**：课程要求题库页看答案不能产生作答记录与进度。
+   */
+  readonly reveal?: boolean;
+  /** 展开/收起答案的回调；由页面持有状态，渲染器只负责画按钮 */
+  readonly onToggleReveal?: () => void;
   /** 已提交时的判分结果（由 core 算出，页面不自己算） */
   readonly grade: GradeResult | undefined;
+  /**
+   * 共享材料（R4-2）：由页面按 `question.passageId` 解析后传入。
+   * 同一篇材料在整卷里只传一次，渲染器不负责去重。
+   */
+  readonly passage?: Passage;
   readonly selfRating: SelfRating | undefined;
   readonly onChange: (answer: AnswerValue) => void;
   readonly onSelfRating: ((level: SelfRatingLevel) => void) | undefined;

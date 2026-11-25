@@ -385,4 +385,4 @@ pnpm verify       # 提交前跑：边界 / 扩展点 / 构建 / 全量单测
 
 - 题库内容由导入者自行提供，题斋不内置、不分发任何题库；题目版权归原作者所有。
 - 旧版单文件应用仍保留在 `题库网页/` 与 `sdk.js`，新功能只维护 `web-v2`。
-- 各阶段的验收记录与发布说明放在 `web-v2/docs/`，随功能分支一起维护。
+- 详细验收与发布记录见 [`web-v2/docs/acceptance.md`](web-v2/docs/acceptance.md)、[`web-v2/docs/release-notes-v2.3.0.md`](web-v2/docs/release-notes-v2.3.0.md)。

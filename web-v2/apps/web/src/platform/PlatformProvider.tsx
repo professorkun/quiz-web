@@ -16,11 +16,12 @@ import type { AuthAdapter, Platform } from "@quiz/platform";
 import { createWebPlatform } from "@quiz/platform-web";
 
 import { createLocalAuthAdapter } from "../account/localAuth";
+import { createRemoteAuthAdapter } from "../account/remoteAuth";
 import { accountDbName, copyGuestDataIfEmpty } from "../account/userStorage";
 import { cloudAuth, createCloudAuthAdapter } from "../cloud/auth";
-import { isCloudOrigin } from "../cloud/config";
-import { createSyncEngine, type SyncEngine, type SyncSnapshot } from "../cloud/syncEngine";
+import { isCloudHost } from "../cloud/config";
 import { BUILTIN_BANKS, EMPTY_BANK_PLACEHOLDER } from "../data/banks";
+import { createCompositeAuthAdapter } from "./compositeAuth";
 
 export interface PendingSession {
   readonly questionIds: readonly string[];
@@ -46,13 +47,6 @@ interface ContextValue {
   readonly pendingSession: PendingSession | null;
   startCustomSession(questionIds: readonly string[], mode: "practice" | "review", origin?: string): void;
   consumePendingSession(): void;
-  /** 云同步状态（P0）：触发时机在引擎里，页面只读状态与手动触发 */
-  readonly sync: {
-    readonly phase: SyncSnapshot["phase"];
-    readonly lastSyncAt: string | null;
-    readonly error: string | null;
-    syncNow(reason?: string): Promise<void>;
-  };
 }
 
 const PlatformContext = createContext<ContextValue | null>(null);
@@ -63,18 +57,17 @@ interface State {
   /** null = 尚无题库可选（空壳态）。持久化时也存 null——契约禁止空字符串 ID */
   readonly activeBankId: string | null;
   readonly degraded: string | null;
-  /** 跟这个 platform 绑定的同步引擎：换账号即换库，引擎也要跟着换 */
-  readonly engine: SyncEngine;
 }
 
 async function loadBank(platform: Platform, bankId: string): Promise<BankContent | null> {
   const manifest = await platform.banks.getManifest(bankId);
   if (manifest === null) return null;
-  const [questions, knowledge] = await Promise.all([
+  const [questions, knowledge, passages] = await Promise.all([
     platform.banks.listQuestions(bankId),
     platform.banks.listKnowledge(bankId),
+    platform.banks.listPassages(bankId),
   ]);
-  return { manifest, questions, knowledge };
+  return { manifest, questions, knowledge, passages };
 }
 
 async function loadBanks(platform: Platform): Promise<readonly BankContent[]> {
@@ -98,9 +91,12 @@ export function PlatformProvider(props: {
   const injected = props.platform;
   const builtinBanks = props.builtinBanks ?? BUILTIN_BANKS;
   const storageWarning = props.storageWarning;
-  // 认证适配器只创建一次：本机账号（静态部署）或应用云账号（正式发布域名）
+  // 认证适配器只创建一次：账号密码（后端库）优先，其次应用云登录；静态域用本机账号
   const auth = useMemo<AuthAdapter>(
-    () => (isCloudOrigin() ? createCloudAuthAdapter() : createLocalAuthAdapter()),
+    () =>
+      isCloudHost()
+        ? createCompositeAuthAdapter([createRemoteAuthAdapter(), createCloudAuthAdapter()])
+        : createLocalAuthAdapter(),
     [],
   );
   const [state, setState] = useState<State | null>(null);
@@ -110,11 +106,6 @@ export function PlatformProvider(props: {
   const [pendingSession, setPendingSession] = useState<PendingSession | null>(null);
   /** 登录账号变化时 +1，触发按账号重新装配数据库 */
   const [bootToken, setBootToken] = useState(0);
-  const [syncSnapshot, setSyncSnapshot] = useState<SyncSnapshot>({
-    phase: "idle",
-    lastSyncAt: null,
-    error: null,
-  });
   const currentUserId = useRef<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -132,7 +123,7 @@ export function PlatformProvider(props: {
       try {
         setFailure(null);
         // OAuth 回调要在任何守卫之前处理；失败不阻塞启动（退回本地游客模式）
-        if (injected === undefined && isCloudOrigin()) {
+        if (injected === undefined && isCloudHost()) {
           await cloudAuth.handleCallback().catch(() => null);
         }
         // 先确定当前账号：每个账号使用独立数据库，游客用默认库
@@ -173,9 +164,7 @@ export function PlatformProvider(props: {
           });
         }
         if (cancelled) return;
-        // 引擎跟 platform 一起创建：同步的永远是"当前账号这一份库"
-        const engine = createSyncEngine({ platform, onSynced: () => setVersion((v) => v + 1) });
-        setState({ platform, banks, activeBankId, degraded, engine });
+        setState({ platform, banks, activeBankId, degraded });
         if (degraded !== null) showToast(degraded);
       } catch (cause) {
         if (cancelled) return;
@@ -204,23 +193,6 @@ export function PlatformProvider(props: {
     });
   }, [auth, injected]);
 
-  const engine = state?.engine;
-  const syncNow = useCallback(
-    (reason?: string) => engine?.syncNow(reason) ?? Promise.resolve(),
-    [engine],
-  );
-
-  // 引擎随库一起启动：登录后、启动、回前台、恢复联网都在这里自动同步
-  useEffect(() => {
-    if (engine === undefined) return;
-    return engine.start();
-  }, [engine]);
-
-  useEffect(() => {
-    if (engine === undefined) return;
-    return engine.subscribe(setSyncSnapshot);
-  }, [engine]);
-
   const selectBank = useCallback(
     async (bankId: string) => {
       if (state === null) return;
@@ -233,7 +205,6 @@ export function PlatformProvider(props: {
         activeBankId: bankId,
         updatedAt: new Date().toISOString(),
       });
-      state.engine.noteLocalWrite();
       setVersion((v) => v + 1);
     },
     [state],
@@ -264,25 +235,15 @@ export function PlatformProvider(props: {
       toast,
       selectBank,
       reloadBanks,
-      // 写入后顺手约一次同步（引擎内部 15s 防抖 + 单飞，连点也只会发一次）
-      bump: () => {
-        state.engine.noteLocalWrite();
-        setVersion((v) => v + 1);
-      },
+      bump: () => setVersion((v) => v + 1),
       showToast,
       dismissToast: () => setToast(null),
       pendingSession,
       startCustomSession: (questionIds, mode, origin = "复习") =>
         setPendingSession({ questionIds, mode, origin }),
       consumePendingSession: () => setPendingSession(null),
-      sync: {
-        phase: syncSnapshot.phase,
-        lastSyncAt: syncSnapshot.lastSyncAt,
-        error: syncSnapshot.error,
-        syncNow,
-      },
     };
-  }, [state, version, toast, pendingSession, selectBank, reloadBanks, showToast, syncSnapshot, syncNow]);
+  }, [state, version, toast, pendingSession, selectBank, reloadBanks, showToast]);
 
   if (failure !== null) {
     return (

@@ -109,11 +109,14 @@ export function KnowledgePanel(props: KnowledgePanelProps): React.ReactElement {
       </nav>
 
       <div className="lecture-scroll" id="lecture-scroll">
-        <LectureArticle
-          module={current}
-          topic={topicMap.get(current.topicId)}
-          onPractice={props.onPractice}
-        />
+        {/* key 变化即重挂载，让切篇动效跟随「换篇」而不是每次页面渲染都播 */}
+        <div className="motion-lecture" key={current.moduleId}>
+          <LectureArticle
+            module={current}
+            topic={topicMap.get(current.topicId)}
+            onPractice={props.onPractice}
+          />
+        </div>
       </div>
     </div>
   );

@@ -10,32 +10,25 @@
  */
 
 import DOMPurifyFactory from "dompurify";
-import hljs from "highlight.js/lib/core";
-import css from "highlight.js/lib/languages/css";
-import java from "highlight.js/lib/languages/java";
-import javascript from "highlight.js/lib/languages/javascript";
-import json from "highlight.js/lib/languages/json";
-import sql from "highlight.js/lib/languages/sql";
-import xml from "highlight.js/lib/languages/xml";
-import katex from "katex";
 import { marked, Renderer } from "marked";
 
-// 按需注册语言：全量 `import hljs from "highlight.js"` 会把上百种语法都打进包里
-// （约 800KB）。题库实际只用到 java/xml(jsp/html)/sql/json/js/css，注册这些即可。
-hljs.registerLanguage("java", java);
-hljs.registerLanguage("xml", xml);
-hljs.registerLanguage("html", xml); // HTML 走 XML 语法
-hljs.registerLanguage("jsp", xml); // hljs 无独立 JSP，按 XML 高亮
-hljs.registerLanguage("sql", sql);
-hljs.registerLanguage("json", json);
-hljs.registerLanguage("javascript", javascript);
-hljs.registerLanguage("css", css);
+import type { Highlighter } from "./highlighter";
+import type { MathRenderer } from "./math";
+import { scanMath } from "./mathScan";
 
 export interface RichTextRenderOptions {
   /** 只渲染行内内容（填空题干片段、采分点），不产生 <p>/<pre> 块 */
   readonly inline?: boolean;
   /** 注入 window，便于 Node/jsdom 测试；浏览器默认取全局 */
   readonly window?: Window;
+  /**
+   * 公式渲染器（KaTeX 懒加载后传入）。
+   * 不传时公式**原样输出**——这是两帧渲染的首帧，等加载完再重渲染；
+   * 同时保证 SSR / 无 DOM 环境不会因为缺 KaTeX 丢内容。
+   */
+  readonly math?: MathRenderer;
+  /** 代码高亮器（highlight.js 懒加载后传入）；不传时输出纯文本代码 */
+  readonly highlight?: Highlighter;
 }
 
 interface PurifyLike {
@@ -100,50 +93,47 @@ function getPurify(win: Window): PurifyLike {
   return purify;
 }
 
-function renderMath(tex: string, displayMode: boolean): string {
-  try {
-    return katex.renderToString(tex, {
-      displayMode,
-      throwOnError: false,
-      trust: false, // 禁止 \href、\includegraphics 等可注入 URL 的命令
-      strict: false,
-      output: "html",
-    });
-  } catch {
-    return escapeHtml(tex);
-  }
-}
-
-/** 先把公式换成占位符，避免 LaTeX 里的 `_`、`{` 被 Markdown 吃掉 */
-function extractMath(source: string): { text: string; math: string[] } {
-  const math: string[] = [];
+/**
+ * 先把公式换成占位符，避免 LaTeX 里的 `_`、`{` 被 Markdown 吃掉。
+ * 没有渲染器时保留原文（转义后），等第二帧 KaTeX 到位再替换。
+ */
+function extractMath(
+  source: string,
+  math: MathRenderer | undefined,
+): { text: string; math: string[] } {
+  const mathHtml: string[] = [];
   const token = (html: string): string => {
-    const i = math.push(html) - 1;
+    const i = mathHtml.push(html) - 1;
     return `${MATH_PREFIX}${i}${MATH_SUFFIX}`;
   };
-  let text = source.replace(/\$\$([\s\S]+?)\$\$/g, (_m, tex: string) =>
-    `\n\n${token(renderMath(tex, true))}\n\n`,
-  );
-  text = text.replace(/\\\(([\s\S]+?)\\\)/g, (_m, tex: string) =>
-    token(renderMath(tex, false)),
-  );
-  return { text, math };
+
+  // 与 RichText 的「要不要加载 KaTeX」共用同一个扫描器，避免判定与渲染两套口径
+  const { spans } = scanMath(source);
+  let text = "";
+  let cursor = 0;
+  for (const span of spans) {
+    text += source.slice(cursor, span.start);
+    const rendered = math?.(span.tex, span.displayMode) ?? null;
+    // 没有渲染器时按原文（含分隔符）输出，保证首帧不丢内容
+    const html = rendered ?? escapeHtml(source.slice(span.start, span.end));
+    text += span.displayMode ? `\n\n${token(html)}\n\n` : token(html);
+    cursor = span.end;
+  }
+  text += source.slice(cursor);
+  return { text, math: mathHtml };
 }
 
-function makeRenderer(): Renderer {
+function makeRenderer(highlight: Highlighter | undefined): Renderer {
   const renderer = new Renderer();
   renderer.code = ({ text, lang }) => {
     const language = (lang ?? "").split(/\s+/)[0] ?? "";
-    const highlighted =
-      language !== "" && hljs.getLanguage(language) !== undefined
-        ? hljs.highlight(text, { language, ignoreIllegals: true }).value
-        : escapeHtml(text);
-    return `<pre><code class="hljs language-${escapeHtml(language || "text")}">${highlighted}</code></pre>`;
+    const highlighted = highlight?.(text, language) ?? null;
+    const inner = highlighted ?? escapeHtml(text);
+    const cls = highlighted === null ? "" : "hljs ";
+    return `<pre><code class="${cls}language-${escapeHtml(language || "text")}">${inner}</code></pre>`;
   };
   return renderer;
 }
-
-const RENDERER = makeRenderer();
 
 /**
  * 把题库文本渲染成**已清洗**的 HTML 字符串。
@@ -153,8 +143,13 @@ export function renderRichText(source: string, options: RichTextRenderOptions = 
   const win = options.window ?? (typeof window === "undefined" ? undefined : window);
   if (win === undefined) return escapeHtml(source);
 
-  const { text, math } = extractMath(source);
-  const markedOptions = { renderer: RENDERER, async: false as const, breaks: true, gfm: true };
+  const { text, math } = extractMath(source, options.math);
+  const markedOptions = {
+    renderer: makeRenderer(options.highlight),
+    async: false as const,
+    breaks: true,
+    gfm: true,
+  };
   const parsed = options.inline === true
     ? marked.parseInline(text, markedOptions)
     : marked(text, markedOptions);

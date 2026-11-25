@@ -7,6 +7,7 @@ import {
 } from "@quiz/core";
 
 import { RichText } from "../../components/RichText";
+import { RevealBar } from "../shared";
 import type { RendererProps } from "../types";
 
 type ShortAnswer = Extract<Question, { type: "short_answer" }>;
@@ -27,8 +28,12 @@ export default function ShortAnswerRenderer(props: RendererProps): React.ReactEl
   const maxScore = rubricMaxScore(q);
   const current = props.selfRating?.level;
 
+  const revealing = props.reveal === true;
   return (
     <div className="short-answer">
+      {props.preview === true ? (
+        <RevealBar open={revealing} onToggle={props.onToggleReveal} />
+      ) : null}
       <textarea
         className="answer-text"
         aria-label="简答作答"
@@ -38,7 +43,7 @@ export default function ShortAnswerRenderer(props: RendererProps): React.ReactEl
         onChange={(event) => props.onChange(event.target.value)}
       />
 
-      {props.locked && props.preview !== true ? (
+      {(props.locked || revealing) && (props.preview !== true || revealing) ? (
         <>
           <div className="ref-answer">
             <div className="ref-head">
@@ -54,23 +59,25 @@ export default function ShortAnswerRenderer(props: RendererProps): React.ReactEl
             {q.explanation ? <RichText text={q.explanation} className="explanation" /> : null}
           </div>
 
-          <div className="self-eval" role="group" aria-label="自评档位">
-            <span className="self-label">对照答案自评：</span>
-            {SELF_RATING_LEVELS.map((level) => {
-              const rating = makeSelfRating(level, maxScore);
-              return (
-                <button
-                  key={level}
-                  type="button"
-                  className={["self-btn", current === level ? "on" : "", level].filter(Boolean).join(" ")}
-                  aria-pressed={current === level}
-                  onClick={() => props.onSelfRating?.(level)}
-                >
-                  {LABEL[level]} {Math.round(rating.score * 100) / 100} 分
-                </button>
-              );
-            })}
-          </div>
+          {props.locked && props.preview !== true ? (
+            <div className="self-eval" role="group" aria-label="自评档位">
+              <span className="self-label">对照答案自评：</span>
+              {SELF_RATING_LEVELS.map((level) => {
+                const rating = makeSelfRating(level, maxScore);
+                return (
+                  <button
+                    key={level}
+                    type="button"
+                    className={["self-btn", current === level ? "on" : "", level].filter(Boolean).join(" ")}
+                    aria-pressed={current === level}
+                    onClick={() => props.onSelfRating?.(level)}
+                  >
+                    {LABEL[level]} {Math.round(rating.score * 100) / 100} 分
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </>
       ) : null}
     </div>

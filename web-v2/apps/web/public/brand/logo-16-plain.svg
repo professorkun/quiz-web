@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" role="img" aria-label="题斋">
+  <title>题斋 · 16px 应急备用（无字）</title>
+  <desc>仅当 logo-16.svg 在 16px 实测无法辨认时启用：去掉汉字，保留墨面、缺角与朱线。</desc>
+  <rect x="1" y="1" width="14" height="14" rx="2" fill="#1B1A17"/>
+  <path d="M11 1H15V5Z" fill="#F5F1E7"/>
+  <rect x="4.4" y="11.2" width="7.2" height="1.6" fill="#B4452F"/>
+</svg>

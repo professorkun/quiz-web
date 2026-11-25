@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getQuestionType,
   listQuestionTypes,
+  type Passage,
   type Question,
   type QuestionProgress,
   type QuestionType,
@@ -26,6 +27,7 @@ import { usePlatform } from "../../platform/PlatformProvider";
 import { navigate } from "../../router";
 import { getRenderer } from "../../renderers";
 import { IconBack, IconFilter, IconSearch, IconStar } from "../../ui/icons";
+import { BankManagePanel } from "./BankManagePanel";
 
 type StatusFilter = "all" | "unseen" | "wrong" | "correct";
 
@@ -42,6 +44,7 @@ interface SavedFilters {
   readonly keyword: string;
   readonly type: QuestionType | "all";
   readonly topicId: string;
+  readonly tag?: string;
   readonly status: StatusFilter;
   readonly scrollTop: number;
 }
@@ -69,6 +72,12 @@ function statusOf(progress: QuestionProgress | undefined): StatusFilter {
   return "correct";
 }
 
+/** 标签 ID 常带 <bankId>:tag: 前缀；展示时只取最后一段，导出时仍是完整 ID */
+function tagLabel(value: string): string {
+  const parts = value.split(":");
+  return parts[parts.length - 1] ?? value;
+}
+
 function stemPreview(stem: string, limit = 60): string {
   const flat = stem.replace(/\s+/g, " ").replace(/[#*`>|-]/g, "").trim();
   return flat.length <= limit ? flat : `${flat.slice(0, limit)}…`;
@@ -85,8 +94,10 @@ export function BanksPage(): React.ReactElement {
   const [keyword, setKeyword] = useState(saved?.keyword ?? "");
   const [type, setType] = useState<QuestionType | "all">(saved?.type ?? "all");
   const [topicId, setTopicId] = useState<string>(saved?.topicId ?? "all");
+  const [tag, setTag] = useState<string>(saved?.tag ?? "all");
   const [status, setStatus] = useState<StatusFilter>(saved?.status ?? "all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [reveal, setReveal] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
   const listRef = useRef<HTMLElement | null>(null);
@@ -114,13 +125,21 @@ export function BanksPage(): React.ReactElement {
     setKeyword(next?.keyword ?? "");
     setType(next?.type ?? "all");
     setTopicId(next?.topicId ?? "all");
+    setTag(next?.tag ?? "all");
     setStatus(next?.status ?? "all");
   }, [bankId]);
 
   // 记住筛选与滚动位置：从预览层返回 / 去练习再回来都接着看
   useEffect(() => {
-    writeFilters(bankId, { keyword, type, topicId, status, scrollTop: listRef.current?.scrollTop ?? 0 });
-  }, [bankId, keyword, type, topicId, status]);
+    writeFilters(bankId, {
+      keyword,
+      type,
+      topicId,
+      tag,
+      status,
+      scrollTop: listRef.current?.scrollTop ?? 0,
+    });
+  }, [bankId, keyword, type, topicId, tag, status]);
 
   useEffect(() => {
     if (saved === null) return;
@@ -147,16 +166,82 @@ export function BanksPage(): React.ReactElement {
     return activeBank.questions.filter((question) => {
       if (type !== "all" && question.type !== type) return false;
       if (topicId !== "all" && !question.topicIds.includes(topicId)) return false;
+      // 标签是可选字段：没标的题在「全部标签」里可见，选中具体标签时不会误入
+      if (tag !== "all" && !(question.tags ?? []).includes(tag)) return false;
       if (status !== "all" && statusOf(progressMap.get(question.questionId)) !== status) return false;
       if (needle !== "" && !question.stem.toLowerCase().includes(needle)) return false;
       return true;
     });
-  }, [activeBank.questions, type, topicId, status, keyword, progressMap]);
+  }, [activeBank.questions, type, topicId, tag, status, keyword, progressMap]);
 
   const selected: Question | undefined =
     filtered.find((q) => q.questionId === selectedId) ??
     filtered[0] ??
     activeBank.questions.find((q) => q.questionId === selectedId);
+
+  // 共享材料（R4-2）：预览只展示当前题引用的那一篇
+  const selectedPassage =
+    selected?.passageId === undefined
+      ? undefined
+      : activeBank.passages?.find((passage) => passage.passageId === selected.passageId);
+
+  // 连续查看（T-06）：移动范围跟着当前筛选走，不跳到被筛掉的题
+  const currentIndex =
+    selected === undefined ? -1 : filtered.findIndex((q) => q.questionId === selected.questionId);
+
+  const [navHint, setNavHint] = useState<string | null>(null);
+
+  const moveSelection = useCallback(
+    (delta: number): void => {
+      if (filtered.length === 0) return;
+      const base = currentIndex >= 0 ? currentIndex : 0;
+      const nextIndex = base + delta;
+      if (nextIndex < 0) {
+        setNavHint("已经是筛选结果的第一题");
+        return;
+      }
+      if (nextIndex >= filtered.length) {
+        setNavHint("已经是筛选结果的最后一题");
+        return;
+      }
+      setSelectedId(filtered[nextIndex]?.questionId ?? null);
+      setNavHint(null);
+    },
+    [filtered, currentIndex],
+  );
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable === true) {
+        return;
+      }
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key === "j" || event.key === "J") {
+        event.preventDefault();
+        moveSelection(1);
+        return;
+      }
+      if (event.key === "k" || event.key === "K") {
+        event.preventDefault();
+        moveSelection(-1);
+        return;
+      }
+      // 空格切换答案；焦点在按钮上时交给浏览器，避免一次按键触发两次
+      if (event.key === " " && tag !== "BUTTON") {
+        event.preventDefault();
+        setReveal((prev) => !prev);
+        return;
+      }
+      if (event.key === "Escape") {
+        if (mobilePreviewOpen) setMobilePreviewOpen(false);
+        else if (reveal) setReveal(false);
+      }
+    };
+    globalThis.addEventListener?.("keydown", onKey);
+    return () => globalThis.removeEventListener?.("keydown", onKey);
+  }, [moveSelection, mobilePreviewOpen, reveal]);
 
   const toggleFavorite = async (questionId: string): Promise<void> => {
     try {
@@ -203,9 +288,20 @@ export function BanksPage(): React.ReactElement {
     return counts;
   }, [activeBank.questions]);
 
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const question of activeBank.questions) {
+      for (const value of question.tags ?? []) {
+        counts.set(value, (counts.get(value) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [activeBank.questions]);
+
   const activeFilterCount =
     (type === "all" ? 0 : 1) +
     (topicId === "all" ? 0 : 1) +
+    (tag === "all" ? 0 : 1) +
     (status === "all" ? 0 : 1) +
     (keyword.trim() === "" ? 0 : 1);
 
@@ -213,6 +309,7 @@ export function BanksPage(): React.ReactElement {
     setKeyword("");
     setType("all");
     setTopicId("all");
+    setTag("all");
     setStatus("all");
   };
 
@@ -275,6 +372,11 @@ export function BanksPage(): React.ReactElement {
             {selectedTopicLabel === "" ? null : (
               <span className="chip tag" data-active>
                 {selectedTopicLabel}
+              </span>
+            )}
+            {tag === "all" ? null : (
+              <span className="chip tag" data-active>
+                #{tagLabel(tag)}
               </span>
             )}
             {status === "all" ? null : (
@@ -342,6 +444,28 @@ export function BanksPage(): React.ReactElement {
             ))}
           </div>
 
+          {tagCounts.size === 0 ? null : (
+            <div className="chips">
+              <button
+                type="button"
+                className={tag === "all" ? "chip on" : "chip"}
+                onClick={() => setTag("all")}
+              >
+                全部标签
+              </button>
+              {[...tagCounts.entries()].map(([value, count]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={tag === value ? "chip on" : "chip"}
+                  onClick={() => setTag(value)}
+                >
+                  #{tagLabel(value)}（{count}）
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="chips">
             {(Object.keys(STATUS_LABEL) as StatusFilter[]).map((key) => (
               <button
@@ -386,6 +510,8 @@ export function BanksPage(): React.ReactElement {
           <p className="muted">只有一份题库时切换器没有意义；可在「我的」页导入第二份题库包。</p>
         ) : null}
       </section>
+
+      <BankManagePanel />
 
       <div className="split">
         <section className="card listpane" ref={listRef}>
@@ -445,14 +571,40 @@ export function BanksPage(): React.ReactElement {
                 <button
                   type="button"
                   className="chip"
+                  aria-pressed={favoriteIds.has(selected.questionId)}
                   onClick={() => void toggleFavorite(selected.questionId)}
                 >
                   <IconStar size={16} filled={favoriteIds.has(selected.questionId)} />
                   {favoriteIds.has(selected.questionId) ? "已收藏" : "收藏"}
                 </button>
               </div>
-              <QuestionPreview question={selected} />
-              <p className="muted mt-2">答案与解析在作答后显示。</p>
+              <div className="preview-nav">
+                <span className="muted">
+                  第 {currentIndex + 1} / {filtered.length} 题
+                </span>
+                <span className="spacer" />
+                <button type="button" className="btn gray sm" onClick={() => moveSelection(-1)}>
+                  上一题 K
+                </button>
+                <button type="button" className="btn gray sm" onClick={() => moveSelection(1)}>
+                  下一题 J
+                </button>
+              </div>
+              {navHint === null ? null : (
+                <div className="notice small" role="status">
+                  {navHint}
+                </div>
+              )}
+              <QuestionPreview
+                key={selected.questionId}
+                question={selected}
+                passage={selectedPassage}
+                reveal={reveal}
+                onToggleReveal={() => setReveal((prev) => !prev)}
+              />
+              <p className="muted mt-2">
+                可展开查看答案与解析；J / K 翻题，Esc 收起，查看不会产生作答记录。
+              </p>
             </>
           )}
         </section>
@@ -469,6 +621,7 @@ export function BanksPage(): React.ReactElement {
             <button
               type="button"
               className="chip"
+              aria-pressed={favoriteIds.has(selected.questionId)}
               onClick={() => void toggleFavorite(selected.questionId)}
             >
               <IconStar size={16} filled={favoriteIds.has(selected.questionId)} />
@@ -476,8 +629,33 @@ export function BanksPage(): React.ReactElement {
             </button>
           </div>
           <div className="mobile-preview-body">
-            <QuestionPreview question={selected} />
-            <p className="muted mt-3">答案与解析在作答后显示。</p>
+            <div className="preview-nav">
+              <span className="muted">
+                第 {currentIndex + 1} / {filtered.length} 题
+              </span>
+              <span className="spacer" />
+              <button type="button" className="btn gray sm" onClick={() => moveSelection(-1)}>
+                上一题 K
+              </button>
+              <button type="button" className="btn gray sm" onClick={() => moveSelection(1)}>
+                下一题 J
+              </button>
+            </div>
+            {navHint === null ? null : (
+              <div className="notice small" role="status">
+                {navHint}
+              </div>
+            )}
+            <QuestionPreview
+              key={selected.questionId}
+              question={selected}
+              passage={selectedPassage}
+              reveal={reveal}
+              onToggleReveal={() => setReveal((prev) => !prev)}
+            />
+            <p className="muted mt-3">
+              可展开查看答案与解析；J / K 翻题，Esc 关闭，查看不会产生作答记录。
+            </p>
           </div>
         </div>
       )}
@@ -504,18 +682,26 @@ export function BanksPage(): React.ReactElement {
  * 判断题/选择题/填空/代码填空都由各自的渲染器决定形态；
  * 新增题型只要注册，这里自动就支持——这才是扩展点该有的样子（ADR-0004）。
  */
-function QuestionPreview(props: { readonly question: Question }): React.ReactElement {
+function QuestionPreview(props: {
+  readonly question: Question;
+  readonly passage: Passage | undefined;
+  readonly reveal: boolean;
+  readonly onToggleReveal: () => void;
+}): React.ReactElement {
   const Renderer = getRenderer(props.question.type);
   return (
     <div className="mt-2 q-preview">
       <Renderer
         question={props.question}
+        passage={props.passage}
         answer={undefined}
         optionOrder={undefined}
         grade={undefined}
         selfRating={undefined}
         locked
         preview
+        reveal={props.reveal}
+        onToggleReveal={props.onToggleReveal}
         onChange={() => undefined}
         onSelfRating={() => undefined}
       />

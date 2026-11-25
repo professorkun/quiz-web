@@ -14,6 +14,9 @@ export {
   CodeBlankQuestionSchema,
   RubricPointSchema,
   ShortAnswerQuestionSchema,
+  ClozeQuestionSchema,
+  ClozeBlankSchema,
+  PassageSchema,
   QuestionSchema,
   TopicSchema,
   KnowledgeItemSchema,
@@ -50,6 +53,8 @@ export type {
   CodeFile,
   CodeBlankSlot,
   RubricPoint,
+  ClozeBlank,
+  Passage,
   Question,
   Topic,
   KnowledgeItem,
@@ -167,7 +172,13 @@ export type {
   RestoreResult,
 } from "./practice/index.js";
 
-export { ValidationCode, validateBankPackage, validateKnowledgeModules } from "./validate.js";
+export {
+  ValidationCode,
+  validateBankPackage,
+  validateKnowledgeModules,
+  topLevelKeyHint,
+  zhErrorMap,
+} from "./validate.js";
 export type {
   ValidationIssue,
   BankPackage,

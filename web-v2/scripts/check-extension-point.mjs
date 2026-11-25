@@ -26,6 +26,7 @@ const BUILTIN = [
   "fill_blank",
   "code_blank",
   "short_answer",
+  "cloze",
 ];
 
 let failed = 0;
@@ -90,8 +91,8 @@ const indexSrc = readFileSync(join(coreSrc, "questions", "index.ts"), "utf8");
 const listBlock = indexSrc.match(/BUILTIN_QUESTION_TYPES[^=]*=\s*\[([\s\S]*?)\]/)?.[1] ?? "";
 const registered = [...listBlock.matchAll(/(\w+Definition)/g)].map((m) => m[1]);
 note(
-  schemaTypes.length === 6 && registered.length === 6,
-  `Schema 6 成员 / 装配清单 ${registered.length} 条（Schema 实际 ${schemaTypes.length}）`,
+  schemaTypes.length === 7 && registered.length === 7,
+  `Schema 7 成员 / 装配清单 ${registered.length} 条（Schema 实际 ${schemaTypes.length}）`,
 );
 
 // 分块实施期间允许渲染器逐步补齐；一旦练习页 App.tsx 出现（已集成），自动转为严格
@@ -101,12 +102,12 @@ if (existsSync(renderersDir)) {
     .filter((d) => d.isDirectory())
     .map((d) => d.name);
   const missing = BUILTIN.filter((t) => !dirs.includes(t));
-  if (dirs.length === 6 && missing.length === 0) {
-    note(true, `渲染器目录 6/6（${dirs.join(", ")}）`);
+  if (dirs.length === 7 && missing.length === 0) {
+    note(true, `渲染器目录 7/7（${dirs.join(", ")}）`);
   } else if (integrated) {
-    note(false, `渲染器目录 ${dirs.length}/6，缺 ${missing.join(", ")}`);
+    note(false, `渲染器目录 ${dirs.length}/7，缺 ${missing.join(", ")}`);
   } else {
-    console.log(`SKIP  渲染器 ${dirs.length}/6（分块实施中，集成后自动严格）`);
+    console.log(`SKIP  渲染器 ${dirs.length}/7（分块实施中，集成后自动严格）`);
   }
 } else {
   console.log("SKIP  apps/web/src/renderers 尚未集成（T2-1 阶段允许）");

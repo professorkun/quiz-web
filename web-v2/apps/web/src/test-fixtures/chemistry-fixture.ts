@@ -46,6 +46,8 @@ const QUESTIONS: readonly Question[] = [
     questionId: "chem:single_choice:001",
     topicIds: ["chem:topic:matter"],
     stem: "下列物质中属于纯净物的是：",
+    tags: ["chem:tag:basics"],
+    difficulty: "easy",
     options: [
       { optionId: "a", text: "空气" },
       { optionId: "b", text: "冰水混合物" },
@@ -60,6 +62,8 @@ const QUESTIONS: readonly Question[] = [
     questionId: "chem:single_choice:002",
     topicIds: ["chem:topic:matter"],
     stem: "决定元素种类的是原子的：",
+    tags: ["chem:tag:basics", "chem:tag:exam"],
+    difficulty: "medium",
     options: [
       { optionId: "a", text: "质子数" },
       { optionId: "b", text: "中子数" },

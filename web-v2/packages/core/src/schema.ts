@@ -31,6 +31,7 @@ export const QuestionTypeSchema = z.enum([
   "fill_blank",
   "code_blank",
   "short_answer",
+  "cloze",
 ]);
 export type QuestionType = z.infer<typeof QuestionTypeSchema>;
 
@@ -68,6 +69,8 @@ const questionBase = {
   tags: z.array(IdStr).optional(),
   difficulty: DifficultySchema.optional(),
   stem: z.string().min(1),
+  /** 共享材料引用（R4-2）：完形 / 选词 / 七选五挂在同一篇材料上 */
+  passageId: IdStr.optional(),
   explanation: z.string().optional(),
   /** 旧版 `q_key` 等历史键，只读；迁移后不再写 */
   legacyKeys: z.array(IdStr).default([]),
@@ -144,6 +147,43 @@ export const ShortAnswerQuestionSchema = z.object({
   rubric: z.array(RubricPointSchema).min(1, "简答题至少 1 个采分点"),
 });
 
+/**
+ * 材料（R4-2）：题库级共享内容，**不进 manifest**（清单要轻）。
+ * 一篇材料可被多道 cloze 引用；保存一次，避免每个空都复制一遍原文。
+ */
+export const PassageSchema = z.object({
+  passageId: IdStr,
+  title: z.string().min(1),
+  /** Markdown 正文，渲染走 renderRichText，与讲义同一套清洗 */
+  body: z.string().min(1),
+  source: z.string().min(1).optional(),
+});
+export type Passage = z.infer<typeof PassageSchema>;
+
+/** 完形的一个空：只有一个正确选项，其他选项在 sharedOptions 里共用 */
+export const ClozeBlankSchema = z.object({
+  blankId: IdStr,
+  optionId: IdStr,
+  hint: z.string().optional(),
+});
+export type ClozeBlank = z.infer<typeof ClozeBlankSchema>;
+
+/**
+ * 完形 / 选词 / 七选五（R4-2）。
+ *
+ * 与 fill_blank 的分工：填空是「自己写」，cloze 是「从共用词库里选」。
+ * `reuseOptions=false` 表示每个选项只能用一次——选词填空的核心规则，
+ * 由 grader 执行：同一个选项被两个空选中时，后一个空判错。
+ */
+export const ClozeQuestionSchema = z.object({
+  ...questionBase,
+  type: z.literal("cloze"),
+  passageId: IdStr,
+  sharedOptions: z.array(OptionSchema).min(2, "共用选项至少 2 项"),
+  blanks: z.array(ClozeBlankSchema).min(1, "至少 1 个空"),
+  reuseOptions: z.boolean().default(false),
+});
+
 function checkOptionAnswer(
   options: readonly Option[],
   answerIds: readonly string[],
@@ -163,6 +203,7 @@ export const QuestionSchema = z
     FillBlankQuestionSchema,
     CodeBlankQuestionSchema,
     ShortAnswerQuestionSchema,
+    ClozeQuestionSchema,
   ])
   .superRefine((q, ctx) => {
     const add = (message: string, path: (string | number)[]): void => {
@@ -183,6 +224,26 @@ export const QuestionSchema = z
     if (q.type === "multiple_choice") {
       const err = checkOptionAnswer(q.options, q.answer);
       if (err) add(err, ["answer"]);
+    }
+
+    if (q.type === "cloze") {
+      const known = new Set(q.sharedOptions.map((o) => o.optionId));
+      const blankIds = new Set<string>();
+      const usedOptions = new Set<string>();
+      for (const b of q.blanks) {
+        if (blankIds.has(b.blankId)) add(`空位编号重复：${b.blankId}`, ["blanks"]);
+        blankIds.add(b.blankId);
+        if (!known.has(b.optionId)) {
+          add(`空位 ${b.blankId} 指向不存在的选项 ${b.optionId}`, ["blanks"]);
+        }
+        if (!q.stem.includes(`{{${b.blankId}}}`)) {
+          add(`题干中缺少空位占位符 {{${b.blankId}}}`, ["blanks"]);
+        }
+        if (!q.reuseOptions && usedOptions.has(b.optionId)) {
+          add(`reuseOptions=false 时选项 ${b.optionId} 被多个空复用`, ["blanks"]);
+        }
+        usedOptions.add(b.optionId);
+      }
     }
 
     if (q.type === "fill_blank") {
@@ -293,7 +354,12 @@ export const KnowledgeModuleSchema = z.object({
   moduleId: IdStr,
   topicId: IdStr,
   title: z.string().min(1),
-  summary: z.string().min(1),
+  /**
+   * 一句话概述：**可选**（V2.1 · R1.1）。
+   * 只挂课程链接的讲义往往没有概述，缺省时展示层直接不渲染这一行，
+   * 不伪造一句"本节介绍…"来凑版面。
+   */
+  summary: z.string().min(1).optional(),
   items: z.array(KnowledgeItemSchema).default([]),
   /** 易错点：旧版 `pits`，展示在模块末尾 */
   pitfalls: z.array(z.string().min(1)).default([]),
@@ -589,4 +655,6 @@ export interface BankContent {
   readonly manifest: BankManifest;
   readonly questions: readonly Question[];
   readonly knowledge: readonly KnowledgeModule[];
+  /** R4-2 起随题库走；旧包没有这个字段，读取方一律 `?? []` */
+  readonly passages?: readonly Passage[];
 }

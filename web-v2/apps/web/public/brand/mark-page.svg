@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="192" height="192" role="img" aria-label="朱批页">
+  <title>朱批页 · 辅助图形（完整版）</title>
+  <desc>用于空态、完成态，单屏只出现一次；颜色不随主题改，深色模式整体反转。</desc>
+  <path d="M10 6H32L40 14V42H10Z" fill="#FCF9F2" stroke="#1B1A17" stroke-width="2.6" stroke-linejoin="round"/>
+  <path d="M32 6V14H40" fill="none" stroke="#1B1A17" stroke-width="2.6" stroke-linejoin="round"/>
+  <path d="M16 30L21 35L32 22" fill="none" stroke="#B4452F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -6,19 +6,33 @@
  * S8 打包成 App 时，页面一行都不用改。
  */
 
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 import type { BankContent } from "@quiz/core";
 import type { Platform } from "@quiz/platform";
 
-import { BanksPage } from "./features/banks/BanksPage";
-import { ExamPage } from "./features/exam/ExamPage";
 import { LearnPage } from "./features/learn/LearnPage";
-import { MePage } from "./features/me/MePage";
-import { PracticePage } from "./features/practice/PracticePage";
-import { ReviewPage } from "./features/review/ReviewPage";
 import { EmptyState } from "./features/welcome/EmptyState";
+
+/**
+ * 路由分包（P3 体积治理）：首屏只带「学习」页，其余入口按需加载。
+ * 用 `.then(m => ({ default: m.XxxPage }))` 适配命名导出，避免改页面模块的导出形状。
+ */
+const BanksPage = lazy(() =>
+  import("./features/banks/BanksPage").then((m) => ({ default: m.BanksPage })),
+);
+const PracticePage = lazy(() =>
+  import("./features/practice/PracticePage").then((m) => ({ default: m.PracticePage })),
+);
+const ExamPage = lazy(() =>
+  import("./features/exam/ExamPage").then((m) => ({ default: m.ExamPage })),
+);
+const ReviewPage = lazy(() =>
+  import("./features/review/ReviewPage").then((m) => ({ default: m.ReviewPage })),
+);
+const MePage = lazy(() => import("./features/me/MePage").then((m) => ({ default: m.MePage })));
 import { PlatformProvider, usePlatform } from "./platform/PlatformProvider";
+import { useAutoSync } from "./cloud/useAutoSync";
 import { navigate, parseRoute, type Route } from "./router";
 import { AppShell } from "./ui/AppShell";
 
@@ -43,6 +57,9 @@ function renderRoute(route: Route): React.ReactElement {
 function Shell(): React.ReactElement {
   const { banks } = usePlatform();
   const [route, setRoute] = useState<Route>(() => parseRoute(globalThis.location.hash));
+
+  // 云账号登录后自动同步（匿名 / 非云域名直接跳过；失败不阻塞刷题）
+  useAutoSync();
 
   useEffect(() => {
     const onHashChange = (): void => setRoute(parseRoute(globalThis.location.hash));
@@ -73,7 +90,9 @@ function Shell(): React.ReactElement {
         setRoute(next);
       }}
     >
-      {content}
+      <div className="motion-page" key={route}>
+        <Suspense fallback={null}>{content}</Suspense>
+      </div>
     </AppShell>
   );
 }

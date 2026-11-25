@@ -22,16 +22,29 @@ export interface StoredAccount {
   readonly salt: string;
   readonly passwordHash: string;
   readonly createdAt: string;
+  /** 旧记录没有该字段，按 version=1 处理 */
+  readonly credentialVersion?: 1 | 2;
+  readonly kdf?: "sha256" | "pbkdf2-sha256";
+  readonly iterations?: number;
+  readonly failedAttempts?: number;
+  readonly lockedUntil?: string;
 }
 
-interface StoredSession {
+export interface StoredSession {
   readonly id: typeof SESSION_KEY;
   readonly userId: string;
+  /** 随机 32 字节 hex；旧会话可无 */
+  readonly token?: string;
+  /** ISO 过期时间；旧会话可无（按兼容接受） */
+  readonly expiresAt?: string;
 }
+
+/** 会话有效期：30 天 */
+export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 const memory = {
   accounts: new Map<string, StoredAccount>(),
-  session: null as string | null,
+  session: null as StoredSession | null,
 };
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -69,19 +82,48 @@ async function putAccount(db: IDBDatabase, account: StoredAccount): Promise<void
   await requestToPromise(tx.objectStore(ACCOUNT_STORE).put(account));
 }
 
-async function getSession(db: IDBDatabase): Promise<string | null> {
+async function getSession(db: IDBDatabase): Promise<StoredSession | null> {
   const tx = db.transaction(SESSION_STORE, "readonly");
   const row = await requestToPromise(
     tx.objectStore(SESSION_STORE).get(SESSION_KEY) as IDBRequest<StoredSession | undefined>,
   );
-  return row?.userId ?? null;
+  if (row === undefined) return null;
+  // 过期会话直接作废：读完即删，避免下次启动又被当成登录态
+  if (row.expiresAt !== undefined && Date.parse(row.expiresAt) <= Date.now()) {
+    await putSessionRecord(db, null);
+    return null;
+  }
+  return row;
+}
+
+async function putSessionRecord(db: IDBDatabase, session: StoredSession | null): Promise<void> {
+  const tx = db.transaction(SESSION_STORE, "readwrite");
+  const store = tx.objectStore(SESSION_STORE);
+  if (session === null) await requestToPromise(store.delete(SESSION_KEY));
+  else await requestToPromise(store.put(session));
+}
+
+function randomToken(): string | undefined {
+  if (typeof globalThis.crypto?.getRandomValues !== "function") return undefined;
+  const bytes = new Uint8Array(32);
+  globalThis.crypto.getRandomValues(bytes);
+  let out = "";
+  for (const byte of bytes) out += byte.toString(16).padStart(2, "0");
+  return out;
+}
+
+function buildSession(userId: string): StoredSession {
+  const token = randomToken();
+  return {
+    id: SESSION_KEY,
+    userId,
+    ...(token === undefined ? {} : { token }),
+    expiresAt: new Date(Date.now() + SESSION_TTL_MS).toISOString(),
+  };
 }
 
 async function putSession(db: IDBDatabase, userId: string | null): Promise<void> {
-  const tx = db.transaction(SESSION_STORE, "readwrite");
-  const store = tx.objectStore(SESSION_STORE);
-  if (userId === null) await requestToPromise(store.delete(SESSION_KEY));
-  else await requestToPromise(store.put({ id: SESSION_KEY, userId } satisfies StoredSession));
+  await putSessionRecord(db, userId === null ? null : buildSession(userId));
 }
 
 /** 把旧版本存在 localStorage 的账号 / 会话搬进数据库，只执行一次 */
@@ -171,11 +213,16 @@ export async function saveAccount(account: StoredAccount): Promise<void> {
   }
 }
 
-export async function readSession(): Promise<string | null> {
+export async function readSession(): Promise<StoredSession | null> {
   try {
     return await getSession(await openDb());
   } catch {
-    return memory.session;
+    const session = memory.session;
+    if (session?.expiresAt !== undefined && Date.parse(session.expiresAt) <= Date.now()) {
+      memory.session = null;
+      return null;
+    }
+    return session;
   }
 }
 
@@ -183,6 +230,15 @@ export async function writeSession(userId: string | null): Promise<void> {
   try {
     await putSession(await openDb(), userId);
   } catch {
-    memory.session = userId;
+    memory.session = userId === null ? null : buildSession(userId);
+  }
+}
+
+/** 直接写入完整会话记录（测试与迁移用；正常登录走 writeSession） */
+export async function writeSessionRecord(session: StoredSession | null): Promise<void> {
+  try {
+    await putSessionRecord(await openDb(), session);
+  } catch {
+    memory.session = session;
   }
 }
